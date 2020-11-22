@@ -1,33 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
-<search> 
-  
-  
-    
-    <entry>
-      <title>test</title>
-      <link href="2020/11/12/test/"/>
-      <url>2020/11/12/test/</url>
-      
-        <content type="html"><![CDATA[<p>hhhhhhhh</p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>Hello World</title>
-      <link href="2020/11/12/hello-world/"/>
-      <url>2020/11/12/hello-world/</url>
-      
-        <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
-      
-      
-      
-    </entry>
-    
-    
-  
-  
+<search>
+  <entry>
+    <title>以太坊源码分析之p2p网络启动</title>
+    <url>/2020/11/22/%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E7%BD%91%E7%BB%9C%E5%90%AF%E5%8A%A8/</url>
+    <content><![CDATA[<blockquote>
+<p>死磕以太坊源码分析之p2p网络启动</p>
+</blockquote>
+<a id="more"></a>
+<h2 id="p2p源码目录"><a href="#p2p源码目录" class="headerlink" title="p2p源码目录"></a>p2p源码目录</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">discover&#x2F;          基于UDP的节点发现V4协议</span><br><span class="line">  discv5&#x2F;            节点发现V5协议</span><br><span class="line">  enode&#x2F;             节点信息</span><br><span class="line">  enr&#x2F;               以太坊节点记录（ethereum node records)</span><br><span class="line">  nat&#x2F;               网络地址转换，用于内网穿透</span><br><span class="line">  netutil&#x2F;</span><br><span class="line">  protocol&#x2F;</span><br><span class="line">  simulations&#x2F;       本地p2p网络的模拟器</span><br><span class="line">  dial.go            建立连接请求，以任务的形式 </span><br><span class="line">  message.go         定义了读写的接口</span><br><span class="line">  metrics.go         计时器和计量器工具</span><br><span class="line">  peer.go            节点</span><br><span class="line">  protocol.go        子协议</span><br><span class="line">  rlpx.go            加密传输协议 </span><br><span class="line">  server.go          底层p2p网络的函数入口 </span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="启动p2p网络"><a href="#启动p2p网络" class="headerlink" title="启动p2p网络"></a>启动p2p网络</h2><p>启动p2p网络主要会做以下几件事：</p>
+<ol>
+<li>发现远程节点，建立相邻节点列表</li>
+<li>监听远程节点发过来的建立TCP请求</li>
+<li>向远程节点发送建立TCP连接请求</li>
+</ol>
+<p>首先找到p2p网络启动的入口：</p>
+<h3 id="Start"><a href="#Start" class="headerlink" title="Start()"></a>Start()</h3><p><code>start</code>函数主要做了以下6件事：</p>
+<ol>
+<li>初始化server的字段</li>
+<li>设置本地节点setupLocalNode</li>
+<li>设置监听TCP连接请求setupListening</li>
+<li>设置节点发现（setupDiscovery）V4版本</li>
+<li>设置最大可以主动发起的连接为50/3</li>
+<li>srv.run(dialer) 发起建立TCP连接请求</li>
+</ol>
+<p>其中setupLocalNode、setupListening、setupDiscovery、newDialState、srv.run(dialer)是我们要重点分析的函数。</p>
+<h4 id="设置本地节点"><a href="#设置本地节点" class="headerlink" title="设置本地节点"></a>设置本地节点</h4><p>进入到setupLocalNode中：</p>
+<p>①：创建devp2p握手</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">pubkey := crypto.FromECDSAPub(&amp;srv.PrivateKey.PublicKey)</span><br><span class="line">	srv.ourHandshake = &amp;protoHandshake&#123;Version: baseProtocolVersion, Name: srv.Name, ID: pubkey[<span class="number">1</span>:]&#125;</span><br><span class="line">	<span class="keyword">for</span> _, p := <span class="keyword">range</span> srv.Protocols &#123;</span><br><span class="line">		srv.ourHandshake.Caps = <span class="built_in">append</span>(srv.ourHandshake.Caps, p.<span class="built_in">cap</span>())</span><br><span class="line">	&#125;</span><br><span class="line">sort.Sort(capsByNameAndVersion(srv.ourHandshake.Caps))</span><br></pre></td></tr></table></figure>
+
+<p>握手协议包括协议版本号，节点名称和节点的公钥，存入到Caps中要根据名称和协议排序。</p>
+<p>②：创建本地节点</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">db, err := enode.OpenDB(srv.Config.NodeDatabase)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	srv.nodedb = db</span><br><span class="line">	srv.localnode = enode.NewLocalNode(db, srv.PrivateKey)</span><br><span class="line">	srv.localnode.SetFallbackIP(net.IP&#123;<span class="number">127</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>&#125;)</span><br><span class="line">	<span class="comment">// <span class="doctag">TODO:</span> check conflicts</span></span><br><span class="line">	<span class="keyword">for</span> _, p := <span class="keyword">range</span> srv.Protocols &#123;</span><br><span class="line">		<span class="keyword">for</span> _, e := <span class="keyword">range</span> p.Attributes &#123;</span><br><span class="line">			srv.localnode.Set(e)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先从节点数据库中去获取节点信息，如果不存在则新建本地节点并设置默认IP，同时将节点记录的协议特定信息存入到本地节点中。</p>
+<hr>
+<h4 id="设置监听"><a href="#设置监听" class="headerlink" title="设置监听"></a>设置监听</h4><p>进入到<code>setupListening</code>:</p>
+<p>①：启动监听器</p>
+<p>②：如果配置了NAT，则更新本地节点记录并映射TCP监听端口</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> tcp, ok := listener.Addr().(*net.TCPAddr); ok &#123;</span><br><span class="line">		srv.localnode.Set(enr.TCP(tcp.Port))</span><br><span class="line">		<span class="keyword">if</span> !tcp.IP.IsLoopback() &amp;&amp; srv.NAT != <span class="literal">nil</span> &#123;</span><br><span class="line">			srv.loopWG.Add(<span class="number">1</span>)</span><br><span class="line">			<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">				nat.Map(srv.NAT, srv.quit, <span class="string">&quot;tcp&quot;</span>, tcp.Port, tcp.Port, <span class="string">&quot;ethereum p2p&quot;</span>)</span><br><span class="line">				srv.loopWG.Done()</span><br><span class="line">			&#125;()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：开启P2P监听，接收<code>inbound</code>连接</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">srv.listenLoop()</span><br></pre></td></tr></table></figure>
+
+<p>这个函数需要进一步分析：</p>
+<p>主要有以下逻辑：</p>
+<ul>
+<li><p>首先<code>defaultMaxPendingPeers</code>这个字段指的是<code>inbound</code> 和<code>outbound</code>连接，默认最大值为50</p>
+</li>
+<li><p>将监听的连接返回给<code>listener</code></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">fd, err = srv.listener.Accept()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>获取监听的连接的地址并检查这个连接</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">remoteIP := netutil.AddrIP(fd.RemoteAddr())</span><br><span class="line"><span class="keyword">if</span> err := srv.checkInboundConn(fd, remoteIP); err != <span class="literal">nil</span> &#123;</span><br><span class="line">  .....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>checkInboundConn</code>主要是做了以下的判断：</p>
+<ul>
+<li>拒绝不符合NetRestrict的连接（NetRestrict是指已经限定了某些连接，除此之外会拒绝）</li>
+<li>拒绝尝试过多的节点</li>
+</ul>
+</li>
+<li><p>最后真正建立连接</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			srv.SetupConn(fd, inboundConn, <span class="literal">nil</span>)<span class="comment">// 连接建立过程（将连接添加为peer）</span></span><br><span class="line">			slots &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">		&#125;()</span><br></pre></td></tr></table></figure>
+
+<p>要注意setupConn的第三个字段传入的是nil，表示还没有拨号，如果正在拨号的话需要节点公钥。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> dialPubkey *ecdsa.PublicKey</span><br><span class="line">	<span class="keyword">if</span> dialDest != <span class="literal">nil</span> &#123;</span><br><span class="line">		dialPubkey = <span class="built_in">new</span>(ecdsa.PublicKey)</span><br><span class="line">		<span class="keyword">if</span> err := dialDest.Load((*enode.Secp256k1)(dialPubkey)); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> errors.New(<span class="string">&quot;dial destination doesn&#x27;t have a secp256k1 public key&quot;</span>)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后就是进行RLPX（RLPX会单独讲）握手</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">remotePubkey, err := c.doEncHandshake(srv.PrivateKey, dialPubkey)</span><br></pre></td></tr></table></figure>
+
+<p>如果dialDest 不为nil，检查公钥是否匹配，如果为nil,就从连接中返回一个node出来</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> dialDest != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// For dialed connections, check that the remote public key matches.</span></span><br><span class="line">		<span class="comment">//对于拨号连接，请检查远程公钥是否匹配</span></span><br><span class="line">		<span class="keyword">if</span> dialPubkey.X.Cmp(remotePubkey.X) != <span class="number">0</span> || dialPubkey.Y.Cmp(remotePubkey.Y) != <span class="number">0</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> DiscUnexpectedIdentity</span><br><span class="line">		&#125;</span><br><span class="line">		c.node = dialDest</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		c.node = nodeFromConn(remotePubkey, c.fd)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来就是真正执行握手了 ,这部分也属于RLPX，跳过</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">phs, err := c.doProtoHandshake(srv.ourHandshake)</span><br></pre></td></tr></table></figure>
+
+<p>之后要进行检查，如果成功了的话，连接就会作为节点被添加，并且启动了runPeer.</p>
+<p>到此为止，整个listenLoop 就完成了。</p>
+<hr>
+</li>
+</ul>
+<h4 id="设置节点发现"><a href="#设置节点发现" class="headerlink" title="设置节点发现"></a>设置节点发现</h4><p>进入到<code>srv.setupDiscovery()</code></p>
+<p>①：添加特定于协议的发现源</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">added := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">bool</span>)</span><br><span class="line">	<span class="keyword">for</span> _, proto := <span class="keyword">range</span> srv.Protocols &#123;</span><br><span class="line">		<span class="keyword">if</span> proto.DialCandidates != <span class="literal">nil</span> &amp;&amp; !added[proto.Name] &#123;</span><br><span class="line">			srv.discmix.AddSource(proto.DialCandidates)</span><br><span class="line">			added[proto.Name] = <span class="literal">true</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：如果DHT禁用的话，就不要在UDP上监听</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> srv.NoDiscovery &amp;&amp; !srv.DiscoveryV5 &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：监听给定的socket 上的发现的包</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">ntab, err := discover.ListenUDP(conn, srv.localnode, cfg)</span><br></pre></td></tr></table></figure>
+
+<h4 id="创建DialState"><a href="#创建DialState" class="headerlink" title="创建DialState"></a>创建DialState</h4><p>dialstate负责拨号和查找发现。</p>
+<p>①：初始化dialstate</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s := &amp;dialstate&#123;</span><br><span class="line">   maxDynDials: maxdyn,</span><br><span class="line">   self:        self,</span><br><span class="line">   netrestrict: cfg.NetRestrict,</span><br><span class="line">   log:         cfg.Logger,</span><br><span class="line">   static:      <span class="built_in">make</span>(<span class="keyword">map</span>[enode.ID]*dialTask),</span><br><span class="line">   dialing:     <span class="built_in">make</span>(<span class="keyword">map</span>[enode.ID]connFlag),</span><br><span class="line">   bootnodes:   <span class="built_in">make</span>([]*enode.Node, <span class="built_in">len</span>(cfg.BootstrapNodes)),</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：加入初始引导节点</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="built_in">copy</span>(s.bootnodes, cfg.BootstrapNodes)</span><br><span class="line"><span class="keyword">if</span> s.log == <span class="literal">nil</span> &#123;</span><br><span class="line">	s.log = log.Root()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③： 加入静态节点</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> _, n := <span class="keyword">range</span> cfg.StaticNodes &#123;</span><br><span class="line">		s.addStatic(n)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>bootnodes</code>是初始引导节点，在节点没有接收到任何节点的连接请求，也没有节点可以给我们邻居节点的时候，就去连接<code>bootnodes</code>，它硬编码在了以太坊的源码中。</p>
+<p><code>static</code>是静态节点，如果我们想和某些节点保持长期的连接，就把它们加入到静态节点的列表中</p>
+<p>接下来就是到了运行p2p网络的时候了，主要的函数是：<code>go srv.run(dialer)</code></p>
+<hr>
+<h2 id="运行p2p网络"><a href="#运行p2p网络" class="headerlink" title="运行p2p网络"></a>运行p2p网络</h2><h3 id="srv-run-dialer"><a href="#srv-run-dialer" class="headerlink" title="srv.run(dialer)"></a>srv.run(dialer)</h3><p>在p2p网络启动时候，我们会监听远程节点发送过来的TCP请求，到了运行p2p网络的时候，我们则会向远程节点发起TCP的连接请求。首先我们要知道我们所说的发起TCP连接请求可以形容成拨号，每个拨号都是以任务的形式存在，进入到<code>srv.run(dialer)</code>分析</p>
+<p>整个函数就是一个循环，介绍下它的主要功能：</p>
+<h4 id="发起TCP连接任务"><a href="#发起TCP连接任务" class="headerlink" title="发起TCP连接任务"></a>发起TCP连接任务</h4><figure class="highlight go"><table><tr><td class="code"><pre><span class="line">scheduleTasks()</span><br></pre></td></tr></table></figure>
+
+<p><code>scheduleTasks</code>主要是从queued task 中去获取任务，通过查询dialer以查找新任务并立即启动尽可能多的任务，我们这里要注意个变量<code>maxActiveDialTasks</code>,它的默认值为16 ，而安排任务的核心方法是：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">nt := dialstate.newTasks(<span class="built_in">len</span>(runningTasks)+<span class="built_in">len</span>(queuedTasks), peers, time.Now())</span><br></pre></td></tr></table></figure>
+
+<p>主要做了以下几件事：</p>
+<p>①：为没有连接的静态节点创建拨号任务</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> id, t := <span class="keyword">range</span> s.static &#123;</span><br><span class="line">		err := s.checkDial(t.dest, peers)</span><br><span class="line">		<span class="keyword">switch</span> err &#123;</span><br><span class="line">		<span class="keyword">case</span> errNotWhitelisted, errSelf:</span><br><span class="line">			s.log.Warn(<span class="string">&quot;Removing static dial candidate&quot;</span>, <span class="string">&quot;id&quot;</span>, t.dest.ID, <span class="string">&quot;addr&quot;</span>, &amp;net.TCPAddr&#123;IP: t.dest.IP(), Port: t.dest.TCP()&#125;, <span class="string">&quot;err&quot;</span>, err)</span><br><span class="line">			<span class="built_in">delete</span>(s.static, t.dest.ID())</span><br><span class="line">		<span class="keyword">case</span> <span class="literal">nil</span>:</span><br><span class="line">			s.dialing[id] = t.flags</span><br><span class="line">			newtasks = <span class="built_in">append</span>(newtasks, t)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先对拨号节点进行校验：正在连接，已经连接，是本身，不在白名单中，最近连接过的都会报错，并且不是在白名单中的和自身的节点会直接从静态节点列表中删除，校验通过的创建任务。</p>
+<p>②：计算所需的动态拨号数</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">needDynDials := s.maxDynDials</span><br><span class="line">	<span class="keyword">for</span> _, p := <span class="keyword">range</span> peers &#123;</span><br><span class="line">		<span class="keyword">if</span> p.rw.is(dynDialedConn) &#123;</span><br><span class="line">			needDynDials--</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, flag := <span class="keyword">range</span> s.dialing &#123;</span><br><span class="line">		<span class="keyword">if</span> flag&amp;dynDialedConn != <span class="number">0</span> &#123;</span><br><span class="line">			needDynDials--</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们主动发起的TCP连接请求是由节点最大连接数除以拨号比率得出的，即<code>maxPeers/radio</code>，同时我们会判断节点中是否已经有建立了连接的节点和正在拨号的节点，有的话会needDynDials会减去。</p>
+<p>③：如果找不到任何的peers,就去随机找bootnode，发起连接</p>
+<p>不过这个一般适用在<strong>测试网或者私链</strong>。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(peers) == <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(s.bootnodes) &gt; <span class="number">0</span> &amp;&amp; needDynDials &gt; <span class="number">0</span> &amp;&amp; now.Sub(s.start) &gt; fallbackInterval &#123;</span><br><span class="line">		bootnode := s.bootnodes[<span class="number">0</span>]</span><br><span class="line">		s.bootnodes = <span class="built_in">append</span>(s.bootnodes[:<span class="number">0</span>], s.bootnodes[<span class="number">1</span>:]...)</span><br><span class="line">		s.bootnodes = <span class="built_in">append</span>(s.bootnodes, bootnode)</span><br><span class="line">		<span class="keyword">if</span> addDial(dynDialedConn, bootnode) &#123;</span><br><span class="line">			needDynDials--</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：从节点发现结果中创建动态拨号任务</p>
+<p>如果不满足最大任务数量的话，就去<code>s.lookupBuf</code>中寻找，<code>lookupBuf</code>通过KAD算法获取的节点。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> ; i &lt; <span class="built_in">len</span>(s.lookupBuf) &amp;&amp; needDynDials &gt; <span class="number">0</span>; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> addDial(dynDialedConn, s.lookupBuf[i]) &#123;</span><br><span class="line">			needDynDials--</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	s.lookupBuf = s.lookupBuf[:<span class="built_in">copy</span>(s.lookupBuf, s.lookupBuf[i:])]</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(s.lookupBuf) &lt; needDynDials &amp;&amp; !s.lookupRunning &#123;</span><br><span class="line">		s.lookupRunning = <span class="literal">true</span></span><br><span class="line">		newtasks = <span class="built_in">append</span>(newtasks, &amp;discoverTask&#123;want: needDynDials - <span class="built_in">len</span>(s.lookupBuf)&#125;)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑤：没有需要执行的任务，保持拨号逻辑继续运行</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> nRunning == <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(newtasks) == <span class="number">0</span> &amp;&amp; s.hist.Len() &gt; <span class="number">0</span> &#123;</span><br><span class="line">		t := &amp;waitExpireTask&#123;s.hist.nextExpiry().Sub(now)&#125;</span><br><span class="line">		newtasks = <span class="built_in">append</span>(newtasks, t)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此创建新任务结束，返回<code>newTasks</code></p>
+<hr>
+<h4 id="执行TCP连接任务"><a href="#执行TCP连接任务" class="headerlink" title="执行TCP连接任务"></a>执行TCP连接任务</h4><p>直到满足最大活动任务数才开始任务执行，具体的执行过程在以下代码：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">startTasks := <span class="function"><span class="keyword">func</span><span class="params">(ts []task)</span> <span class="params">(rest []task)</span></span> &#123;</span><br><span class="line">		i := <span class="number">0</span></span><br><span class="line">		<span class="keyword">for</span> ; <span class="built_in">len</span>(runningTasks) &lt; maxActiveDialTasks &amp;&amp; i &lt; <span class="built_in">len</span>(ts); i++ &#123;</span><br><span class="line">			t := ts[i]</span><br><span class="line">			srv.log.Trace(<span class="string">&quot;New dial task&quot;</span>, <span class="string">&quot;task&quot;</span>, t)</span><br><span class="line">			<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; t.Do(srv); taskdone &lt;- t &#125;()</span><br><span class="line">			runningTasks = <span class="built_in">append</span>(runningTasks, t)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> ts[i:]</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">t.Do(srv);</span><br></pre></td></tr></table></figure>
+
+<p>执行的主要任务包括下面几种：</p>
+<ol>
+<li>dialTask</li>
+<li>discoverTask</li>
+<li>waitExpireTask</li>
+</ol>
+<p>最关键的就是<code>dialTask</code></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *dialTask)</span> <span class="title">Do</span><span class="params">(srv *Server)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> t.dest.Incomplete() &#123;</span><br><span class="line">		<span class="keyword">if</span> !t.resolve(srv) &#123;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	err := t.dial(srv, t.dest)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		srv.log.Trace(<span class="string">&quot;Dial error&quot;</span>, <span class="string">&quot;task&quot;</span>, t, <span class="string">&quot;err&quot;</span>, err)</span><br><span class="line">		<span class="comment">// Try resolving the ID of static nodes if dialing failed.</span></span><br><span class="line">		<span class="keyword">if</span> _, ok := err.(*dialError); ok &amp;&amp; t.flags&amp;staticDialedConn != <span class="number">0</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> t.resolve(srv) &#123;</span><br><span class="line">				t.dial(srv, t.dest)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>真正的连接是在<code>t.dail</code>中做的：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 实际的网络连接操作</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *dialTask)</span> <span class="title">dial</span><span class="params">(srv *Server, dest *enode.Node)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	fd, err := srv.Dialer.Dial(dest)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> &amp;dialError&#123;err&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	mfd := newMeteredConn(fd, <span class="literal">false</span>, &amp;net.TCPAddr&#123;IP: dest.IP(), Port: dest.TCP()&#125;)</span><br><span class="line">	<span class="keyword">return</span> srv.SetupConn(mfd, t.flags, dest)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再往下面就没必要深究了，实际的网络连接操作到此为止了。</p>
+<hr>
+<h4 id="管理TCP连接任务"><a href="#管理TCP连接任务" class="headerlink" title="管理TCP连接任务"></a>管理TCP连接任务</h4><p>在TCP连接任务完成后，会对连接有各种处理，如下：</p>
+<p>①：停止p2p服务</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> &lt;-srv.quit:</span><br><span class="line"><span class="keyword">break</span> running</span><br></pre></td></tr></table></figure>
+
+<p>②：添加静态节点到peer列表</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> n := &lt;-srv.addstatic:</span><br><span class="line">srv.log.Trace(<span class="string">&quot;Adding static node&quot;</span>, <span class="string">&quot;node&quot;</span>, n)</span><br><span class="line">dialstate.addStatic(n)</span><br></pre></td></tr></table></figure>
+
+<p>③：发送断开连接请求，并断开连接</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> n := &lt;-srv.removestatic:</span><br><span class="line">dialstate.removeStatic(n)</span><br><span class="line">			<span class="keyword">if</span> p, ok := peers[n.ID()]; ok &#123;</span><br><span class="line">				p.Disconnect(DiscRequested)</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>断开连接会立即返回，并且不会等连接关闭。</p>
+<p>④：标记可信节点</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> n := &lt;-srv.addtrusted:</span><br><span class="line">trusted[n.ID()] = <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>⑤：从信任节点中删除一个节点</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> n := &lt;-srv.removetrusted:</span><br><span class="line"><span class="built_in">delete</span>(trusted, n.ID())</span><br></pre></td></tr></table></figure>
+
+<p>⑥：拨号任务完成</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> t := &lt;-taskdone:newTasks</span><br><span class="line">dialstate.taskDone(t, time.Now())</span><br><span class="line">delTask(t)</span><br></pre></td></tr></table></figure>
+
+<p>⑦：连接已通过加密握手,远程身份是已知的（但尚未经过验证）</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> c := &lt;-srv.checkpointPostHandshake:</span><br><span class="line">c.cont &lt;- srv.postHandshakeChecks(peers, inboundCount, c)</span><br></pre></td></tr></table></figure>
+
+<p>⑧：连接已通过协议握手，已知其功能并验证了远程身份</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">err := srv.addPeerChecks(peers, inboundCount, c)</span><br><span class="line">			<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="comment">// 握手完成，所有检查完毕</span></span><br><span class="line">				p := newPeer(srv.log, c, srv.Protocols)</span><br><span class="line">			<span class="comment">//启用了消息事件就把peerfeed传给peer</span></span><br><span class="line">				<span class="keyword">if</span> srv.EnableMsgEvents &#123;</span><br><span class="line">					p.events = &amp;srv.peerFeed</span><br><span class="line">				&#125;</span><br><span class="line">				name := truncateName(c.name)</span><br><span class="line">	p.RemoteAddr(), <span class="string">&quot;peers&quot;</span>, <span class="built_in">len</span>(peers)+<span class="number">1</span>, <span class="string">&quot;name&quot;</span>, name)</span><br><span class="line">				<span class="keyword">go</span> srv.runPeer(p) <span class="comment">// 重点</span></span><br><span class="line">				peers[c.node.ID()] = p</span><br><span class="line">				<span class="keyword">if</span> p.Inbound() &#123;</span><br><span class="line">					inboundCount++</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span> conn, ok := c.fd.(*meteredConn); ok &#123;</span><br><span class="line">					conn.handshakeDone(p)<span class="comment">// </span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>addPeerChecks</code>会删除没有匹配协议的连接，并且会重复握手后检查，因为自执行这些检查后可能已更改。连接通过握手后，将调用<code>handshakeDone</code></p>
+<p>⑨：Peer断开连接</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">case</span> pd := &lt;-srv.delpeer:</span><br><span class="line">d := common.PrettyDuration(mclock.Now() - pd.created)</span><br><span class="line">			pd.log.Debug(<span class="string">&quot;Removing p2p peer&quot;</span>, <span class="string">&quot;addr&quot;</span>, pd.RemoteAddr(), <span class="string">&quot;peers&quot;</span>, <span class="built_in">len</span>(peers)<span class="number">-1</span>, <span class="string">&quot;duration&quot;</span>, d, <span class="string">&quot;req&quot;</span>, pd.requested, <span class="string">&quot;err&quot;</span>, pd.err)</span><br><span class="line">			<span class="built_in">delete</span>(peers, pd.ID())</span><br><span class="line">			<span class="keyword">if</span> pd.Inbound() &#123;</span><br><span class="line">				inboundCount--</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此为止整个主要的处理TCP连接的循环讲解结束。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>开启p2p网络主要包括：设置本地节点，监听TCP连接以及设置节点发现</li>
+<li>运行P2P网络之后主要包括：发起TCP连接并执行连接，以及相关的连接处理。</li>
+</ol>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a>   很全面的区块链开源学习资源</p>
+</blockquote>
+]]></content>
+      <tags>
+        <tag>以太坊</tag>
+        <tag>p2p</tag>
+        <tag>区块链</tag>
+        <tag>以太坊源码</tag>
+        <tag>p2p网络</tag>
+      </tags>
+  </entry>
 </search>
