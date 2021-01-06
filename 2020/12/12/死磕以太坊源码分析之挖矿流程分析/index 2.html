@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="google-site-verification" content="K1V7BuG8Q6fuSFZbXnYgcVNAQQnOuffJi4wbUHnJmXw" />
+<meta name="baidu-site-verification" content="code-YewuHFP0PS" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="挖矿," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="死磕以太坊源码分析之挖矿流程分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之挖矿流程分析">
+<meta property="og:url" content="http://example.com/2020/12/12/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="mindcarver">
+<meta property="og:description" content="死磕以太坊源码分析之挖矿流程分析">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glkzcyd6xhj31am0u0qe0.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gllc2fgu1gj31cw0rwdlc.jpg">
+<meta property="article:published_time" content="2020-12-12T12:29:33.000Z">
+<meta property="article:modified_time" content="2020-12-12T12:32:43.323Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="挖矿">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glkzcyd6xhj31am0u0qe0.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://example.com/2020/12/12/死磕以太坊源码分析之挖矿流程分析/"/>
+
+
+
+
+
+
+
+  <title>死磕以太坊源码分析之挖矿流程分析 | mindcarver</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+    <a target="_blank" rel="noopener" href="https://github.com/blockchainGuide" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta custom-logo">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">mindcarver</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">一生散漫，最爱自由</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-首页">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-关于">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-标签">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-分类">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/12/12/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gm19l6wtnpj30dw09djry.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">死磕以太坊源码分析之挖矿流程分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-12-12T20:29:33+08:00">
+                2020-12-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" itemprop="url" rel="index">
+                    <span itemprop="name">以太坊源码分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2020/12/12/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2020/12/12/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2.3k
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  9
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之挖矿流程分析</p>
+</blockquote>
+<a id="more"></a>
+<blockquote>
+<p>代码分支：<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/tree/v1.9.9">https://github.com/ethereum/go-ethereum/tree/v1.9.9</a></p>
+</blockquote>
+<h2 id="基本架构"><a href="#基本架构" class="headerlink" title="基本架构"></a>基本架构</h2><p>以太坊挖矿的主要流程是由<code>miner</code>包负责的，下面是基本的一个架构：</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glkzcyd6xhj31am0u0qe0.jpg" alt="image-20201212125409326"></p>
+<p>首先外部是通过<code>miner</code>对象进行了操作，<code>miner</code>里面则是实用<code>worker</code>对象来实现挖矿的整体功能。miner决定着是否停止挖矿或者是否可以开始挖矿，同时还可以设置矿工的地址来获取奖励。</p>
+<p>真正调度处理挖矿相关细节的则是在worker.go里面，我们先来看一张总体的图。</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gllc2fgu1gj31cw0rwdlc.jpg" alt="image-20201212201358073"></p>
+<p>上图我们看到有四个循环，分别通过几个<code>channel</code>负责不同的事：</p>
+<h3 id="newWorkLoop"><a href="#newWorkLoop" class="headerlink" title="newWorkLoop"></a>newWorkLoop</h3><ol>
+<li><code>startCh</code>：接收<code>startCh</code>信号，开始挖矿</li>
+<li><code>chainHeadCh</code>：表示接收到新区块，需要终止当前的挖矿工作，开始新的挖矿。</li>
+<li><code>timer.C</code>：默认每三秒检查一次是否有新交易需要处理。如果有则需要重新开始挖矿。以便将加高的交易优先打包到区块中。</li>
+</ol>
+<p>在 <code>newWorkLoop</code> 中还有一个辅助信号，<code>resubmitAdjustCh</code> 和 <code>resubmitIntervalCh</code>。运行外部修改timer计时器的时钟。<code>resubmitAdjustCh</code>是根据历史情况重新计算一个合理的间隔时间。而<code>resubmitIntervalCh</code>则允许外部，实时通过 <code>Miner</code> 实例方法 <code>SetRecommitInterval</code> 修改间隔时间。</p>
+<h3 id="mainLoop"><a href="#mainLoop" class="headerlink" title="mainLoop"></a>mainLoop</h3><ol>
+<li><code>newWorkCh</code>:接收生成新的挖矿任务信号</li>
+<li><code>chainSideCh</code>:接收区块链中加入了一个新区块作为当前链头的旁支的信号</li>
+<li><code>txsCh</code>:接收交易池的Pending中新加入了交易事件的信号</li>
+</ol>
+<p><code>TaskLoop</code>则是提交新的挖矿任务，而<code>resultLoop</code>则是成功出块之后做的一些处理。</p>
+<hr>
+<h2 id="启动挖矿"><a href="#启动挖矿" class="headerlink" title="启动挖矿"></a>启动挖矿</h2><h3 id="挖矿的参数设置"><a href="#挖矿的参数设置" class="headerlink" title="挖矿的参数设置"></a>挖矿的参数设置</h3><p><code>geth</code>挖矿的参数设置定义在 <code>cmd/utils/flags.go</code> 文件中</p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">默认值</th>
+<th align="center">用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">–mine</td>
+<td align="left">false</td>
+<td align="center">是否开启自动挖矿</td>
+</tr>
+<tr>
+<td align="left">–miner.threads</td>
+<td align="left">0</td>
+<td align="center">挖矿时可用并行PoW计算的协程（轻量级线程）数。 兼容过时参数 —minerthreads。</td>
+</tr>
+<tr>
+<td align="left">–miner.notify</td>
+<td align="left">空</td>
+<td align="center">挖出新块时用于通知远程服务的任意数量的远程服务地址。 是用 <code>,</code>分割的多个远程服务器地址。 如：”<a target="_blank" rel="noopener" href="http://api.miner.com,http//api2.miner.com%E2%80%9C">http://api.miner.com,http://api2.miner.com“</a></td>
+</tr>
+<tr>
+<td align="left">–miner.noverify</td>
+<td align="left">false</td>
+<td align="center">是否禁用区块的PoW工作量校验。</td>
+</tr>
+<tr>
+<td align="left">–miner.gasprice</td>
+<td align="left">1000000000 wei</td>
+<td align="center">矿工可接受的交易Gas价格， 低于此GasPrice的交易将被拒绝写入交易池和不会被矿工打包到区块。</td>
+</tr>
+<tr>
+<td align="left">–miner.gastarget</td>
+<td align="left">8000000 gas</td>
+<td align="center">动态计算新区块燃料上限（gaslimit）的下限值。 兼容过时参数 —targetgaslimit。</td>
+</tr>
+<tr>
+<td align="left">–miner.gaslimit</td>
+<td align="left">8000000 gas</td>
+<td align="center">动态技术新区块燃料上限的上限值。</td>
+</tr>
+<tr>
+<td align="left">–miner.etherbase</td>
+<td align="left">第一个账户</td>
+<td align="center">用于接收挖矿奖励的账户地址， 默认是本地钱包中的第一个账户地址。</td>
+</tr>
+<tr>
+<td align="left">–miner.extradata</td>
+<td align="left">geth版本号</td>
+<td align="center">允许矿工自定义写入区块头的额外数据。</td>
+</tr>
+<tr>
+<td align="left">–miner.recommit</td>
+<td align="left">3s</td>
+<td align="center">重新开始挖掘新区块的时间间隔。 将自动放弃进行中的挖矿后，重新开始一次新区块挖矿。</td>
+</tr>
+</tbody></table>
+<h3 id="常见的启动挖矿的方式"><a href="#常见的启动挖矿的方式" class="headerlink" title="常见的启动挖矿的方式"></a>常见的启动挖矿的方式</h3><h4 id="参数设置挖矿"><a href="#参数设置挖矿" class="headerlink" title="参数设置挖矿"></a>参数设置挖矿</h4><blockquote>
+<p>dgeth –dev –mine</p>
+</blockquote>
+<h4 id="控制台启动挖矿"><a href="#控制台启动挖矿" class="headerlink" title="控制台启动挖矿"></a>控制台启动挖矿</h4><blockquote>
+<p>miner.start(1)</p>
+</blockquote>
+<h4 id="rpc-启动挖矿"><a href="#rpc-启动挖矿" class="headerlink" title="rpc 启动挖矿"></a>rpc 启动挖矿</h4><p>这是部署节点使用的方式，一般设置如下：</p>
+<blockquote>
+<p>/geth –datadir “/data0” –nodekeyhex “27aa615f5fa5430845e4e99229def5f23e9525a20640cc49304f40f3b43824dc” –bootnodes $enodeid –mine –debug –metrics –syncmode=”full” –gcmode=archive –istanbul.blockperiod 5 –gasprice 0 –port 30303 –rpc –rpcaddr “0.0.0.0” –rpcport 8545 –rpcapi “db,eth,net,web3,personal” –nat any –allow-insecure-unlock </p>
+</blockquote>
+<hr>
+<p>开始源码分析，进入到<code>miner.go</code>的<code>New</code>函数中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(eth Backend, config *Config, chainConfig *params.ChainConfig, mux *event.TypeMux, engine consensus.Engine, isLocalBlock <span class="keyword">func</span>(block *types.Block)</span> <span class="title">bool</span>) *<span class="title">Miner</span></span> &#123;</span><br><span class="line">	miner := &amp;Miner&#123;</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">go</span> miner.update()</span><br><span class="line">	<span class="keyword">return</span> miner</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(miner *Miner)</span> <span class="title">update</span><span class="params">()</span></span> &#123;</span><br><span class="line">  <span class="keyword">switch</span> ev.Data.(<span class="keyword">type</span>) &#123;</span><br><span class="line">			<span class="keyword">case</span> downloader.StartEvent:</span><br><span class="line">				atomic.StoreInt32(&amp;miner.canStart, <span class="number">0</span>)</span><br><span class="line">				<span class="keyword">if</span> miner.Mining() &#123;</span><br><span class="line">					miner.Stop()</span><br><span class="line">					atomic.StoreInt32(&amp;miner.shouldStart, <span class="number">1</span>)</span><br><span class="line">					log.Info(<span class="string">&quot;Mining aborted due to sync&quot;</span>)</span><br><span class="line">				&#125;</span><br><span class="line">			<span class="keyword">case</span> downloader.DoneEvent, downloader.FailedEvent:</span><br><span class="line">				shouldStart := atomic.LoadInt32(&amp;miner.shouldStart) == <span class="number">1</span></span><br><span class="line"></span><br><span class="line">				atomic.StoreInt32(&amp;miner.canStart, <span class="number">1</span>)</span><br><span class="line">				atomic.StoreInt32(&amp;miner.shouldStart, <span class="number">0</span>)</span><br><span class="line">				<span class="keyword">if</span> shouldStart &#123;</span><br><span class="line">					miner.Start(miner.coinbase)</span><br><span class="line">				&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一开始我们初始化的<code>canStart=1</code> ， 如果<code>Downloader</code>模块正在同步，则<code>canStart=0</code>,并且停止挖矿，如果<code>Downloader</code>模块<code>Done</code>或者<code>Failed</code>，则<code>canStart=1</code>,且同时<code>shouldStart=0</code>,miner将启动。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">miner.Start(miner.coinbase)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(miner *Miner)</span> <span class="title">Start</span><span class="params">(coinbase common.Address)</span></span> &#123;</span><br><span class="line">...</span><br><span class="line">	miner.worker.start()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(w *worker)</span> <span class="title">start</span><span class="params">()</span></span> &#123;</span><br><span class="line">...</span><br><span class="line">	w.startCh &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来将会进入到<code>mainLoop</code>中去处理<code>startCh</code>：</p>
+<p>①：清除过旧的挖矿任务</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clearPending(w.chain.CurrentBlock().NumberU64())</span><br></pre></td></tr></table></figure>
+
+<p>②：提交新的挖矿任务</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">commit := <span class="function"><span class="keyword">func</span><span class="params">(noempty <span class="keyword">bool</span>, s <span class="keyword">int32</span>)</span></span> &#123;</span><br><span class="line">...</span><br><span class="line">		w.newWorkCh &lt;- &amp;newWorkReq&#123;interrupt: interrupt, noempty: noempty, timestamp: timestamp&#125;</span><br><span class="line">...</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生成新的挖矿任务"><a href="#生成新的挖矿任务" class="headerlink" title="生成新的挖矿任务"></a>生成新的挖矿任务</h2><p>根据<code>newWorkCh</code>生成新的挖矿任务，进入到<code>CommitNewWork</code>中：</p>
+<p>①：组装<code>header</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">header := &amp;types.Header&#123; <span class="comment">//组装header</span></span><br><span class="line">		ParentHash: parent.Hash(),</span><br><span class="line">		Number:     num.Add(num, common.Big1), <span class="comment">//num+1</span></span><br><span class="line">		GasLimit:   core.CalcGasLimit(parent, w.config.GasFloor, w.config.GasCeil),</span><br><span class="line">		Extra:      w.extra,</span><br><span class="line">		Time:       <span class="keyword">uint64</span>(timestamp),</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：根据共识引擎吃初始化header的共识字段</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.engine.Prepare(w.chain, header); </span><br></pre></td></tr></table></figure>
+
+<p>③：为当前挖矿新任务创建环境</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.makeCurrent(parent, header)</span><br></pre></td></tr></table></figure>
+
+<p>④：添加叔块</p>
+<p>叔块集分本地矿工打包区块和其他挖矿打包的区块。优先选择自己挖出的区块。选择时，将先删除太旧的区块，只从最近的7(staleThreshold)个高度中选择，最多<strong>选择两个叔块</strong>放入新区块中.在真正添加叔块的同时会进行校验，包括如下：</p>
+<ul>
+<li>叔块存在报错</li>
+<li>添加的uncle是父块的兄弟报错</li>
+<li>叔块的父块未知报错</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">commitUncles(w.localUncles)</span><br><span class="line">commitUncles(w.remoteUncles)</span><br></pre></td></tr></table></figure>
+
+<p>⑤：如果noempty为false，则提交空块，不填充交易进入到区块中,表示提前挖矿</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> !noempty &#123;</span><br><span class="line">  w.commit(uncles, <span class="literal">nil</span>, <span class="literal">false</span>, tstart)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑥：填充交易到新区块中</p>
+<p>6.1 从交易池中获取交易，并把交易分为本地交易和远程交易，本地交易优先，先将本地交易提交，再将外部交易提交。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">localTxs, remoteTxs := <span class="built_in">make</span>(<span class="keyword">map</span>[common.Address]types.Transactions), pending</span><br><span class="line">	<span class="keyword">for</span> _, account := <span class="keyword">range</span> w.eth.TxPool().Locals() &#123;</span><br><span class="line">		<span class="keyword">if</span> txs := remoteTxs[account]; <span class="built_in">len</span>(txs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">			<span class="built_in">delete</span>(remoteTxs, account)</span><br><span class="line">			localTxs[account] = txs</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(localTxs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">   txs := types.NewTransactionsByPriceAndNonce(w.current.signer, localTxs)</span><br><span class="line">   <span class="keyword">if</span> w.commitTransactions(txs, w.coinbase, interrupt) &#123;</span><br><span class="line">      <span class="keyword">return</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(remoteTxs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>6.2提交交易 </p>
+<ul>
+<li>首先校验有没有可用的<code>Gas</code></li>
+<li>如果碰到以下情况要进行交易执行的中断<ul>
+<li>新的头块事件到达，中断信号为 1     (整个任务会被丢弃)</li>
+<li><code>worker</code> 开启或者重启，中断信号为 1     （整个任务会被丢弃）</li>
+<li><code>worker</code>重新创建挖矿任务根据新的交易，中断信号为 2 （任务还是会被送入到共识引擎）</li>
+</ul>
+</li>
+</ul>
+<p>6.3开始执行交易</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">logs, err := w.commitTransaction(tx, coinbase)</span><br></pre></td></tr></table></figure>
+
+<p>6.4执行交易获取收据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &amp;coinbase, w.current.gasPool, w.current.state, w.current.header, tx, &amp;w.current.header.GasUsed, *w.chain.GetVMConfig())</span><br></pre></td></tr></table></figure>
+
+<p>如果执行出错，直接回退上一个快照</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		w.current.state.RevertToSnapshot(snap)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>出错的原因大概有以下几个：</p>
+<ul>
+<li> 超出当前块的<code>gas limit</code></li>
+<li><code>Nonce</code> 太低</li>
+<li><code>Nonce</code> 太高</li>
+</ul>
+<p>执行成功的话讲交易和收据存入到<code>w.current</code>中。</p>
+<p>⑦：执行交易的状态更改，并组装成最终块</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.commit(uncles, w.fullTaskHook, <span class="literal">true</span>, tstart)</span><br></pre></td></tr></table></figure>
+
+<p>执行交易的状态更改，并组装成最终块是由下面的共识引擎所完成的事情：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">block, err := w.engine.FinalizeAndAssemble(w.chain, w.current.header, s, w.current.txs, uncles, w.current.receipts)</span><br></pre></td></tr></table></figure>
+
+<p>底层会调用 <code>state.IntermediateRoot</code>执行状态更改。组装成最终块意味着到这打包任务完成。接着就是要提交新的挖矿任务。</p>
+<hr>
+<h2 id="提交新的挖矿任务"><a href="#提交新的挖矿任务" class="headerlink" title="提交新的挖矿任务"></a>提交新的挖矿任务</h2><p>①：获取<code>sealHash</code>（挖矿前的区块哈希），重复提交则跳过</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sealHash := w.engine.SealHash(task.block.Header()) <span class="comment">// 返回挖矿前的块的哈希</span></span><br><span class="line">			<span class="keyword">if</span> sealHash == prev &#123;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②:生成新的挖矿请求，结果返回到<code>reultCh</code>或者<code>StopCh</code>中</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.engine.Seal(w.chain, task.block, w.resultCh, stopCh);</span><br></pre></td></tr></table></figure>
+
+<p>挖矿的结果会返回到<code>resultCh</code>中或者<code>stopCh</code>中，<code>resultCh</code>有数据成功出块，<code>stopCh</code>不为空，则中断挖矿线程。</p>
+<hr>
+<h2 id="成功出块"><a href="#成功出块" class="headerlink" title="成功出块"></a>成功出块</h2><p><code>resultCh</code>有区块数据，则成功挖出了块，到最后的成功出块我们还需要进行相应的验证判断。</p>
+<p>①：块为空或者链上已经有块或者<code>pendingTasks</code>不存在相关的<code>sealhash</code>,跳过处理</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> block == <span class="literal">nil</span> &#123;&#125;</span><br><span class="line"><span class="keyword">if</span> w.chain.HasBlock(block.Hash(), block.NumberU64()) &#123;&#125;</span><br><span class="line">task, exist := w.pendingTasks[sealhash] <span class="keyword">if</span> !exist &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：更新<code>receipts</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i, receipt := <span class="keyword">range</span> task.receipts &#123;</span><br><span class="line">  receipt.BlockHash = hash</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：提交块和状态到数据库</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, <span class="literal">true</span>) <span class="comment">// 互斥</span></span><br></pre></td></tr></table></figure>
+
+<p>④：广播区块并宣布链插入事件</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.mux.Post(core.NewMinedBlockEvent&#123;Block: block&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>⑤：等待规范确认本地挖出的块</p>
+<p>新区块并非立即稳定，暂时存入到未确认区块集中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.unconfirmed.Insert(block.NumberU64(), block.Hash())</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="总结-amp-参考"><a href="#总结-amp-参考" class="headerlink" title="总结&amp;参考"></a>总结&amp;参考</h2><p>整个挖矿流程还是比较的简单，通过 4 个<code>Loop</code>互相工作，从开启挖矿到生成新的挖矿任务到提交新的挖矿任务到最后的成功出块，这里面的共识处理细节不会提到，接下来的文章会说到。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://mindcarver.cn/">https://mindcarver.cn</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+<p><a target="_blank" rel="noopener" href="https://learnblockchain.cn/books/geth/part2/mine/design.html">https://learnblockchain.cn/books/geth/part2/mine/design.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://yangzhe.me/2019/02/25/ethereum-miner/#%E5%8A%A8%E6%80%81%E8%B0%83%E6%95%B4%E5%87%BA%E5%9D%97%E9%A2%91%E7%8E%8">https://yangzhe.me/2019/02/25/ethereum-miner/#%E5%8A%A8%E6%80%81%E8%B0%83%E6%95%B4%E5%87%BA%E5%9D%97%E9%A2%91%E7%8E%8</a></p>
+</blockquote>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/uploads/wechat-qcode.jpg" alt=" wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫扫上面的微信公众号，订阅我的博客</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>您的赞赏是我创作的最大动力</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt=" 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt=" 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    mindcarver
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://example.com/2020/12/12/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/" title="死磕以太坊源码分析之挖矿流程分析">http://example.com/2020/12/12/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%8C%96%E7%9F%BF/" rel="tag"># 挖矿</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/12/02/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BFetcher%E5%90%8C%E6%AD%A5/" rel="next" title="死磕以太坊源码分析之Fetcher同步">
+                <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之Fetcher同步
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/12/18/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BEthash%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" rel="prev" title="死磕以太坊源码分析之Ethash共识算法">
+                死磕以太坊源码分析之Ethash共识算法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="https://tva1.sinaimg.cn/large/0081Kckwgy1gm19l6wtnpj30dw09djry.jpg"
+                alt="" />
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/blockchainGuide" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">基本架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#newWorkLoop"><span class="nav-number">1.1.</span> <span class="nav-text">newWorkLoop</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mainLoop"><span class="nav-number">1.2.</span> <span class="nav-text">mainLoop</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.</span> <span class="nav-text">启动挖矿</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%96%E7%9F%BF%E7%9A%84%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE"><span class="nav-number">2.1.</span> <span class="nav-text">挖矿的参数设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF%E7%9A%84%E6%96%B9%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">常见的启动挖矿的方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.1.</span> <span class="nav-text">参数设置挖矿</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E5%8F%B0%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.2.</span> <span class="nav-text">控制台启动挖矿</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rpc-%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.3.</span> <span class="nav-text">rpc 启动挖矿</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E6%96%B0%E7%9A%84%E6%8C%96%E7%9F%BF%E4%BB%BB%E5%8A%A1"><span class="nav-number">3.</span> <span class="nav-text">生成新的挖矿任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E4%BA%A4%E6%96%B0%E7%9A%84%E6%8C%96%E7%9F%BF%E4%BB%BB%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">提交新的挖矿任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%88%90%E5%8A%9F%E5%87%BA%E5%9D%97"><span class="nav-number">5.</span> <span class="nav-text">成功出块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-amp-%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">总结&amp;参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">Site words total count&#58;</span>
+    
+    <span title="Site words total count">45.1k</span>
+  
+</div>
+
+<!--
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+-->
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站访客数:<span id="busuanzi_value_site_uv"></span>
+</span>
+</div>
+
+<span id="busuanzi_container_site_uv">
+    本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+
+<div class="theme-info">
+  <div class="powered-by"></div>
+  <span class="post-count">博客全站共45.1k字</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: 'yFiyzRqVtEeMLDHbUtTS5MKB-gzGzoHsz',
+        appKey: 'ijPW7CJ8OjjBe60NVOpsjmgP',
+        placeholder: '欢迎大家指正，畅所欲言',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "box";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleRight";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
