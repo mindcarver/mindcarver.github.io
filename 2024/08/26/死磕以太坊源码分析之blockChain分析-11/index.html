@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码分析之blockChain分析 配合以下代码进行阅读：https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide&#x2F; 写文不易，给个小关注，有什么问题可以指出，便于大家交流学习。  blockchain关键元素 db：持久化到底层数据储存，即leveldb； genesisBlock：创始区块 currentBlock：当前区块，blockchain中并不是储存链所有的bl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之blockChain分析">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码分析之blockChain分析 配合以下代码进行阅读：https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide&#x2F; 写文不易，给个小关注，有什么问题可以指出，便于大家交流学习。  blockchain关键元素 db：持久化到底层数据储存，即leveldb； genesisBlock：创始区块 currentBlock：当前区块，blockchain中并不是储存链所有的bl">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-08-26T05:10:14.993Z">
+<meta property="article:modified_time" content="2024-08-26T05:10:53.089Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码分析之blockChain分析 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码分析之blockChain分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:10:14 / Modified: 13:10:53" itemprop="dateCreated datePublished" datetime="2024-08-26T13:10:14+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之blockChain分析</p>
+<p>配合以下代码进行阅读：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>写文不易，给个小关注，有什么问题可以指出，便于大家交流学习。</p>
+</blockquote>
+<h2 id="blockchain关键元素"><a href="#blockchain关键元素" class="headerlink" title="blockchain关键元素"></a>blockchain关键元素</h2><ul>
+<li><code>db</code>：持久化到底层数据储存，即<code>leveldb</code>；</li>
+<li><code>genesisBlock</code>：创始区块</li>
+<li><code>currentBlock</code>：当前区块，<code>blockchain</code>中并不是储存链所有的<code>block</code>，而是通过<code>currentBlock</code>向前回溯直到<code>genesisBlock</code>，这样就构成了区块链</li>
+<li><code>bodyCache</code>、<code>bodyRLPCache</code>、<code>blockCache</code>、<code>futureBlocks</code>：区块链中的缓存结构，用于加快区块链的读取和构建；</li>
+<li><code>hc</code>：<code>headerchain</code>区块头链，由<code>blockchain</code>额外维护的另一条链，由于<code>Header</code>和<code>Block</code>的储存空间是有很大差别的，但同时<code>Block</code>的<code>Hash</code>值就是<code>Header</code>（RLP）的<code>Hash</code>值，所以维护一个<code>headerchain</code>可以用于快速延长链，验证通过后再下载<code>blockchain</code>，或者可以与<code>blockchain</code>进行相互验证；</li>
+<li><code>processor</code>：执行区块链交易的接口，收到一个新的区块时，要对区块中的所有交易执行一遍，一方面是验证，一方面是更新世界状态；</li>
+<li><code>validator</code>：验证数据有效性的接口</li>
+<li><code>futureBlocks</code>：收到的区块时间大于当前头区块时间15s而小于30s的区块，可作为当前节点待处理的区块。</li>
+</ul>
+<hr>
+<h2 id="函数介绍"><a href="#函数介绍" class="headerlink" title="函数介绍"></a>函数介绍</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// BadBlocks 处理客户端从网络上获取的最近的bad block列表</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> BadBlocks() []*types.Block &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// addBadBlock 把bad block放入缓存</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> addBadBlock(block *types.Block) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// CurrentBlock取回主链的当前头区块，这个区块是从blockchian的内部缓存中取得</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> CurrentBlock() *types.Block &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// CurrentHeader检索规范链的当前头区块header。从HeaderChain的内部缓存中检索标头。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> CurrentHeader() *types.Header&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// CurrentFastBlock取回主链的当前fast-sync头区块，这个区块是从blockchian的内部缓存中取得</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> CurrentFastBlock() *types.Block &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将活动链或其子集写入给定的编写器.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Export(w io.Writer) <span class="type">error</span> &#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> ExportN(w io.Writer, first <span class="type">uint64</span>, last <span class="type">uint64</span>) <span class="type">error</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// FastSyncCommitHead快速同步，将当前头块设置为特定hash的区块。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> FastSyncCommitHead(hash common.Hash) <span class="type">error</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// GasLimit返回当前头区块的gas limit</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GasLimit() <span class="type">uint64</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Genesis 取回genesis区块</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Genesis() *types.Block &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 通过hash从数据库或缓存中取到一个区块体(transactions and uncles)或RLP数据</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBody(hash common.Hash) *types.Body &#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBodyRLP(hash common.Hash) rlp.RawValue &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// GetBlock 通过hash和number取到区块</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBlock(hash common.Hash, number <span class="type">uint64</span>) *types.Block &#123;&#125;</span><br><span class="line"><span class="comment">// GetBlockByHash 通过hash取到区块</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBlockByHash(hash common.Hash) *types.Block &#123;&#125;</span><br><span class="line"><span class="comment">// GetBlockByNumber 通过number取到区块</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBlockByNumber(number <span class="type">uint64</span>) *types.Block &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取给定hash和number区块的header</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetHeader(hash common.Hash, number <span class="type">uint64</span>) *types.Header&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// 获取给定hash的区块header</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetHeaderByHash(hash common.Hash) *types.Header&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// 获取给定number的区块header</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetHeaderByNumber(number <span class="type">uint64</span>) *types.Header&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// HasBlock检验hash对应的区块是否完全存在数据库中</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> HasBlock(hash common.Hash, number <span class="type">uint64</span>) <span class="type">bool</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// 检查给定hash和number的区块的区块头是否存在数据库</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> HasHeader(hash common.Hash, number <span class="type">uint64</span>) <span class="type">bool</span>&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// HasState检验state trie是否完全存在数据库中</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> HasState(hash common.Hash) <span class="type">bool</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// HasBlockAndState检验hash对应的block和state trie是否完全存在数据库中</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> HasBlockAndState(hash common.Hash, number <span class="type">uint64</span>) <span class="type">bool</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取给定hash的区块的总难度</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetTd(hash common.Hash, number <span class="type">uint64</span>) *big.Int&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取从给定hash的区块到genesis区块的所有hash</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBlockHashesFromHash(hash common.Hash, max <span class="type">uint64</span>) []common.Hash&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// GetReceiptsByHash 在特定的区块中取到所有交易的收据</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetReceiptsByHash(hash common.Hash) types.Receipts &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// GetBlocksFromHash 取到特定hash的区块及其n-1个父区块</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetBlocksFromHash(hash common.Hash, n <span class="type">int</span>) (blocks []*types.Block) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// GetUnclesInChain 取回从给定区块到向前回溯特定距离到区块上的所有叔区块</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> GetUnclesInChain(block *types.Block, length <span class="type">int</span>) []*types.Header &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// insert 将新的头块注入当前块链。 该方法假设该块确实是真正的头。</span></span><br><span class="line"><span class="comment">// 如果它们较旧或者它们位于不同的侧链上，它还会将头部标题和头部快速同步块重置为同一个块。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> insert(block *types.Block) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// InsertChain尝试将给定批量的block插入到规范链中，否则，创建一个分叉。 如果返回错误，它将返回失败块的索引号以及描述错误的错误。</span></span><br><span class="line"><span class="comment">//插入完成后，将触发所有累积的事件。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> InsertChain(chain types.Blocks) (<span class="type">int</span>, <span class="type">error</span>)&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// insertChain将执行实际的链插入和事件聚合。 </span></span><br><span class="line"><span class="comment">// 此方法作为单独方法存在的唯一原因是使用延迟语句使锁定更清晰。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> insertChain(chain types.Blocks) (<span class="type">int</span>, []<span class="keyword">interface</span>&#123;&#125;, []*types.Log, <span class="type">error</span>)&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// InsertHeaderChain尝试将给定的headerchain插入到本地链中，可能会创建一个重组</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> InsertHeaderChain(chain []*types.Header, checkFreq <span class="type">int</span>) (<span class="type">int</span>, <span class="type">error</span>)&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// InsertReceiptChain 使用交易和收据数据来完成已经存在的headerchain</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> InsertReceiptChain(blockChain types.Blocks, receiptChain []types.Receipts) (<span class="type">int</span>, <span class="type">error</span>) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//loadLastState从数据库加载最后一个已知的链状态。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> loadLastState() <span class="type">error</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Processor 返回当前current processor.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Processor() Processor &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Reset重置清除整个区块链，将其恢复到genesis state.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Reset() <span class="type">error</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// ResetWithGenesisBlock 清除整个区块链, 用特定的genesis state重塑，被Reset所引用</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> ResetWithGenesisBlock(genesis *types.Block) <span class="type">error</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// repair尝试通过回滚当前块来修复当前的区块链，直到找到具有关联状态的块。</span></span><br><span class="line"><span class="comment">// 用于修复由崩溃/断电或简单的非提交尝试导致的不完整的数据库写入。</span></span><br><span class="line"><span class="comment">//此方法仅回滚当前块。 当前标头和当前快速块保持不变。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> repair(head **types.Block) <span class="type">error</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// reorgs需要两个块、一个旧链以及一个新链，并将重新构建块并将它们插入到新的规范链中，并累积潜在的缺失事务并发布有关它们的事件</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> reorg(oldBlock, newBlock *types.Block) <span class="type">error</span>&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Rollback 旨在从数据库中删除不确定有效的链片段</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Rollback(chain []common.Hash) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// SetReceiptsData 计算收据的所有非共识字段</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">SetReceiptsData</span><span class="params">(config *params.ChainConfig, block *types.Block, receipts types.Receipts)</span></span> <span class="type">error</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// SetHead将本地链回滚到指定的头部。</span></span><br><span class="line"><span class="comment">// 通常可用于处理分叉时重选主链。对于Header，新Header上方的所有内容都将被删除，新的头部将被设置。</span></span><br><span class="line"><span class="comment">// 但如果块体丢失，则会进一步回退（快速同步后的非归档节点）。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> SetHead(head <span class="type">uint64</span>) <span class="type">error</span> &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// SetProcessor设置状态修改所需要的processor</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> SetProcessor(processor Processor) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// SetValidator 设置用于验证未来区块的validator</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> SetValidator(validator Validator) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// State 根据当前头区块返回一个可修改的状态</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> State() (*state.StateDB, <span class="type">error</span>) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// StateAt 根据特定时间点返回新的可变状态</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> StateAt(root common.Hash) (*state.StateDB, <span class="type">error</span>) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Stop 停止区块链服务，如果有正在import的进程，它会使用procInterrupt来取消。</span></span><br><span class="line"><span class="comment">// it will abort them using the procInterrupt.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Stop() &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// TrieNode从memory缓存或storage中检索与trie节点hash相关联的数据。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> TrieNode(hash common.Hash) ([]<span class="type">byte</span>, <span class="type">error</span>) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Validator返回当前validator.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> Validator() Validator &#123;&#125;</span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// WriteBlockWithoutState仅将块及其元数据写入数据库，但不写入任何状态。 这用于构建竞争方叉，直到超过规范总难度。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> WriteBlockWithoutState(block *types.Block, td *big.Int) (err <span class="type">error</span>)&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// WriteBlockWithState将块和所有关联状态写入数据库。</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> WriteBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB) &#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// writeHeader将标头写入本地链，因为它的父节点已知。 如果新插入的报头的总难度变得大于当前已知的TD，则重新路由规范链</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> writeHeader(header *types.Header) <span class="type">error</span>&#123;&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// 处理未来区块链</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bc *BlockChain)</span></span> update() &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="blockchain初始化"><a href="#blockchain初始化" class="headerlink" title="blockchain初始化"></a>blockchain初始化</h2><p>主要步骤：</p>
+<p>①：创建一个新的headerChain结构</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bc.hc, err = NewHeaderChain(db, chainConfig, engine, bc.getProcInterrupt)</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>根据number（0）获取genesisHeader</li>
+<li>从rawdb中读取HeadBlock并存储在currentHeader中</li>
+</ol>
+<p>②：获取genesisBlock</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bc.genesisBlock = bc.GetBlockByNumber(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<p>③：如果链不为空，则用老的链数据初始化链</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> bc.empty() &#123;</span><br><span class="line">		rawdb.InitDatabaseFromFreezer(bc.db)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：加载最新的状态数据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := bc.loadLastState(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑤：检查区块哈希的当前状态，并确保链中没有任何坏块</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> hash := <span class="keyword">range</span> BadHashes &#123;</span><br><span class="line">		<span class="keyword">if</span> header := bc.GetHeaderByHash(hash); header != <span class="literal">nil</span> &#123;</span><br><span class="line">			headerByNumber := bc.GetHeaderByNumber(header.Number.Uint64())</span><br><span class="line">			<span class="keyword">if</span> headerByNumber != <span class="literal">nil</span> &amp;&amp; headerByNumber.Hash() == header.Hash() &#123;</span><br><span class="line">				log.Error(<span class="string">&quot;Found bad hash, rewinding chain&quot;</span>, <span class="string">&quot;number&quot;</span>, header.Number, <span class="string">&quot;hash&quot;</span>, header.ParentHash)</span><br><span class="line">				bc.SetHead(header.Number.Uint64() - <span class="number">1</span>)</span><br><span class="line">				log.Error(<span class="string">&quot;Chain rewind was successful, resuming normal operation&quot;</span>)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑥：定时处理future block</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> bc.update()</span><br><span class="line">	-&gt;procFutureBlocks</span><br><span class="line">		-&gt;InsertChain</span><br></pre></td></tr></table></figure>
+
+<p>总的来说做了以下几件事：</p>
+<ol>
+<li>配置<code>cacheConfig</code>，创建各种lru缓存</li>
+<li>初始化<code>triegc</code></li>
+<li>初始化<code>stateDb</code>：<strong>state.NewDatabase(db)</strong></li>
+<li>初始化区块和状态验证：<strong>NewBlockValidator()</strong></li>
+<li>初始化状态处理器：<strong>NewStateProcessor()</strong></li>
+<li>初始化区块头部链：<strong>NewHeaderChain()</strong></li>
+<li>查找创世区块：<strong>bc.genesisBlock &#x3D; bc.GetBlockByNumber(0)</strong></li>
+<li>加载最新的状态数据：<strong>bc.loadLastState()</strong></li>
+<li>检查区块哈希的当前状态，并确保链中没有任何坏块</li>
+<li><code>go bc.update()</code> 定时处理<code>future block</code></li>
+</ol>
+<h2 id="加载区块链状态"><a href="#加载区块链状态" class="headerlink" title="加载区块链状态"></a>加载区块链状态</h2><p>①：从数据库中恢复headblock，如果空的话，触发reset chain</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">head := rawdb.ReadHeadBlockHash(bc.db)</span><br><span class="line">	<span class="keyword">if</span> head == (common.Hash&#123;&#125;) &#123;</span><br><span class="line">		log.Warn(<span class="string">&quot;Empty database, resetting chain&quot;</span>)</span><br><span class="line">		<span class="keyword">return</span> bc.Reset()</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：确保整个head block是可以获取的，若为空，则触发reset chain</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">currentBlock := bc.GetBlockByHash(head)</span><br><span class="line">	<span class="keyword">if</span> currentBlock == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// Corrupt or empty database, init from scratch</span></span><br><span class="line">		log.Warn(<span class="string">&quot;Head block missing, resetting chain&quot;</span>, <span class="string">&quot;hash&quot;</span>, head)</span><br><span class="line">		<span class="keyword">return</span> bc.Reset()</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：从stateDb中打开最新区块的状态trie，如果打开失败调用bc.repair(&amp;currentBlock)方法进行修复。修复方法就是从当前区块一个个的往前面找，直到找到好的区块，然后赋值给currentBlock。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> _, err := state.New(currentBlock.Root(), bc.stateCache); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// Dangling block without a state associated, init from scratch</span></span><br><span class="line">		log.Warn(<span class="string">&quot;Head state missing, repairing chain&quot;</span>, <span class="string">&quot;number&quot;</span>, currentBlock.Number(), <span class="string">&quot;hash&quot;</span>, currentBlock.Hash())</span><br><span class="line">		<span class="keyword">if</span> err := bc.repair(&amp;currentBlock); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		rawdb.WriteHeadBlockHash(bc.db, currentBlock.Hash())</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：存储当前的headblock和设置当前的headHeader以及头部快速块</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">bc.currentBlock.Store(currentBlock)</span><br><span class="line">....</span><br><span class="line">bc.hc.SetCurrentHeader(currentHeader)</span><br><span class="line">...</span><br><span class="line">bc.currentFastBlock.Store(currentBlock)</span><br></pre></td></tr></table></figure>
+
+
+
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://mindcarver.cn/">https://mindcarver.cn</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B-8/" rel="prev" title="死磕以太坊源码分析之挖矿流程">
+      <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之挖矿流程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bdownloader%E5%90%8C%E6%AD%A5-7/" rel="next" title="死磕以太坊源码分析之downloader同步">
+      死磕以太坊源码分析之downloader同步 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#blockchain%E5%85%B3%E9%94%AE%E5%85%83%E7%B4%A0"><span class="nav-number">1.</span> <span class="nav-text">blockchain关键元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">函数介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#blockchain%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">3.</span> <span class="nav-text">blockchain初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD%E5%8C%BA%E5%9D%97%E9%93%BE%E7%8A%B6%E6%80%81"><span class="nav-number">4.</span> <span class="nav-text">加载区块链状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码分析之挖矿流程 https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide (文章资料在此，给个Star哦)  基本架构以太坊挖矿的主要流程是由miner包负责的，下面是基本的一个架构：  首先外部是通过miner对象进行了操作，miner里面则是实用worker对象来实现挖矿的整体功能。miner决定着是否停止挖矿或者是否可以开始挖矿，同时还可以设置矿工的地址来获取奖励">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之挖矿流程">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B-8/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码分析之挖矿流程 https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide (文章资料在此，给个Star哦)  基本架构以太坊挖矿的主要流程是由miner包负责的，下面是基本的一个架构：  首先外部是通过miner对象进行了操作，miner里面则是实用worker对象来实现挖矿的整体功能。miner决定着是否停止挖矿或者是否可以开始挖矿，同时还可以设置矿工的地址来获取奖励">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glkzcyd6xhj31am0u0qe0.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gllc2fgu1gj31cw0rwdlc.jpg">
+<meta property="article:published_time" content="2024-08-26T05:10:14.983Z">
+<meta property="article:modified_time" content="2024-08-26T05:10:42.932Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glkzcyd6xhj31am0u0qe0.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B-8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码分析之挖矿流程 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B-8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码分析之挖矿流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:10:14 / Modified: 13:10:42" itemprop="dateCreated datePublished" datetime="2024-08-26T13:10:14+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B-8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E6%8C%96%E7%9F%BF%E6%B5%81%E7%A8%8B-8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之挖矿流程</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a> (文章资料在此，给个Star哦)</p>
+</blockquote>
+<h2 id="基本架构"><a href="#基本架构" class="headerlink" title="基本架构"></a>基本架构</h2><p>以太坊挖矿的主要流程是由<code>miner</code>包负责的，下面是基本的一个架构：</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glkzcyd6xhj31am0u0qe0.jpg" alt="image-20201212125409326"></p>
+<p>首先外部是通过<code>miner</code>对象进行了操作，<code>miner</code>里面则是实用<code>worker</code>对象来实现挖矿的整体功能。miner决定着是否停止挖矿或者是否可以开始挖矿，同时还可以设置矿工的地址来获取奖励。</p>
+<p>真正调度处理挖矿相关细节的则是在worker.go里面，我们先来看一张总体的图。</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gllc2fgu1gj31cw0rwdlc.jpg" alt="image-20201212201358073"></p>
+<p>上图我们看到有四个循环，分别通过几个<code>channel</code>负责不同的事：</p>
+<h3 id="newWorkLoop"><a href="#newWorkLoop" class="headerlink" title="newWorkLoop"></a>newWorkLoop</h3><ol>
+<li><code>startCh</code>：接收<code>startCh</code>信号，开始挖矿</li>
+<li><code>chainHeadCh</code>：表示接收到新区块，需要终止当前的挖矿工作，开始新的挖矿。</li>
+<li><code>timer.C</code>：默认每三秒检查一次是否有新交易需要处理。如果有则需要重新开始挖矿。以便将加高的交易优先打包到区块中。</li>
+</ol>
+<p>在 <code>newWorkLoop</code> 中还有一个辅助信号，<code>resubmitAdjustCh</code> 和 <code>resubmitIntervalCh</code>。运行外部修改timer计时器的时钟。<code>resubmitAdjustCh</code>是根据历史情况重新计算一个合理的间隔时间。而<code>resubmitIntervalCh</code>则允许外部，实时通过 <code>Miner</code> 实例方法 <code>SetRecommitInterval</code> 修改间隔时间。</p>
+<h3 id="mainLoop"><a href="#mainLoop" class="headerlink" title="mainLoop"></a>mainLoop</h3><ol>
+<li><code>newWorkCh</code>:接收生成新的挖矿任务信号</li>
+<li><code>chainSideCh</code>:接收区块链中加入了一个新区块作为当前链头的旁支的信号</li>
+<li><code>txsCh</code>:接收交易池的Pending中新加入了交易事件的信号</li>
+</ol>
+<p><code>TaskLoop</code>则是提交新的挖矿任务，而<code>resultLoop</code>则是成功出块之后做的一些处理。</p>
+<hr>
+<h2 id="启动挖矿"><a href="#启动挖矿" class="headerlink" title="启动挖矿"></a>启动挖矿</h2><h3 id="挖矿的参数设置"><a href="#挖矿的参数设置" class="headerlink" title="挖矿的参数设置"></a>挖矿的参数设置</h3><p><code>geth</code>挖矿的参数设置定义在 <code>cmd/utils/flags.go</code> 文件中</p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">默认值</th>
+<th align="center">用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">–mine</td>
+<td align="left">false</td>
+<td align="center">是否开启自动挖矿</td>
+</tr>
+<tr>
+<td align="left">–miner.threads</td>
+<td align="left">0</td>
+<td align="center">挖矿时可用并行PoW计算的协程（轻量级线程）数。 兼容过时参数 —minerthreads。</td>
+</tr>
+<tr>
+<td align="left">–miner.notify</td>
+<td align="left">空</td>
+<td align="center">挖出新块时用于通知远程服务的任意数量的远程服务地址。 是用 <code>,</code>分割的多个远程服务器地址。 如：”<a target="_blank" rel="noopener" href="http://api.miner.com,http//api2.miner.com%E2%80%9C">http://api.miner.com,http://api2.miner.com“</a></td>
+</tr>
+<tr>
+<td align="left">–miner.noverify</td>
+<td align="left">false</td>
+<td align="center">是否禁用区块的PoW工作量校验。</td>
+</tr>
+<tr>
+<td align="left">–miner.gasprice</td>
+<td align="left">1000000000 wei</td>
+<td align="center">矿工可接受的交易Gas价格， 低于此GasPrice的交易将被拒绝写入交易池和不会被矿工打包到区块。</td>
+</tr>
+<tr>
+<td align="left">–miner.gastarget</td>
+<td align="left">8000000 gas</td>
+<td align="center">动态计算新区块燃料上限（gaslimit）的下限值。 兼容过时参数 —targetgaslimit。</td>
+</tr>
+<tr>
+<td align="left">–miner.gaslimit</td>
+<td align="left">8000000 gas</td>
+<td align="center">动态技术新区块燃料上限的上限值。</td>
+</tr>
+<tr>
+<td align="left">–miner.etherbase</td>
+<td align="left">第一个账户</td>
+<td align="center">用于接收挖矿奖励的账户地址， 默认是本地钱包中的第一个账户地址。</td>
+</tr>
+<tr>
+<td align="left">–miner.extradata</td>
+<td align="left">geth版本号</td>
+<td align="center">允许矿工自定义写入区块头的额外数据。</td>
+</tr>
+<tr>
+<td align="left">–miner.recommit</td>
+<td align="left">3s</td>
+<td align="center">重新开始挖掘新区块的时间间隔。 将自动放弃进行中的挖矿后，重新开始一次新区块挖矿。</td>
+</tr>
+</tbody></table>
+<h3 id="常见的启动挖矿的方式"><a href="#常见的启动挖矿的方式" class="headerlink" title="常见的启动挖矿的方式"></a>常见的启动挖矿的方式</h3><h4 id="参数设置挖矿"><a href="#参数设置挖矿" class="headerlink" title="参数设置挖矿"></a>参数设置挖矿</h4><blockquote>
+<p>dgeth –dev –mine</p>
+</blockquote>
+<h4 id="控制台启动挖矿"><a href="#控制台启动挖矿" class="headerlink" title="控制台启动挖矿"></a>控制台启动挖矿</h4><blockquote>
+<p>miner.start(1)</p>
+</blockquote>
+<h4 id="rpc-启动挖矿"><a href="#rpc-启动挖矿" class="headerlink" title="rpc 启动挖矿"></a>rpc 启动挖矿</h4><p>这是部署节点使用的方式，一般设置如下：</p>
+<blockquote>
+<p>&#x2F;geth –datadir “&#x2F;data0” –nodekeyhex “27aa615f5fa5430845e4e99229def5f23e9525a20640cc49304f40f3b43824dc” –bootnodes $enodeid –mine –debug –metrics –syncmode&#x3D;”full” –gcmode&#x3D;archive –istanbul.blockperiod 5 –gasprice 0 –port 30303 –rpc –rpcaddr “0.0.0.0” –rpcport 8545 –rpcapi “db,eth,net,web3,personal” –nat any –allow-insecure-unlock </p>
+</blockquote>
+<hr>
+<p>开始源码分析，进入到<code>miner.go</code>的<code>New</code>函数中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(eth Backend, config *Config, chainConfig *params.ChainConfig, mux *event.TypeMux, engine consensus.Engine, isLocalBlock <span class="keyword">func</span>(block *types.Block)</span></span> <span class="type">bool</span>) *Miner &#123;</span><br><span class="line">	miner := &amp;Miner&#123;</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">go</span> miner.update()</span><br><span class="line">	<span class="keyword">return</span> miner</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(miner *Miner)</span></span> update() &#123;</span><br><span class="line">  <span class="keyword">switch</span> ev.Data.(<span class="keyword">type</span>) &#123;</span><br><span class="line">			<span class="keyword">case</span> downloader.StartEvent:</span><br><span class="line">				atomic.StoreInt32(&amp;miner.canStart, <span class="number">0</span>)</span><br><span class="line">				<span class="keyword">if</span> miner.Mining() &#123;</span><br><span class="line">					miner.Stop()</span><br><span class="line">					atomic.StoreInt32(&amp;miner.shouldStart, <span class="number">1</span>)</span><br><span class="line">					log.Info(<span class="string">&quot;Mining aborted due to sync&quot;</span>)</span><br><span class="line">				&#125;</span><br><span class="line">			<span class="keyword">case</span> downloader.DoneEvent, downloader.FailedEvent:</span><br><span class="line">				shouldStart := atomic.LoadInt32(&amp;miner.shouldStart) == <span class="number">1</span></span><br><span class="line"></span><br><span class="line">				atomic.StoreInt32(&amp;miner.canStart, <span class="number">1</span>)</span><br><span class="line">				atomic.StoreInt32(&amp;miner.shouldStart, <span class="number">0</span>)</span><br><span class="line">				<span class="keyword">if</span> shouldStart &#123;</span><br><span class="line">					miner.Start(miner.coinbase)</span><br><span class="line">				&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一开始我们初始化的<code>canStart=1</code> ， 如果<code>Downloader</code>模块正在同步，则<code>canStart=0</code>,并且停止挖矿，如果<code>Downloader</code>模块<code>Done</code>或者<code>Failed</code>，则<code>canStart=1</code>,且同时<code>shouldStart=0</code>,miner将启动。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">miner.Start(miner.coinbase)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(miner *Miner)</span></span> Start(coinbase common.Address) &#123;</span><br><span class="line">...</span><br><span class="line">	miner.worker.start()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(w *worker)</span></span> start() &#123;</span><br><span class="line">...</span><br><span class="line">	w.startCh &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来将会进入到<code>mainLoop</code>中去处理<code>startCh</code>：</p>
+<p>①：清除过旧的挖矿任务</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clearPending(w.chain.CurrentBlock().NumberU64())</span><br></pre></td></tr></table></figure>
+
+<p>②：提交新的挖矿任务</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">commit := <span class="function"><span class="keyword">func</span><span class="params">(noempty <span class="type">bool</span>, s <span class="type">int32</span>)</span></span> &#123;</span><br><span class="line">...</span><br><span class="line">		w.newWorkCh &lt;- &amp;newWorkReq&#123;interrupt: interrupt, noempty: noempty, timestamp: timestamp&#125;</span><br><span class="line">...</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="生成新的挖矿任务"><a href="#生成新的挖矿任务" class="headerlink" title="生成新的挖矿任务"></a>生成新的挖矿任务</h2><p>根据<code>newWorkCh</code>生成新的挖矿任务，进入到<code>CommitNewWork</code>中：</p>
+<p>①：组装<code>header</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">header := &amp;types.Header&#123; <span class="comment">//组装header</span></span><br><span class="line">		ParentHash: parent.Hash(),</span><br><span class="line">		Number:     num.Add(num, common.Big1), <span class="comment">//num+1</span></span><br><span class="line">		GasLimit:   core.CalcGasLimit(parent, w.config.GasFloor, w.config.GasCeil),</span><br><span class="line">		Extra:      w.extra,</span><br><span class="line">		Time:       <span class="type">uint64</span>(timestamp),</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：根据共识引擎吃初始化header的共识字段</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.engine.Prepare(w.chain, header); </span><br></pre></td></tr></table></figure>
+
+<p>③：为当前挖矿新任务创建环境</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.makeCurrent(parent, header)</span><br></pre></td></tr></table></figure>
+
+<p>④：添加叔块</p>
+<p>叔块集分本地矿工打包区块和其他挖矿打包的区块。优先选择自己挖出的区块。选择时，将先删除太旧的区块，只从最近的7(staleThreshold)个高度中选择，最多<strong>选择两个叔块</strong>放入新区块中.在真正添加叔块的同时会进行校验，包括如下：</p>
+<ul>
+<li>叔块存在报错</li>
+<li>添加的uncle是父块的兄弟报错</li>
+<li>叔块的父块未知报错</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">commitUncles(w.localUncles)</span><br><span class="line">commitUncles(w.remoteUncles)</span><br></pre></td></tr></table></figure>
+
+<p>⑤：如果noempty为false，则提交空块，不填充交易进入到区块中,表示提前挖矿</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> !noempty &#123;</span><br><span class="line">  w.commit(uncles, <span class="literal">nil</span>, <span class="literal">false</span>, tstart)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑥：填充交易到新区块中</p>
+<p>6.1 从交易池中获取交易，并把交易分为本地交易和远程交易，本地交易优先，先将本地交易提交，再将外部交易提交。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">localTxs, remoteTxs := <span class="built_in">make</span>(<span class="keyword">map</span>[common.Address]types.Transactions), pending</span><br><span class="line">	<span class="keyword">for</span> _, account := <span class="keyword">range</span> w.eth.TxPool().Locals() &#123;</span><br><span class="line">		<span class="keyword">if</span> txs := remoteTxs[account]; <span class="built_in">len</span>(txs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">			<span class="built_in">delete</span>(remoteTxs, account)</span><br><span class="line">			localTxs[account] = txs</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(localTxs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">   txs := types.NewTransactionsByPriceAndNonce(w.current.signer, localTxs)</span><br><span class="line">   <span class="keyword">if</span> w.commitTransactions(txs, w.coinbase, interrupt) &#123;</span><br><span class="line">      <span class="keyword">return</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(remoteTxs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>6.2提交交易 </p>
+<ul>
+<li>首先校验有没有可用的<code>Gas</code></li>
+<li>如果碰到以下情况要进行交易执行的中断<ul>
+<li>新的头块事件到达，中断信号为 1     (整个任务会被丢弃)</li>
+<li><code>worker</code> 开启或者重启，中断信号为 1     （整个任务会被丢弃）</li>
+<li><code>worker</code>重新创建挖矿任务根据新的交易，中断信号为 2 （任务还是会被送入到共识引擎）</li>
+</ul>
+</li>
+</ul>
+<p>6.3开始执行交易</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">logs, err := w.commitTransaction(tx, coinbase)</span><br></pre></td></tr></table></figure>
+
+<p>6.4执行交易获取收据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &amp;coinbase, w.current.gasPool, w.current.state, w.current.header, tx, &amp;w.current.header.GasUsed, *w.chain.GetVMConfig())</span><br></pre></td></tr></table></figure>
+
+<p>如果执行出错，直接回退上一个快照</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		w.current.state.RevertToSnapshot(snap)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>出错的原因大概有以下几个：</p>
+<ul>
+<li>超出当前块的<code>gas limit</code></li>
+<li><code>Nonce</code> 太低</li>
+<li><code>Nonce</code> 太高</li>
+</ul>
+<p>执行成功的话讲交易和收据存入到<code>w.current</code>中。</p>
+<p>⑦：执行交易的状态更改，并组装成最终块</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.commit(uncles, w.fullTaskHook, <span class="literal">true</span>, tstart)</span><br></pre></td></tr></table></figure>
+
+<p>执行交易的状态更改，并组装成最终块是由下面的共识引擎所完成的事情：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">block, err := w.engine.FinalizeAndAssemble(w.chain, w.current.header, s, w.current.txs, uncles, w.current.receipts)</span><br></pre></td></tr></table></figure>
+
+<p>底层会调用 <code>state.IntermediateRoot</code>执行状态更改。组装成最终块意味着到这打包任务完成。接着就是要提交新的挖矿任务。</p>
+<hr>
+<h2 id="提交新的挖矿任务"><a href="#提交新的挖矿任务" class="headerlink" title="提交新的挖矿任务"></a>提交新的挖矿任务</h2><p>①：获取<code>sealHash</code>（挖矿前的区块哈希），重复提交则跳过</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sealHash := w.engine.SealHash(task.block.Header()) <span class="comment">// 返回挖矿前的块的哈希</span></span><br><span class="line">			<span class="keyword">if</span> sealHash == prev &#123;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②:生成新的挖矿请求，结果返回到<code>reultCh</code>或者<code>StopCh</code>中</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.engine.Seal(w.chain, task.block, w.resultCh, stopCh);</span><br></pre></td></tr></table></figure>
+
+<p>挖矿的结果会返回到<code>resultCh</code>中或者<code>stopCh</code>中，<code>resultCh</code>有数据成功出块，<code>stopCh</code>不为空，则中断挖矿线程。</p>
+<hr>
+<h2 id="成功出块"><a href="#成功出块" class="headerlink" title="成功出块"></a>成功出块</h2><p><code>resultCh</code>有区块数据，则成功挖出了块，到最后的成功出块我们还需要进行相应的验证判断。</p>
+<p>①：块为空或者链上已经有块或者<code>pendingTasks</code>不存在相关的<code>sealhash</code>,跳过处理</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> block == <span class="literal">nil</span> &#123;&#125;</span><br><span class="line"><span class="keyword">if</span> w.chain.HasBlock(block.Hash(), block.NumberU64()) &#123;&#125;</span><br><span class="line">task, exist := w.pendingTasks[sealhash] <span class="keyword">if</span> !exist &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：更新<code>receipts</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i, receipt := <span class="keyword">range</span> task.receipts &#123;</span><br><span class="line">  receipt.BlockHash = hash</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：提交块和状态到数据库</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, <span class="literal">true</span>) <span class="comment">// 互斥</span></span><br></pre></td></tr></table></figure>
+
+<p>④：广播区块并宣布链插入事件</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.mux.Post(core.NewMinedBlockEvent&#123;Block: block&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>⑤：等待规范确认本地挖出的块</p>
+<p>新区块并非立即稳定，暂时存入到未确认区块集中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">w.unconfirmed.Insert(block.NumberU64(), block.Hash())</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="总结-参考"><a href="#总结-参考" class="headerlink" title="总结&amp;参考"></a>总结&amp;参考</h2><p>整个挖矿流程还是比较的简单，通过 4 个<code>Loop</code>互相工作，从开启挖矿到生成新的挖矿任务到提交新的挖矿任务到最后的成功出块，这里面的共识处理细节不会提到，接下来的文章会说到。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://mindcarver.cn/">https://mindcarver.cn</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+<p><a target="_blank" rel="noopener" href="https://learnblockchain.cn/books/geth/part2/mine/design.html">https://learnblockchain.cn/books/geth/part2/mine/design.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://yangzhe.me/2019/02/25/ethereum-miner/#%E5%8A%A8%E6%80%81%E8%B0%83%E6%95%B4%E5%87%BA%E5%9D%97%E9%A2%91%E7%8E%8">https://yangzhe.me/2019/02/25/ethereum-miner/#%E5%8A%A8%E6%80%81%E8%B0%83%E6%95%B4%E5%87%BA%E5%9D%97%E9%A2%91%E7%8E%8</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E4%B8%8A%E9%93%BE%E5%85%A5%E5%BA%93-10/" rel="prev" title="死磕以太坊源码分析之区块上链入库">
+      <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之区块上链入库
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/" rel="next" title="死磕以太坊源码分析之blockChain分析">
+      死磕以太坊源码分析之blockChain分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">基本架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#newWorkLoop"><span class="nav-number">1.1.</span> <span class="nav-text">newWorkLoop</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mainLoop"><span class="nav-number">1.2.</span> <span class="nav-text">mainLoop</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.</span> <span class="nav-text">启动挖矿</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8C%96%E7%9F%BF%E7%9A%84%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE"><span class="nav-number">2.1.</span> <span class="nav-text">挖矿的参数设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF%E7%9A%84%E6%96%B9%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">常见的启动挖矿的方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.1.</span> <span class="nav-text">参数设置挖矿</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E5%8F%B0%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.2.</span> <span class="nav-text">控制台启动挖矿</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rpc-%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.3.</span> <span class="nav-text">rpc 启动挖矿</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E6%96%B0%E7%9A%84%E6%8C%96%E7%9F%BF%E4%BB%BB%E5%8A%A1"><span class="nav-number">3.</span> <span class="nav-text">生成新的挖矿任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E4%BA%A4%E6%96%B0%E7%9A%84%E6%8C%96%E7%9F%BF%E4%BB%BB%E5%8A%A1"><span class="nav-number">4.</span> <span class="nav-text">提交新的挖矿任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%88%90%E5%8A%9F%E5%87%BA%E5%9D%97"><span class="nav-number">5.</span> <span class="nav-text">成功出块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">总结&amp;参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

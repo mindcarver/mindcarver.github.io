@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码分析之rlpx协议  本文主要参考自eth官方文档：rlpx协议 符号 X || Y：表示X和Y的串联 X ^ Y： X和Y按位异或 X[:N]：X的前N个字节 [X, Y, Z, ...]：[X, Y, Z, …]的RLP递归编码 keccak256(MESSAGE)：以太坊使用的keccak256哈希算法 ecies.encrypt(PUBKEY, MESSAGE, AUTHD">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之rlpx协议">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Brlpx%E5%8D%8F%E8%AE%AE-4/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码分析之rlpx协议  本文主要参考自eth官方文档：rlpx协议 符号 X || Y：表示X和Y的串联 X ^ Y： X和Y按位异或 X[:N]：X的前N个字节 [X, Y, Z, ...]：[X, Y, Z, …]的RLP递归编码 keccak256(MESSAGE)：以太坊使用的keccak256哈希算法 ecies.encrypt(PUBKEY, MESSAGE, AUTHD">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-08-26T05:08:56.689Z">
+<meta property="article:modified_time" content="2024-08-26T05:09:19.645Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Brlpx%E5%8D%8F%E8%AE%AE-4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码分析之rlpx协议 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Brlpx%E5%8D%8F%E8%AE%AE-4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码分析之rlpx协议
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:08:56 / Modified: 13:09:19" itemprop="dateCreated datePublished" datetime="2024-08-26T13:08:56+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Brlpx%E5%8D%8F%E8%AE%AE-4/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Brlpx%E5%8D%8F%E8%AE%AE-4/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>8.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之rlpx协议</p>
+</blockquote>
+<p>本文主要参考自eth官方文档：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">rlpx协议</a></p>
+<h2 id="符号"><a href="#符号" class="headerlink" title="符号"></a>符号</h2><ul>
+<li><code>X || Y</code>：表示X和Y的串联</li>
+<li><code>X ^ Y</code>： X和Y按位异或</li>
+<li><code>X[:N]</code>：X的前N个字节</li>
+<li><code>[X, Y, Z, ...]</code>：[X, Y, Z, …]的RLP递归编码</li>
+<li><code>keccak256(MESSAGE)</code>：以太坊使用的keccak256哈希算法</li>
+<li><code>ecies.encrypt(PUBKEY, MESSAGE, AUTHDATA)</code>：RLPx使用的非对称身份验证加密函数     AUTHDATA是身份认证的数据，并非密文的一部分     但是AUTHDATA会在生成消息tag前，写入HMAC-256哈希函数</li>
+<li><code>ecdh.agree(PRIVKEY, PUBKEY)</code>：是PRIVKEY和PUBKEY之间的椭圆曲线Diffie-Hellman协商函数</li>
+</ul>
+<hr>
+<h2 id="ECIES加密"><a href="#ECIES加密" class="headerlink" title="ECIES加密"></a>ECIES加密</h2><p>ECIES (Elliptic Curve Integrated Encryption Scheme) 非对称加密用于RLPx握手。RLPx使用的加密系统：</p>
+<ul>
+<li>椭圆曲线secp256k1基点<code>G</code></li>
+<li><code>KDF(k, len)</code>：密钥推导函数 NIST SP 800-56 Concatenation</li>
+<li><code>MAC(k, m)</code>：HMAC函数，使用了SHA-256哈希</li>
+<li><code>AES(k, iv, m)</code>：AES-128对称加密函数，CTR模式</li>
+</ul>
+<p>假设Alice想发送加密消息给Bob，并且希望Bob可以用他的静态私钥<code>kB</code>解密。Alice知道Bob的静态公钥<code>KB</code>。</p>
+<p>Alice为了对消息<code>m</code>进行加密：</p>
+<ol>
+<li>生成一个随机数<code>r</code>并生成对应的椭圆曲线公钥<code>R = r * G</code></li>
+<li>计算共享密码<code>S = Px</code>，其中 <code>(Px, Py) = r * KB</code></li>
+<li>推导加密及认证所需的密钥<code>kE || kM = KDF(S, 32)</code>以及随机向量<code>iv</code></li>
+<li>使用AES加密 <code>c = AES(kE, iv, m)</code></li>
+<li>计算MAC校验 <code>d = MAC(keccak256(kM), iv || c)</code></li>
+<li>发送完整密文<code>R || iv || c || d</code>给Bob</li>
+</ol>
+<p>Bob对密文<code>R || iv || c || d</code>进行解密：</p>
+<ol>
+<li>推导共享密码<code>S = Px</code>, 其中<code>(Px, Py) = r * KB = kB * R</code></li>
+<li>推导加密认证用的密钥<code>kE || kM = KDF(S, 32)</code></li>
+<li>验证MAC<code>d = MAC(keccak256(kM), iv || c)</code></li>
+<li>获得明文<code>m = AES(kE, iv || c)</code></li>
+</ol>
+<hr>
+<h2 id="节点身份"><a href="#节点身份" class="headerlink" title="节点身份"></a>节点身份</h2><p>所有的加密操作都基于<strong>secp256k1</strong>椭圆曲线。每个节点维护一个静态的<strong>secp256k1</strong>私钥。建议该私钥只能进行手动重置（例如删除文件或数据库条目）。</p>
+<hr>
+<h2 id="握手流程"><a href="#握手流程" class="headerlink" title="握手流程"></a>握手流程</h2><p>RLPx连接基于TCP通信，并且每次通信都会生成随机的临时密钥用于加密和验证。生成临时密钥的过程被称作“握手” (handshake)，握手在发起端（initiator, 发起TCP连接请求的节点）和接收端（recipient, 接受连接的节点）之间进行。</p>
+<ol>
+<li>发起端向接收端发起TCP连接，发送<code>auth</code>消息</li>
+<li>接收端接受连接，解密、验证<code>auth</code>消息（检查recovery of signature &#x3D;&#x3D; <code>keccak256(ephemeral-pubk)</code>）</li>
+<li>接收端通过<code>remote-ephemeral-pubk</code> 和 <code>nonce</code>生成<code>auth-ack</code>消息</li>
+<li>接收端推导密钥，发送首个包含<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00">Hello</a>消息的数据帧 (frame)</li>
+<li>发起端接收到<code>auth-ack</code>消息，导出密钥</li>
+<li>发起端发送首个加密后的数据帧，包含发起端<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00">Hello</a>消息</li>
+<li>接收端接收并验证首个加密后的数据帧</li>
+<li>发起端接收并验证首个加密后的数据帧</li>
+<li>如果两边的首个加密数据帧的MAC都验证通过，则加密握手完成</li>
+</ol>
+<p>如果首个数据帧的验证失败，则任意一方都可以断开连接。</p>
+<h3 id="握手消息"><a href="#握手消息" class="headerlink" title="握手消息"></a>握手消息</h3><p><strong>发送端：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">auth = auth-size || enc-auth-body</span><br><span class="line">auth-size = size of enc-auth-body, encoded as a big-endian <span class="number">16</span>-bit integer</span><br><span class="line">auth-vsn = <span class="number">4</span></span><br><span class="line">auth-body = [sig, initiator-pubk, initiator-nonce, auth-vsn, ...]</span><br><span class="line">enc-auth-body = ecies.encrypt(recipient-pubk, auth-body || auth-padding, auth-size)</span><br><span class="line">auth-padding = arbitrary data</span><br></pre></td></tr></table></figure>
+
+<p><strong>接收端：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ack = ack-size || enc-ack-body</span><br><span class="line">ack-size = size of enc-ack-body, encoded as a big-endian <span class="number">16</span>-bit integer</span><br><span class="line">ack-vsn = <span class="number">4</span></span><br><span class="line">ack-body = [recipient-ephemeral-pubk, recipient-nonce, ack-vsn, ...]</span><br><span class="line">enc-ack-body = ecies.encrypt(initiator-pubk, ack-body || ack-padding, ack-size)</span><br><span class="line">ack-padding = arbitrary data</span><br></pre></td></tr></table></figure>
+
+<p>实现必须忽略<code>auth-vsn</code> 和 <code>ack-vsn</code>中的所有不匹配。</p>
+<p>实现必须忽略<code>auth-body</code> 和 <code>ack-body</code>中的所有额外列表元素。</p>
+<p>握手消息互换后，密钥生成：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">static-shared-secret = ecdh.agree(privkey, remote-pubk)</span><br><span class="line">ephemeral-key = ecdh.agree(ephemeral-privkey, remote-ephemeral-pubk)</span><br><span class="line">shared-secret = keccak256(ephemeral-key || keccak256(nonce || initiator-nonce))</span><br><span class="line">aes-secret = keccak256(ephemeral-key || shared-secret)</span><br><span class="line">mac-secret = keccak256(ephemeral-key || aes-secret)</span><br></pre></td></tr></table></figure>
+
+<h2 id="帧结构"><a href="#帧结构" class="headerlink" title="帧结构"></a>帧结构</h2><p>握手后所有的消息都按帧 (frame) 传输。一帧数据携带属于某一功能的一条加密消息。</p>
+<p>分帧传输的主要目的是在单一连接上实现可靠的支持多路复用协议。其次，因数据包分帧，为消息认证码产生了适当的分界点，使得加密流变得简单了。通过握手生成的密钥对数据帧进行加密和验证。</p>
+<p>帧头提供关于消息大小和消息源功能的信息。填充字节用于防止缓存区不足，使得帧组件按指定区块字节大小对齐。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">frame = header-ciphertext || header-mac || frame-ciphertext || frame-mac</span><br><span class="line">header-ciphertext = aes(aes-secret, header)</span><br><span class="line">header = frame-size || header-data || header-padding</span><br><span class="line">header-data = [capability-id, context-id]</span><br><span class="line">capability-id = integer, always zero</span><br><span class="line">context-id = integer, always zero</span><br><span class="line">header-padding = zero-fill header to <span class="number">16</span>-<span class="type">byte</span> boundary</span><br><span class="line">frame-ciphertext = aes(aes-secret, frame-data || frame-padding)</span><br><span class="line">frame-padding = zero-fill frame-data to <span class="number">16</span>-<span class="type">byte</span> boundary</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="MAC"><a href="#MAC" class="headerlink" title="MAC"></a>MAC</h2><p>RLPx中的消息认证 (Message authentication) 使用了两个keccak256状态，分别用于两个传输方向。<code>egress-mac</code>和<code>ingress-mac</code>分别代表发送和接收状态，每次发送或者接收密文，其状态都会更新。初始握手后，MAC状态初始化如下:</p>
+<p><strong>发送端：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">egress-mac = keccak256.init((mac-secret ^ recipient-nonce) || auth)</span><br><span class="line">ingress-mac = keccak256.init((mac-secret ^ initiator-nonce) || ack)</span><br></pre></td></tr></table></figure>
+
+<p><strong>接收端：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">egress-mac = keccak256.init((mac-secret ^ initiator-nonce) || ack)</span><br><span class="line">ingress-mac = keccak256.init((mac-secret ^ recipient-nonce) || auth)</span><br></pre></td></tr></table></figure>
+
+<p>当发送一帧数据时，通过即将发送的数据更新<code>egress-mac</code>状态，然后计算相应的MAC值。通过将帧头与其对应MAC值的加密输出异或来进行更新。这样做是为了确保对明文MAC和密文执行统一操作。所有的MAC值都以明文发送。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">header-mac-seed = aes(mac-secret, keccak256.digest(egress-mac)[:16]) ^ header-ciphertext</span><br><span class="line">egress-mac = keccak256.update(egress-mac, header-mac-seed)</span><br><span class="line">header-mac = keccak256.digest(egress-mac)[:16]</span><br></pre></td></tr></table></figure>
+
+<p><strong>计算 <code>frame-mac</code></strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">egress-mac = keccak256.update(egress-mac, frame-ciphertext)</span><br><span class="line">frame-mac-seed = aes(mac-secret, keccak256.digest(egress-mac)[:16]) ^ keccak256.digest(egress-mac)[:16]</span><br><span class="line">egress-mac = keccak256.update(egress-mac, frame-mac-seed)</span><br><span class="line">frame-mac = keccak256.digest(egress-mac)[:16]</span><br></pre></td></tr></table></figure>
+
+<p>只要发送者和接受者按相同方式更新<code>egress-mac</code>和<code>ingress-mac</code>，并且在ingress帧中比对<code>header-mac</code> 和 <code>frame-mac</code>的值，就能对ingress帧中的MAC值进行校验。这一步应当在解密<code>header-ciphertext</code> 和 <code>frame-ciphertext</code>之前完成。</p>
+<hr>
+<h2 id="功能消息"><a href="#功能消息" class="headerlink" title="功能消息"></a>功能消息</h2><p>初始握手后的所有消息均与“功能”相关。单个RLPx连接上就可以同时使用任何数量的功能。</p>
+<p>功能由简短的ASCII名称和版本号标识。连接两端都支持的功能在隶属于“ p2p”功能的<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00">Hello</a>消息中进行交换，p2p功能需要在所有连接中都可用。</p>
+<h3 id="消息编码"><a href="#消息编码" class="headerlink" title="消息编码"></a>消息编码</h3><p>初始Hello消息编码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">frame-data = msg-id || msg-data</span><br><span class="line">frame-size = length of frame-data, encoded as a 24bit big-endian integer</span><br></pre></td></tr></table></figure>
+
+<p>其中，<code>msg-id</code>是标识消息的由RLP编码的整数，<code>msg-data</code>是包含消息数据的RLP列表。</p>
+<p>Hello之后的所有消息均使用Snappy算法压缩。请注意，压缩消息的<code>frame-size</code>指<code>msg-data</code>压缩前的大小。消息的压缩编码为:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">frame-data = msg-id || snappyCompress(msg-data)</span><br><span class="line">frame-size = length of (msg-id || msg-data) encoded as a 24bit big-endian integer</span><br></pre></td></tr></table></figure>
+
+<h2 id="基于msg-id的复用"><a href="#基于msg-id的复用" class="headerlink" title="基于msg-id的复用"></a>基于<code>msg-id</code>的复用</h2><p>frame中虽然支持<code>capability-id</code>，但是在本RLPx版本中并没有将该字段用于不同功能之间的复用（当前版本仅使用msg-id来实现复用）。</p>
+<p>每种功能都会根据需要分配尽可能多的msg-id空间。所有这些功能所需的msg-id空间都必须通过静态指定。在连接和接收<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00">Hello</a>消息时，两端都具有共享功能（包括版本）的对等信息，并且能够就msg-id空间达成共识。</p>
+<p>msg-id应当大于0x11(0x00-0x10保留用于“ p2p”功能）。</p>
+<hr>
+<h2 id="p2p功能"><a href="#p2p功能" class="headerlink" title="p2p功能"></a>p2p功能</h2><p>所有连接都具有“p2p”功能。初始握手后，连接的两端都必须发送<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#hello-0x00">Hello</a>或<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#disconnect-0x01">Disconnect</a>消息。在接收到Hello消息后，会话就进入激活状态，并且可以开始发送其他消息。由于前向兼容性，实现必须忽略协议版本中的所有差异。与处于较低版本的节点通信时，实现应尝试靠近该版本。</p>
+<p>任何时候都可能会收到<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#disconnect-0x01">Disconnect</a>消息。</p>
+<h3 id="Hello-0x00"><a href="#Hello-0x00" class="headerlink" title="Hello (0x00)"></a>Hello (0x00)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[protocolVersion: P, clientId: B, capabilities, listenPort: P, nodeKey: B_64, ...]</span><br></pre></td></tr></table></figure>
+
+<p>握手完成后，双方发送的第一包数据。在收到Hello消息前，不能发送任何其他消息。实现必须忽略Hello消息中所有其他列表元素，因为可能会在未来版本中用到。</p>
+<ul>
+<li><code>protocolVersion</code>当前p2p功能版本为第5版</li>
+<li><code>clientId</code>表示客户端软件身份，人类可读字符串, 比如”Ethereum(++)&#x2F;1.0.0“</li>
+<li><code>capabilities</code>支持的子协议列表，名称及其版本：<code>[[cap1, capVersion1], [cap2, capVersion2], ...]</code></li>
+<li><code>listenPort</code>节点的收听端口 (位于当前连接路径的接口)，0表示没有收听</li>
+<li><code>nodeId</code>secp256k1的公钥，对应节点私钥</li>
+</ul>
+<h3 id="Disconnect-0x01"><a href="#Disconnect-0x01" class="headerlink" title="Disconnect (0x01)"></a>Disconnect (0x01)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[reason: P]</span><br></pre></td></tr></table></figure>
+
+<p>通知节点断开连接。收到该消息后，节点应当立即断开连接。如果是发送，正常的主机会给节点2秒钟读取时间，使其主动断开连接。</p>
+<p><code>reason</code> 一个可选整数，表示断开连接的原因：</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x00</code></td>
+<td>Disconnect requested</td>
+</tr>
+<tr>
+<td><code>0x01</code></td>
+<td>TCP sub-system error</td>
+</tr>
+<tr>
+<td><code>0x02</code></td>
+<td>Breach of protocol, e.g. a malformed message, bad RLP, …</td>
+</tr>
+<tr>
+<td><code>0x03</code></td>
+<td>Useless peer</td>
+</tr>
+<tr>
+<td><code>0x04</code></td>
+<td>Too many peers</td>
+</tr>
+<tr>
+<td><code>0x05</code></td>
+<td>Already connected</td>
+</tr>
+<tr>
+<td><code>0x06</code></td>
+<td>Incompatible P2P protocol version</td>
+</tr>
+<tr>
+<td><code>0x07</code></td>
+<td>Null node identity received - this is automatically invalid</td>
+</tr>
+<tr>
+<td><code>0x08</code></td>
+<td>Client quitting</td>
+</tr>
+<tr>
+<td><code>0x09</code></td>
+<td>Unexpected identity in handshake</td>
+</tr>
+<tr>
+<td><code>0x0a</code></td>
+<td>Identity is the same as this node (i.e. connected to itself)</td>
+</tr>
+<tr>
+<td><code>0x0b</code></td>
+<td>Ping timeout</td>
+</tr>
+<tr>
+<td><code>0x10</code></td>
+<td>Some other reason specific to a subprotocol</td>
+</tr>
+</tbody></table>
+<h3 id="Ping-0x02"><a href="#Ping-0x02" class="headerlink" title="Ping (0x02)"></a>Ping (0x02)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[]</span><br></pre></td></tr></table></figure>
+
+<p>要求节点立即进行<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#pong-0x03">Pong</a>回复。</p>
+<h3 id="Pong-0x03"><a href="#Pong-0x03" class="headerlink" title="Pong (0x03)"></a>Pong (0x03)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[]</span><br></pre></td></tr></table></figure>
+
+<p>回复节点的<a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md#ping-0x02">Ping</a>包。</p>
+<hr>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><h3 id="主要功能"><a href="#主要功能" class="headerlink" title="主要功能"></a>主要功能</h3><h4 id="返回传输对象"><a href="#返回传输对象" class="headerlink" title="返回传输对象"></a>返回传输对象</h4><blockquote>
+<p>返回一个transport对象,连接持续5秒</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// handshakeTimeout 5</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newRLPX</span><span class="params">(fd net.Conn)</span></span> transport &#123;</span><br><span class="line">....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="读取消息"><a href="#读取消息" class="headerlink" title="读取消息"></a>读取消息</h4><blockquote>
+<p>返回Msg对象,调用读写器的ReadMsg,连接持续30秒</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *rlpx)</span></span> ReadMsg() (Msg, <span class="type">error</span>) &#123;</span><br><span class="line">  ..</span><br><span class="line">	t.fd.SetReadDeadline(time.Now().Add(frameReadTimeout))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="写入消息"><a href="#写入消息" class="headerlink" title="写入消息"></a>写入消息</h4><blockquote>
+<p>调用读写器的WriteMsg写信息,连接持续20秒</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *rlpx)</span></span> WriteMsg(msg Msg) <span class="type">error</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">	t.fd.SetWriteDeadline(time.Now().Add(frameWriteTimeout))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="协议版本握手"><a href="#协议版本握手" class="headerlink" title="协议版本握手"></a>协议版本握手</h4><blockquote>
+<p>协议握手,输入输出均是protoHandshake对象,包含了版本号、名称、容量、端口号、ID和一个扩展属性,握手时会对这些信息进行验证</p>
+</blockquote>
+<h4 id="加密握手"><a href="#加密握手" class="headerlink" title="加密握手"></a>加密握手</h4><blockquote>
+<p>握手时主动发起者叫<strong>initiator</strong></p>
+<p>接收方叫<strong>receiver</strong></p>
+<p>分别对应两种处理方式<strong>initiatorEncHandshake</strong>和receiverEncHandshake</p>
+<p>两种处理方式成功以后都会得到一个<strong>secrets</strong>对象,保存了共享密钥信息,它会跟原有的<strong>net.Conn</strong>对象一起生成一个帧处理器:<strong>rlpxFrameRW</strong></p>
+<p>握手双方使用到的信息有:各自的公私钥地址对**(iPrv,iPub,rPrv,rPub)<strong>、各自生成的随机公私钥对</strong>(iRandPrv,iRandPub,rRandPrv,rRandPub)<strong>、各自生成的临时随机数</strong>(initNonce,respNonce).**<br> 其中i开头的表示发起方**(initiator)<strong>信息,r开头的表示接收方</strong>(receiver)**信息.</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *rlpx)</span></span> doEncHandshake(prv *ecdsa.PrivateKey, dial *ecdsa.PublicKey) (*ecdsa.PublicKey, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">var</span> (</span><br><span class="line">		sec secrets</span><br><span class="line">		err <span class="type">error</span></span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">if</span> dial == <span class="literal">nil</span> &#123;</span><br><span class="line">		sec, err = receiverEncHandshake(t.fd, prv) <span class="comment">// 接收者</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		sec, err = initiatorEncHandshake(t.fd, prv, dial) <span class="comment">//主动发起者</span></span><br><span class="line">	&#125;</span><br><span class="line">...</span><br><span class="line">	t.rw = newRLPXFrameRW(t.fd, sec)</span><br><span class="line">	t.wmu.Unlock()</span><br><span class="line">	<span class="keyword">return</span> sec.Remote.ExportECDSA(), <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里我们就讲解一下主动握手部分源码<code>initiatorEncHandshake</code>：</p>
+<p>①：初始化握手对象</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">h := &amp;encHandshake&#123;initiator: <span class="literal">true</span>, remote: ecies.ImportECDSAPublic(remote)&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：生成验证信息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">authMsg, err := h.makeAuthMsg(prv) </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(h *encHandshake)</span></span> makeAuthMsg(prv *ecdsa.PrivateKey) (*authMsgV4, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="comment">// 生成己方随机数initNonce</span></span><br><span class="line">	h.initNonce = <span class="built_in">make</span>([]<span class="type">byte</span>, shaLen)</span><br><span class="line">	_, err := rand.Read(h.initNonce)</span><br><span class="line">...</span><br><span class="line">	&#125;</span><br><span class="line"><span class="comment">// 生成随机的一组公私钥对</span></span><br><span class="line">	h.randomPrivKey, err = ecies.GenerateKey(rand.Reader, crypto.S256(), <span class="literal">nil</span>)</span><br><span class="line">...</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 生成静态共享秘密token(用己方私钥和对方公钥进行有限域乘法)</span></span><br><span class="line">	token, err := h.staticSharedSecret(prv)</span><br><span class="line">	...</span><br><span class="line">	&#125;</span><br><span class="line"><span class="comment">//  和己方随机数异或后用随机生成的私钥签名</span></span><br><span class="line">	signed := xor(token, h.initNonce)</span><br><span class="line">	signature, err := crypto.Sign(signed, h.randomPrivKey.ExportECDSA())</span><br><span class="line">...</span><br><span class="line">	&#125;</span><br><span class="line">...</span><br><span class="line">	<span class="keyword">return</span> msg, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：封包,将验证信息和握手进行rlp编码并拼接前缀信息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">authPacket, err := sealEIP8(authMsg, h)</span><br></pre></td></tr></table></figure>
+
+<p>④：通过conn发送消息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conn.Write(authPacket)</span><br></pre></td></tr></table></figure>
+
+<p>⑤：处理接收的信息,得到响应包</p>
+<blockquote>
+<p><code>readHandshakeMsg</code>比较简单。 首先用一种格式尝试解码。如果不行就换另外一种。应该是一种兼容性的设置。 基本上就是使用自己的私钥进行解码然后调用rlp解码成结构体。 </p>
+<p>结构体的描述就是下面的authRespV4,里面最重要的就是对端的随机公钥。 双方通过自己的私钥和对端的随机公钥可以得到一样的共享秘密。 而这个共享秘密是第三方拿不到的</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">authRespMsg := <span class="built_in">new</span>(authRespV4)</span><br><span class="line">authRespPacket, err := readHandshakeMsg(authRespMsg, encAuthRespLen, prv, conn)</span><br></pre></td></tr></table></figure>
+
+<p>⑥：填充响应的respNonce(对方随机数,生成共享私钥用)和remoteRandomPub(对方的随机公钥)</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">h.handleAuthResp(authRespMsg)</span><br></pre></td></tr></table></figure>
+
+<p>⑦：将请求包和响应包封装成共享秘密(secrets)</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">h.secrets(authPacket, authRespPacket)</span><br></pre></td></tr></table></figure>
+
+<p>到此RLPX 相关的比较重要的内容就解读差不多了。</p>
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/blockchainguide">https://github.com/blockchainGuide/blockchainguide</a>  ☆ ☆ ☆ ☆ ☆</p>
+<p><a target="_blank" rel="noopener" href="https://mindcarver.cn/">https://mindcarver.cn/</a>  ☆ ☆ ☆ ☆ ☆</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/ethereum/devp2p/blob/master/rlpx.md">https://github.com/ethereum/devp2p/blob/master/rlpx.md</a> </p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E7%BD%91%E7%BB%9C%E5%90%AF%E5%8A%A8-1/" rel="prev" title="死磕以太坊源码分析之p2p网络启动">
+      <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之p2p网络启动
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E4%B8%8A%E9%93%BE%E5%85%A5%E5%BA%93-10/" rel="next" title="死磕以太坊源码分析之区块上链入库">
+      死磕以太坊源码分析之区块上链入库 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%A6%E5%8F%B7"><span class="nav-number">1.</span> <span class="nav-text">符号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ECIES%E5%8A%A0%E5%AF%86"><span class="nav-number">2.</span> <span class="nav-text">ECIES加密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E8%BA%AB%E4%BB%BD"><span class="nav-number">3.</span> <span class="nav-text">节点身份</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">握手流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%A1%E6%89%8B%E6%B6%88%E6%81%AF"><span class="nav-number">4.1.</span> <span class="nav-text">握手消息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%A7%E7%BB%93%E6%9E%84"><span class="nav-number">5.</span> <span class="nav-text">帧结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MAC"><span class="nav-number">6.</span> <span class="nav-text">MAC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E6%B6%88%E6%81%AF"><span class="nav-number">7.</span> <span class="nav-text">功能消息</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E7%BC%96%E7%A0%81"><span class="nav-number">7.1.</span> <span class="nav-text">消息编码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8Emsg-id%E7%9A%84%E5%A4%8D%E7%94%A8"><span class="nav-number">8.</span> <span class="nav-text">基于msg-id的复用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#p2p%E5%8A%9F%E8%83%BD"><span class="nav-number">9.</span> <span class="nav-text">p2p功能</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hello-0x00"><span class="nav-number">9.1.</span> <span class="nav-text">Hello (0x00)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Disconnect-0x01"><span class="nav-number">9.2.</span> <span class="nav-text">Disconnect (0x01)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Ping-0x02"><span class="nav-number">9.3.</span> <span class="nav-text">Ping (0x02)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pong-0x03"><span class="nav-number">9.4.</span> <span class="nav-text">Pong (0x03)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">10.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E5%8A%9F%E8%83%BD"><span class="nav-number">10.1.</span> <span class="nav-text">主要功能</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E4%BC%A0%E8%BE%93%E5%AF%B9%E8%B1%A1"><span class="nav-number">10.1.1.</span> <span class="nav-text">返回传输对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%8F%96%E6%B6%88%E6%81%AF"><span class="nav-number">10.1.2.</span> <span class="nav-text">读取消息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%99%E5%85%A5%E6%B6%88%E6%81%AF"><span class="nav-number">10.1.3.</span> <span class="nav-text">写入消息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%8F%E8%AE%AE%E7%89%88%E6%9C%AC%E6%8F%A1%E6%89%8B"><span class="nav-number">10.1.4.</span> <span class="nav-text">协议版本握手</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E6%8F%A1%E6%89%8B"><span class="nav-number">10.1.5.</span> <span class="nav-text">加密握手</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">11.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

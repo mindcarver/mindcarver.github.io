@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码分析之downloader同步 需要配合注释代码看：https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide&#x2F; 给个star哦 这篇文章篇幅较长，能看下去的是条汉子，建议收藏 希望读者在阅读过程中，指出问题，给个关注，一起探讨。  概览downloader 模块的代码位于 eth&#x2F;downloader 目录下。主要的功能代码分别是：  downloader.go ：实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之downloader同步">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bdownloader%E5%90%8C%E6%AD%A5-7/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码分析之downloader同步 需要配合注释代码看：https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide&#x2F; 给个star哦 这篇文章篇幅较长，能看下去的是条汉子，建议收藏 希望读者在阅读过程中，指出问题，给个关注，一起探讨。  概览downloader 模块的代码位于 eth&#x2F;downloader 目录下。主要的功能代码分别是：  downloader.go ：实现">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glwzmv4zyej30zh0u0dps.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glszpqzeuwj313u0msq73.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glxk6y6zhjj31180jstcl.jpg">
+<meta property="article:published_time" content="2024-08-26T05:10:15.000Z">
+<meta property="article:modified_time" content="2024-08-26T05:11:05.548Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1glwzmv4zyej30zh0u0dps.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bdownloader%E5%90%8C%E6%AD%A5-7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码分析之downloader同步 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bdownloader%E5%90%8C%E6%AD%A5-7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码分析之downloader同步
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:10:15 / Modified: 13:11:05" itemprop="dateCreated datePublished" datetime="2024-08-26T13:10:15+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bdownloader%E5%90%8C%E6%AD%A5-7/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bdownloader%E5%90%8C%E6%AD%A5-7/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>26k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>23 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之downloader同步</p>
+<p><strong>需要配合注释代码看</strong>：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a> 给个star哦</p>
+<p><em>这篇文章篇幅较长，能看下去的是条汉子，建议收藏</em></p>
+<p>希望读者在阅读过程中，指出问题，给个关注，一起探讨。</p>
+</blockquote>
+<h2 id="概览"><a href="#概览" class="headerlink" title="概览"></a>概览</h2><p><code>downloader</code> 模块的代码位于 <code>eth/downloader</code> 目录下。主要的功能代码分别是：</p>
+<ul>
+<li><p><code>downloader.go</code> ：实现了区块同步逻辑</p>
+</li>
+<li><p><code>peer.go</code> ：对区块各个阶段的组装，下面的各个<code>FetchXXX</code> 就是很依赖这个模块。</p>
+</li>
+<li><p><code>queue.go</code> ：对<code>eth/peer.go</code>的封装</p>
+</li>
+<li><p><code>statesync.go</code> ：同步<code>state</code>对象</p>
+</li>
+</ul>
+<h2 id="同步模式"><a href="#同步模式" class="headerlink" title="同步模式"></a>同步模式</h2><h3 id="full-sync"><a href="#full-sync" class="headerlink" title="full  sync"></a>full  sync</h3><p>full 模式会在数据库中保存所有区块数据，同步时从远程节点同步 header 和 body 数据，而state 和 receipt 数据则是在本地计算出来的。</p>
+<p>在 full 模式下，downloader 会同步区块的 header 和 body 数据组成一个区块，然后通过 blockchain 模块的 <code>BlockChain.InsertChain</code> 向数据库中插入区块。在 <code>BlockChain.InsertChain</code> 中，会逐个计算和验证每个块的 <code>state</code> 和 <code>recepit</code> 等数据，如果一切正常就将区块数据以及自己计算得到的 <code>state</code>、<code>recepit</code> 数据一起写入到数据库中。</p>
+<h3 id="fast-sync"><a href="#fast-sync" class="headerlink" title="fast sync"></a>fast sync</h3><p> <code>fast</code> 模式下，<code>recepit</code> 不再由本地计算，而是和区块数据一样，直接由 <code>downloader</code> 从其它节点中同步；<code>state</code> 数据并不会全部计算和下载，而是选一个较新的区块（称之为 <code>pivot</code>）的 <code>state</code> 进行下载，以这个区块为分界，之前的区块是没有 <code>state</code> 数据的，之后的区块会像 <code>full</code> 模式下一样在本地计算 <code>state</code>。因此在 <code>fast</code> 模式下，同步的数据除了 <code>header</code> 和 body，还有 <code>receipt</code>，以及 <code>pivot</code> 区块的 <code>state</code>。</p>
+<p>因此 <code>fast</code> 模式忽略了大部分 <code>state</code> 数据，并且使用网络直接同步 <code>receipt</code> 数据的方式替换了 full 模式下的本地计算，所以比较快。</p>
+<h3 id="light-sync"><a href="#light-sync" class="headerlink" title="light sync"></a>light sync</h3><p>light 模式也叫做轻模式，它只对区块头进行同步，而不同步其它的数据。</p>
+<p>SyncMode:</p>
+<ul>
+<li>FullSync:从完整区块同步整个区块链历史</li>
+<li>FastSync:快速下载标题，仅在链头处完全同步</li>
+<li>LightSync:仅下载标题，然后终止</li>
+</ul>
+<h2 id="区块下载流程"><a href="#区块下载流程" class="headerlink" title="区块下载流程"></a>区块下载流程</h2><blockquote>
+<p>图片只是大概的描述一下，实际还是要结合代码，<strong>所有区块链相关文章合集</strong>，<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>同时希望结识更多区块链圈子的人，可以star上面项目，持续更新</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glwzmv4zyej30zh0u0dps.jpg" alt="image-20201222221031797"></p>
+<p>首先根据<code>Synchronise</code>开始区块同步，通过<code>findAncestor</code>找到指定节点的共同祖先，并在此高度进行同步，同时开启多个<code>goroutine</code>同步不同的数据：<code>header</code>、<code>receipt</code>、<code>body</code>。假如同步高度为 100 的区块，必须先<code>header</code>同步成功同步完成才可以唤醒<code>body</code>和<code>receipts</code>的同步。</p>
+<p>而每个部分的同步大致都是由<code>FetchParts</code>来完成的，里面包含了各个<code>Chan</code>的配合，也会涉及不少的回调函数，总而言之多读几遍每次都会有不同的理解。接下来就逐步分析这些关键内容。</p>
+<hr>
+<h2 id="synchronise"><a href="#synchronise" class="headerlink" title="synchronise"></a>synchronise</h2><p>①：确保对方的TD高于我们自己的TD</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">currentBlock := pm.blockchain.CurrentBlock()</span><br><span class="line">	td := pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())</span><br><span class="line">	pHead, pTd := peer.Head()</span><br><span class="line">	<span class="keyword">if</span> pTd.Cmp(td) &lt;= <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：开启<code>downloader</code>的同步</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pm.downloader.Synchronise(peer.id, pHead, pTd, mode)</span><br></pre></td></tr></table></figure>
+
+<p>进入函数：主要做了以下几件事：</p>
+<ol>
+<li><code>d.synchronise(id, head, td, mode)</code> ：同步过程</li>
+<li>错误日志输出， 并删除此<code>peer</code>。</li>
+</ol>
+<p>进入到<code>d.synchronise</code>，走到最后一步<code>d.syncWithPeer(p, hash, td)</code>真正开启同步。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Downloader)</span></span> synchronise(id <span class="type">string</span>, hash common.Hash, td *big.Int, mode SyncMode) <span class="type">error</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">return</span> d.syncWithPeer(p, hash, td)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>syncWithPeer大概做了以下几件事：</p>
+<ol>
+<li>查找祖先<code>findAncestor</code></li>
+<li>开启单独<code>goroutine</code>分别运行以下几个函数：<ul>
+<li>fetchHeaders</li>
+<li>processHeaders</li>
+<li>fetchbodies</li>
+<li>fetchReceipts</li>
+<li>processFastSyncContent</li>
+<li>processFullSyncContent</li>
+</ul>
+</li>
+</ol>
+<p>接下来的文章，以及整个<code>Downloader</code>模块主要内容就是围绕这几个部分进行展开。</p>
+<hr>
+<h2 id="findAncestor"><a href="#findAncestor" class="headerlink" title="findAncestor"></a>findAncestor</h2><p>同步首要的是<strong>确定同步区块的区间</strong>：顶部为远程节点的最高区块，底部为两个节点都拥有的相同区块的最高高度（祖先区块）。<code>findAncestor</code>就是用来找祖先区块。函数分析如下：</p>
+<p>①：确定本地高度和远程节点的最高高度</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> (</span><br><span class="line">		floor        = <span class="type">int64</span>(<span class="number">-1</span>) <span class="comment">// 底部</span></span><br><span class="line">		localHeight  <span class="type">uint64</span>  <span class="comment">// 本地最高高度</span></span><br><span class="line">		remoteHeight = remoteHeader.Number.Uint64() <span class="comment">// 远程节点最高高度</span></span><br><span class="line">	)</span><br><span class="line"><span class="keyword">switch</span> d.mode &#123;</span><br><span class="line">	<span class="keyword">case</span> FullSync:</span><br><span class="line">		localHeight = d.blockchain.CurrentBlock().NumberU64()</span><br><span class="line">	<span class="keyword">case</span> FastSync:</span><br><span class="line">		localHeight = d.blockchain.CurrentFastBlock().NumberU64()</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		localHeight = d.lightchain.CurrentHeader().Number.Uint64()</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：计算同步的高度区间和间隔</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">from, count, skip, max := calculateRequestSpan(remoteHeight, localHeight) </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>from</code>:：表示从哪个高度开始获取区块</li>
+<li><code>count</code>：表示从远程节点获取多少个区块</li>
+<li><code>skip</code>：表示间隔，比如<code>skip</code> 为 2 ，获取第一个高度为 5，则第二个就是 8</li>
+<li><code>max</code>：表示最大高度</li>
+</ul>
+<p>③：发送获取<code>header</code>的请求</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> p.peer.RequestHeadersByNumber(<span class="type">uint64</span>(from), count, skip, <span class="literal">false</span>)</span><br></pre></td></tr></table></figure>
+
+<p>④：处理上面请求接收到的<code>header</code>  :<code>case packet := &lt;-d.headerCh</code></p>
+<ol>
+<li>丢弃掉不是来自我们请求节的内容</li>
+<li>确保返回的<code>header</code>数量不为空</li>
+<li>验证返回的<code>headers</code>的高度是我们所请求的</li>
+<li>检查是否找到共同祖先</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//----①</span></span><br><span class="line"><span class="keyword">if</span> packet.PeerId() != p.id &#123;</span><br><span class="line">				log.Debug(<span class="string">&quot;Received headers from incorrect peer&quot;</span>, <span class="string">&quot;peer&quot;</span>, packet.PeerId())</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br><span class="line"><span class="comment">//-----②</span></span><br><span class="line">headers := packet.(*headerPack).headers</span><br><span class="line">			<span class="keyword">if</span> <span class="built_in">len</span>(headers) == <span class="number">0</span> &#123;</span><br><span class="line">				p.log.Warn(<span class="string">&quot;Empty head header set&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">      &#125;</span><br><span class="line"><span class="comment">//-----③</span></span><br><span class="line"><span class="keyword">for</span> i, header := <span class="keyword">range</span> headers &#123;</span><br><span class="line">				expectNumber := from + <span class="type">int64</span>(i)*<span class="type">int64</span>(skip+<span class="number">1</span>)</span><br><span class="line">				<span class="keyword">if</span> number := header.Number.Int64(); number != expectNumber &#123; <span class="comment">// 验证这些返回的header是否是我们上面请求的headers</span></span><br><span class="line">					p.log.Warn(<span class="string">&quot;Head headers broke chain ordering&quot;</span>, <span class="string">&quot;index&quot;</span>, i, <span class="string">&quot;requested&quot;</span>, expectNumber, <span class="string">&quot;received&quot;</span>, number)</span><br><span class="line">					<span class="keyword">return</span> <span class="number">0</span>, errInvalidChain</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"><span class="comment">//-----④</span></span><br><span class="line"><span class="comment">// 检查是否找到共同祖先</span></span><br><span class="line">			finished = <span class="literal">true</span></span><br><span class="line">			<span class="comment">//注意这里是从headers最后一个元素开始查找，也就是高度最高的区块。</span></span><br><span class="line">			<span class="keyword">for</span> i := <span class="built_in">len</span>(headers) - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i-- &#123;</span><br><span class="line">				<span class="comment">// 跳过不在我们请求的高度区间内的区块</span></span><br><span class="line">				<span class="keyword">if</span> headers[i].Number.Int64() &lt; from || headers[i].Number.Uint64() &gt; max &#123;</span><br><span class="line">					<span class="keyword">continue</span></span><br><span class="line">				&#125;</span><br><span class="line">				<span class="comment">// //检查我们本地是否已经有某个区块了，如果有就算是找到了共同祖先，</span></span><br><span class="line">				<span class="comment">//并将共同祖先的哈希和高度设置在number和hash变量中。</span></span><br><span class="line">				h := headers[i].Hash()</span><br><span class="line">				n := headers[i].Number.Uint64()</span><br><span class="line"></span><br><span class="line">        </span><br><span class="line">        </span><br></pre></td></tr></table></figure>
+
+<p>⑤：如果通过固定间隔法找到了共同祖先则返回祖先，会对其高度与 <code>floor</code> 变量进行验证, <code>floor</code> 变量代表的是共同祖先的高度的最小值,如果找到共同祖先的高度比这个值还小，就认为是两个节点之间分叉太大了，不再允许进行同步。如果一切正常，就返回找到的共同祖先的高度 <code>number</code> 变量。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> hash != (common.Hash&#123;&#125;) &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="type">int64</span>(number) &lt;= floor &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>, errInvalidAncestor</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> number, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑥：如果固定间隔法没有找到祖先则通过二分法来查找祖先，这部分可以思想跟二分法算法类似，有兴趣的可以细看。</p>
+<hr>
+<h2 id="queue详解"><a href="#queue详解" class="headerlink" title="queue详解"></a>queue详解</h2><p><code>queue</code>对象和<code>Downloader</code>对象是相互作用的，<code>Downloader</code>的很多功能离不开他，接下来我们介绍一下这部分内容，但是本节，<strong>可以先行跳过</strong>，等到了阅读下面的关于<code>Queue</code>调用的一些函数部分再回过来阅读这部分讲解。</p>
+<h3 id="queue结构体"><a href="#queue结构体" class="headerlink" title="queue结构体"></a>queue结构体</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> queue <span class="keyword">struct</span> &#123;</span><br><span class="line">  mode SyncMode <span class="comment">// 同步模式</span></span><br><span class="line">  </span><br><span class="line">  <span class="comment">// header处理相关</span></span><br><span class="line">  headerHead      common.Hash   <span class="comment">//最后一个排队的标头的哈希值以验证顺序</span></span><br><span class="line">  headerTaskPool  <span class="keyword">map</span>[<span class="type">uint64</span>]*types.Header  <span class="comment">//待处理的标头检索任务，将起始索引映射到框架标头</span></span><br><span class="line">  headerTaskQueue *prque.Prque  <span class="comment">//骨架索引的优先级队列，以获取用于的填充标头</span></span><br><span class="line">  headerPeerMiss <span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">map</span>[<span class="type">uint64</span>]<span class="keyword">struct</span>&#123;&#125; <span class="comment">//已知不可用的对等头批处理集</span></span><br><span class="line">  headerPendPool <span class="keyword">map</span>[<span class="type">string</span>]*fetchRequest <span class="comment">//当前挂起的头检索操作</span></span><br><span class="line">  headerResults []*types.Header <span class="comment">//结果缓存累积完成的头</span></span><br><span class="line">  headerProced <span class="type">int</span> <span class="comment">//从结果中拿出来已经处理的header</span></span><br><span class="line">  headerContCh <span class="keyword">chan</span> <span class="type">bool</span> <span class="comment">//header下载完成时通知的频道</span></span><br><span class="line">  </span><br><span class="line">  blockTaskPool  <span class="keyword">map</span>[common.Hash]*types.Header <span class="comment">//待处理的块（body）检索任务，将哈希映射到header</span></span><br><span class="line">  blockTaskQueue *prque.Prque <span class="comment">//标头的优先级队列,以用于获取块（bodies）</span></span><br><span class="line">  blockPendPool <span class="keyword">map</span>[<span class="type">string</span>]*fetchRequest <span class="comment">//当前的正在处理的块（body)检索操作</span></span><br><span class="line">  blockDonePool <span class="keyword">map</span>[common.Hash]<span class="keyword">struct</span>&#123;&#125; <span class="comment">//已经完成的块（body)</span></span><br><span class="line">  </span><br><span class="line">	receiptTaskPool <span class="keyword">map</span>[common.Hash]*types.Header <span class="comment">//待处理的收据检索任务，将哈希映射到header</span></span><br><span class="line">	receiptTaskQueue *prque.Prque <span class="comment">//标头的优先级队列,以用于获取收据</span></span><br><span class="line">	receiptPendPool <span class="keyword">map</span>[<span class="type">string</span>]*fetchRequest <span class="comment">//当前的正在处理的收据检索操作</span></span><br><span class="line">	receiptDonePool <span class="keyword">map</span>[common.Hash]<span class="keyword">struct</span>&#123;&#125; <span class="comment">//已经完成的收据</span></span><br><span class="line">	</span><br><span class="line">	resultCache []*fetchResult <span class="comment">//下载但尚未交付获取结果</span></span><br><span class="line">	resultOffset <span class="type">uint64</span> <span class="comment">//区块链中第一个缓存的获取结果的偏移量</span></span><br><span class="line">	resultSize common.StorageSize <span class="comment">// 块的近似大小</span></span><br><span class="line"></span><br><span class="line">	lock   *sync.Mutex</span><br><span class="line">	active *sync.Cond</span><br><span class="line">	closed <span class="type">bool</span></span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="主要细分功能"><a href="#主要细分功能" class="headerlink" title="主要细分功能"></a>主要细分功能</h3><h4 id="数据下载开始安排任务"><a href="#数据下载开始安排任务" class="headerlink" title="数据下载开始安排任务"></a>数据下载开始安排任务</h4><ul>
+<li><code>ScheduleSkeleton</code>:<em>将一批<code>header</code>检索任务添加到队列中，以填充已检索的<code>header skeleton</code></em></li>
+<li><code>Schedule</code>:<em>用来准备对一些 <code>body</code> 和 <code>receipt</code> 数据的下载</em></li>
+</ul>
+<h4 id="数据下载中的各类状态"><a href="#数据下载中的各类状态" class="headerlink" title="数据下载中的各类状态"></a>数据下载中的各类状态</h4><ul>
+<li><p><code>pending</code></p>
+<p><code>pending</code>表示待检索的XXX请求的数量，包括了：<code>PendingHeaders</code>、<code>PendingBlocks</code>、<code>PendingReceipts</code>，分别都是对应取<code>XXXTaskQueue</code>的长度。</p>
+</li>
+<li><p><code>InFlight</code></p>
+<p><code>InFlight</code>表示是否有正在获取XXX的请求，包括：<code>InFlightHeaders</code>、<code>InFlightBlocks</code>、<code>InFlightReceipts</code>，都是通过判断<code>len(q.receiptPendPool) &gt; 0</code> 来确认。</p>
+</li>
+<li><p><code>ShouldThrottle</code></p>
+<p><code>ShouldThrottle</code>表示检查是否应该限制下载XXX，包括:<code>ShouldThrottleBlocks</code>、<code>ShouldThrottleReceipts</code>，主要是为了防止下载过程中本地内存占用过大。</p>
+</li>
+<li><p><code>Reserve</code></p>
+<p><code>Reserve</code>通过构造一个 <code>fetchRequest</code> 结构并返回，向调用者提供指定数量的待下载的数据的信息（<code>queue</code> 内部会将这些数据标记为「正在下载」）。调用者使用返回的 <code>fetchRequest</code> 数据向远程节点发起新的获取数据的请求。包括：<code>ReserveHeaders</code>、<code>ReserveBodies</code>、<code>ReserveReceipts</code>。</p>
+</li>
+<li><p><code>Cancel</code></p>
+<p><code>Cance</code>用来撤消对 <code>fetchRequest</code> 结构中的数据的下载（<code>queue</code> 内部会将这些数据重新从「正在下载」的状态更改为「等待下载」）。包括：<code>CancelHeaders</code>、<code>CancelBodies</code>、<code>CancelReceipts</code>。</p>
+</li>
+<li><p><code>expire</code></p>
+<p><code>expire</code>检查正在执行中的请求是否超过了超时限制，包括：<code>ExpireHeaders</code>、<code>ExpireBodies</code>、<code>ExpireReceipts</code>。</p>
+</li>
+<li><p><code>Deliver</code></p>
+<p>当有数据下载成功时，调用者会使用 <code>deliver</code> 功能用来通知 <code>queue</code> 对象。包括：<code>DeliverHeaders</code>、<code>DeliverBodies</code>、<code>DeliverReceipts</code>。</p>
+</li>
+</ul>
+<h4 id="数据下载完成获取区块数据"><a href="#数据下载完成获取区块数据" class="headerlink" title="数据下载完成获取区块数据"></a>数据下载完成获取区块数据</h4><ul>
+<li><code>RetrieveHeaders</code><br>在填充 <code>skeleton</code> 完成后，<code>queue.RetrieveHeaders</code> 用来获取整个 <code>skeleton</code> 中的所有 <code>header</code>。</li>
+<li><code>Results</code><br><code>queue.Results</code> 用来获取当前的 <code>header</code>、<code>body</code> 和 <code>receipt</code>（只在 <code>fast</code> 模式下） 都已下载成功的区块（并将这些区块从 <code>queue</code> 内部移除）</li>
+</ul>
+<hr>
+<h3 id="函数实现"><a href="#函数实现" class="headerlink" title="函数实现"></a>函数实现</h3><h4 id="ScheduleSkeleton"><a href="#ScheduleSkeleton" class="headerlink" title="ScheduleSkeleton"></a>ScheduleSkeleton</h4><p>queue.ScheduleSkeleton主要是为了填充skeleton，它的参数是要下载区块的起始高度和所有 <code>skeleton</code> 区块头，最核心的内容则是下面这段循环：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *queue)</span></span> ScheduleSkeleton(from <span class="type">uint64</span>, skeleton []*types.Header) &#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> i, header := <span class="keyword">range</span> skeleton &#123;</span><br><span class="line">        index := from + <span class="type">uint64</span>(i*y)</span><br><span class="line">        q.headerTaskPool[index] = header</span><br><span class="line">        q.headerTaskQueue.Push(index, -<span class="type">int64</span>(index))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>假设已确定需要下载的区块高度区间是从 10 到 46，<code>MaxHeaderFetch</code> 的值为 10，那么这个高度区块就会被分成 3 组：10 - 19，20 - 29，30 - 39，而 skeleton 则分别由高度为 19、29、39 的区块头组成。循环中的 <code>index</code> 变量实际上是每一组区块中的第一个区块的高度（比如 10、20、30），<code>queue.headerTaskPool</code> 实际上是一个<strong>每一组区块中第一个区块的高度到最后一个区块的 header 的映射</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">headerTaskPool = &#123;</span><br><span class="line">  <span class="number">10</span>: headerOf_19,</span><br><span class="line">	<span class="number">20</span>: headerOf_20,</span><br><span class="line">	<span class="number">30</span>: headerOf_39,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h4 id="ReserveHeaders"><a href="#ReserveHeaders" class="headerlink" title="ReserveHeaders"></a>ReserveHeaders</h4><p><code>reserve</code> 用来获取可下载的数据。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">reserve  = <span class="function"><span class="keyword">func</span><span class="params">(p *peerConnection, count <span class="type">int</span>)</span></span> (*fetchRequest, <span class="type">bool</span>, <span class="type">error</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> d.queue.ReserveHeaders(p, count), <span class="literal">false</span>, <span class="literal">nil</span></span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *queue)</span></span> ReserveHeaders(p *peerConnection, count <span class="type">int</span>) *fetchRequest &#123;</span><br><span class="line">  <span class="keyword">if</span> _, ok := q.headerPendPool[p.id]; ok &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125; <span class="comment">//①</span></span><br><span class="line">  ...</span><br><span class="line">  send, skip := <span class="type">uint64</span>(<span class="number">0</span>), []<span class="type">uint64</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">for</span> send == <span class="number">0</span> &amp;&amp; !q.headerTaskQueue.Empty() &#123;</span><br><span class="line">		from, _ := q.headerTaskQueue.Pop()</span><br><span class="line">		<span class="keyword">if</span> q.headerPeerMiss[p.id] != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> _, ok := q.headerPeerMiss[p.id][from.(<span class="type">uint64</span>)]; ok &#123;</span><br><span class="line">				skip = <span class="built_in">append</span>(skip, from.(<span class="type">uint64</span>))</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		send = from.(<span class="type">uint64</span>) <span class="comment">// ②</span></span><br><span class="line">	&#125;</span><br><span class="line">  </span><br><span class="line"> ...</span><br><span class="line">  <span class="keyword">for</span> _, from := <span class="keyword">range</span> skip &#123;</span><br><span class="line">		q.headerTaskQueue.Push(from, -<span class="type">int64</span>(from))</span><br><span class="line">	&#125; <span class="comment">// ③</span></span><br><span class="line">  ...</span><br><span class="line">  request := &amp;fetchRequest&#123;</span><br><span class="line">		Peer: p,</span><br><span class="line">		From: send,</span><br><span class="line">		Time: time.Now(),</span><br><span class="line">	&#125;</span><br><span class="line">	q.headerPendPool[p.id] = request <span class="comment">// ④</span></span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>①：根据<code>headerPendPool</code>来判断远程节点是否正在下载数据信息。</p>
+<p>②：从<code>headerTaskQueue</code>取出值作为本次请求的起始高度，赋值给<code>send</code>变量，在这个过程中会排除headerPeerMiss所记录的节点下载数据失败的信息。</p>
+<p>③：将失败的任务再重新写回<code>task queue</code></p>
+<p>④：利用<code>send</code>变量构造<code>fetchRequest</code>结构，此结构是用来作为<code>FetchHeaders</code>来使用的：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">fetch = <span class="function"><span class="keyword">func</span><span class="params">(p *peerConnection, req *fetchRequest)</span></span> <span class="type">error</span> &#123; </span><br><span class="line">    <span class="keyword">return</span> p.FetchHeaders(req.From, MaxHeaderFetch) </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至此，<code>ReserveHeaders</code>会从任务队列里选择最小的起始高度并构造<code>fetchRequest</code>传递给<code>fetch</code>获取数据。</p>
+<hr>
+<h4 id="DeliverHeaders"><a href="#DeliverHeaders" class="headerlink" title="DeliverHeaders"></a>DeliverHeaders</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">deliver = <span class="function"><span class="keyword">func</span><span class="params">(packet dataPack)</span></span> (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">			pack := packet.(*headerPack)</span><br><span class="line">			<span class="keyword">return</span> d.queue.DeliverHeaders(pack.peerID, pack.headers, d.headerProcCh)</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>①：如果发现下载数据的节点没有在 <code>queue.headerPendPool</code> 中，就直接返回错误；否则就继续处理，并将节点记录从 <code>queue.headerPendPool</code> 中删除。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">request := q.headerPendPool[id]</span><br><span class="line">	<span class="keyword">if</span> request == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, errNoFetchesPending</span><br><span class="line">	&#125;</span><br><span class="line">	headerReqTimer.UpdateSince(request.Time)</span><br><span class="line">	<span class="built_in">delete</span>(q.headerPendPool, id)</span><br></pre></td></tr></table></figure>
+
+<p>②：验证<code>headers</code> </p>
+<p>包括三方面验证：</p>
+<ol>
+<li>检查起始区块的高度和哈希</li>
+<li>检查高度的连接性</li>
+<li>检查哈希的连接性</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> accepted &#123;</span><br><span class="line">		<span class="comment">//检查起始区块的高度和哈希</span></span><br><span class="line">		<span class="keyword">if</span> headers[<span class="number">0</span>].Number.Uint64() != request.From &#123;</span><br><span class="line">			...</span><br><span class="line">			accepted = <span class="literal">false</span></span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> headers[<span class="built_in">len</span>(headers)<span class="number">-1</span>].Hash() != target &#123;</span><br><span class="line">			...</span><br><span class="line">			accepted = <span class="literal">false</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> accepted &#123;</span><br><span class="line">		<span class="keyword">for</span> i, header := <span class="keyword">range</span> headers[<span class="number">1</span>:] &#123;</span><br><span class="line">			hash := header.Hash() <span class="comment">// 检查高度的连接性</span></span><br><span class="line">			<span class="keyword">if</span> want := request.From + <span class="number">1</span> + <span class="type">uint64</span>(i); header.Number.Uint64() != want &#123;</span><br><span class="line">				...</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> headers[i].Hash() != header.ParentHash &#123; <span class="comment">// 检查哈希的连接性</span></span><br><span class="line">				...</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③： 将无效数据存入<code>headerPeerMiss</code>，并将这组区块起始高度重新放入<code>headerTaskQueue</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> !accepted &#123;</span><br><span class="line">	...</span><br><span class="line">		miss := q.headerPeerMiss[id]</span><br><span class="line">		<span class="keyword">if</span> miss == <span class="literal">nil</span> &#123;</span><br><span class="line">			q.headerPeerMiss[id] = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">uint64</span>]<span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line">			miss = q.headerPeerMiss[id]</span><br><span class="line">		&#125;</span><br><span class="line">		miss[request.From] = <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">		q.headerTaskQueue.Push(request.From, -<span class="type">int64</span>(request.From))</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, errors.New(<span class="string">&quot;delivery not accepted&quot;</span>)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：保存数据，并通知<code>headerProcCh</code>处理新的<code>header</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ready &gt; <span class="number">0</span> &#123;</span><br><span class="line">		process := <span class="built_in">make</span>([]*types.Header, ready)</span><br><span class="line">		<span class="built_in">copy</span>(process, q.headerResults[q.headerProced:q.headerProced+ready])</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> headerProcCh &lt;- process:</span><br><span class="line">			q.headerProced += <span class="built_in">len</span>(process)</span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑤：发送消息给.<code>headerContCh</code>，通知<code>skeleton</code> 都被下载完了</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(q.headerTaskPool) == <span class="number">0</span> &#123;</span><br><span class="line">		q.headerContCh &lt;- <span class="literal">false</span></span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>DeliverHeaders</code> 会对数据进行检验和保存，并发送 channel 消息给 <code>Downloader.processHeaders</code> 和 <code>Downloader.fetchParts</code>的 <code>wakeCh</code> 参数。</p>
+<hr>
+<h4 id="Schedule"><a href="#Schedule" class="headerlink" title="Schedule"></a>Schedule</h4><p><code>processHeaders</code>在处理<code>header</code>数据的时候，会调用<code>queue.Schedule</code> 为下载 <code>body</code> 和 <code>receipt</code> 作准备。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">inserts := d.queue.Schedule(chunk, origin)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *queue)</span></span> Schedule(headers []*types.Header, from <span class="type">uint64</span>) []*types.Header &#123;</span><br><span class="line">	inserts := <span class="built_in">make</span>([]*types.Header, <span class="number">0</span>, <span class="built_in">len</span>(headers))</span><br><span class="line">	<span class="keyword">for</span> _, header := <span class="keyword">range</span> headers &#123;</span><br><span class="line">    <span class="comment">//校验</span></span><br><span class="line">    ...</span><br><span class="line">		q.blockTaskPool[hash] = header</span><br><span class="line">		q.blockTaskQueue.Push(header, -<span class="type">int64</span>(header.Number.Uint64()))</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> q.mode == FastSync &#123;</span><br><span class="line">			q.receiptTaskPool[hash] = header</span><br><span class="line">			q.receiptTaskQueue.Push(header, -<span class="type">int64</span>(header.Number.Uint64()))</span><br><span class="line">		&#125;</span><br><span class="line">		inserts = <span class="built_in">append</span>(inserts, header)</span><br><span class="line">		q.headerHead = hash</span><br><span class="line">		from++</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> inserts</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数主要就是将信息写入到body和receipt队列，等待调度。</p>
+<hr>
+<h4 id="ReserveBody-Receipt"><a href="#ReserveBody-Receipt" class="headerlink" title="ReserveBody&amp;Receipt"></a>ReserveBody&amp;Receipt</h4><p>在 <code>queue</code> 中准备好了 <strong>body</strong> 和 <strong>receipt</strong> 相关的数据， <code>processHeaders</code>最后一段，是唤醒下载Bodyies和Receipts的关键代码，会通知 <code>fetchBodies</code> 和 <code>fetchReceipts</code> 可以对各自的数据进行下载了。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, ch := <span class="keyword">range</span> []<span class="keyword">chan</span> <span class="type">bool</span>&#123;d.bodyWakeCh, d.receiptWakeCh&#125; &#123;</span><br><span class="line">				<span class="keyword">select</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> ch &lt;- <span class="literal">true</span>:</span><br><span class="line">				<span class="keyword">default</span>:</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而<code>fetchXXX</code> 会调用<code>fetchParts</code>，逻辑类似上面的的，<code>reserve</code>最终则会调用<code>reserveHeaders</code>，<code>deliver</code> 最终调用的是 <code>queue.deliver</code>.</p>
+<p>先来分析<code>reserveHeaders</code>：</p>
+<p>①：如果没有可处理的任务，直接返回</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> taskQueue.Empty() &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">false</span>, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：如果参数给定的节点正在下载数据，返回</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> _, ok := pendPool[p.id]; ok &#123;</span><br><span class="line">       <span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">false</span>, <span class="literal">nil</span></span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：计算 queue 对象中的缓存空间还可以容纳多少条数据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">space := q.resultSlots(pendPool, donePool)</span><br></pre></td></tr></table></figure>
+
+<p>④：从 「task queue」 中依次取出任务进行处理</p>
+<p>主要实现以下功能：</p>
+<ul>
+<li>计算当前 header 在 <code>queue.resultCache</code> 中的位置，然后填充 <code>queue.resultCache</code> 中相应位置的元素</li>
+<li>处理空区块的情况，若为空不下载。</li>
+<li>处理远程节点缺少这个当前区块数据的情况，如果发现这个节点曾经下载当前数据失败过，就不再让它下载了。</li>
+</ul>
+<p>注意：<code>resultCache</code> 字段用来记录所有正在被处理的数据的处理结果，它的元素类型是 <code>fetchResult</code> 。它的 <code>Pending</code> 字段代表当前区块还有几类数据需要下载。这里需要下载的数据最多有两类：body 和 receipt，<code>full</code> 模式下只需要下载 <code>body</code> 数据，而 <code>fast</code> 模式要多下载一个 <code>receipt</code> 数据。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> proc := <span class="number">0</span>; proc &lt; space &amp;&amp; <span class="built_in">len</span>(send) &lt; count &amp;&amp; !taskQueue.Empty(); proc++ &#123;</span><br><span class="line">		header := taskQueue.PopItem().(*types.Header)</span><br><span class="line">		hash := header.Hash()</span><br><span class="line">		index := <span class="type">int</span>(header.Number.Int64() - <span class="type">int64</span>(q.resultOffset))</span><br><span class="line">		<span class="keyword">if</span> index &gt;= <span class="built_in">len</span>(q.resultCache) || index &lt; <span class="number">0</span> &#123;</span><br><span class="line">			....</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> q.resultCache[index] == <span class="literal">nil</span> &#123;</span><br><span class="line">			components := <span class="number">1</span></span><br><span class="line">			<span class="keyword">if</span> q.mode == FastSync &#123;</span><br><span class="line">				components = <span class="number">2</span></span><br><span class="line">			&#125;</span><br><span class="line">			q.resultCache[index] = &amp;fetchResult&#123;</span><br><span class="line">				Pending: components,</span><br><span class="line">				Hash:    hash,</span><br><span class="line">				Header:  header,</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">  </span><br><span class="line">		<span class="keyword">if</span> isNoop(header) &#123;</span><br><span class="line">			donePool[hash] = <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">			<span class="built_in">delete</span>(taskPool, hash)</span><br><span class="line"></span><br><span class="line">			space, proc = space<span class="number">-1</span>, proc<span class="number">-1</span></span><br><span class="line">			q.resultCache[index].Pending--</span><br><span class="line">			progress = <span class="literal">true</span></span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> p.Lacks(hash) &#123;</span><br><span class="line">			skip = <span class="built_in">append</span>(skip, header)</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			send = <span class="built_in">append</span>(send, header)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后就是构造 <code>fetchRequest</code> 结构并返回。</p>
+<hr>
+<h4 id="DeliverBodies-Receipts"><a href="#DeliverBodies-Receipts" class="headerlink" title="DeliverBodies&amp;Receipts"></a>DeliverBodies&amp;Receipts</h4><p><code>body</code> 或 <code>receipt</code> 数据都已经通过 <code>reserve</code> 操作构造了 <code>fetchRequest</code> 结构并传给 <code>fetch</code>，接下来就是等待数据的到达,数据下载成功后，会调用 <code>queue</code> 对象的 <code>deliver</code> 方法进行传递，包括 <code>queue.DeliverBodies</code> 和 <code>queue.DeliverReceipts</code>。这两个方法都以不同的参数调用了 <code>queue.deliver</code> 方法:</p>
+<p>①：如果下载的数据数量为 0，则把所有此节点此次下载的数据标记为「缺失」</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> results == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">for</span> _, header := <span class="keyword">range</span> request.Headers &#123;</span><br><span class="line">			request.Peer.MarkLacking(header.Hash())</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：循环处理数据，通过调用<code>reconstruct</code> 填充 <code>resultCache[index]</code> 中的相应的字段</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i, header := <span class="keyword">range</span> request.Headers &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">if</span> err := reconstruct(header, i, q.resultCache[index]); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			failure = err</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：验证<code>resultCache</code> 中的数据，其对应的 <code>request.Headers</code> 中的 <code>header</code> 都应为 nil，若不是则说明验证未通过，需要假如到task queue重新下载</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, header := <span class="keyword">range</span> request.Headers &#123;</span><br><span class="line">		<span class="keyword">if</span> header != <span class="literal">nil</span> &#123;</span><br><span class="line">			taskQueue.Push(header, -<span class="type">int64</span>(header.Number.Uint64()))</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：如果有数据被验证通过且写入 <code>queue.resultCache</code> 中了（<code>accepted</code> &gt; 0），发送 <code>queue.active</code> 消息。<code>Results</code> 会等待这这个信号。</p>
+<hr>
+<h4 id="Results"><a href="#Results" class="headerlink" title="Results"></a>Results</h4><p>当(header、body、receipt)都下载完，就要将区块写入到数据库了，<code>queue.Results</code> 就是用来返回所有目前已经下载完成的数据，它在 <code>Downloader.processFullSyncContent</code> 和 <code>Downloader.processFastSyncContent</code> 中被调用。代码比较简单就不多说了。</p>
+<p>到此为止<code>queue</code>对象就分析的差不多了。</p>
+<hr>
+<h2 id="同步headers"><a href="#同步headers" class="headerlink" title="同步headers"></a>同步headers</h2><p>继续回到<code>syncWithPeer</code>函数中，来讲下面比较关键的几个点。</p>
+<h3 id="fetchHeaders"><a href="#fetchHeaders" class="headerlink" title="fetchHeaders"></a>fetchHeaders</h3><p>同步<code>headers</code> 是是由函数<code>fetchHeaders</code>来完成的。</p>
+<p><code>fetchHeaders</code>的大致思想：</p>
+<p> 同步<code>header</code>的数据会被填充到<code>skeleton</code>，每次从远程节点获取区块数据最大为<code>MaxHeaderFetch</code>（192），所以要获取的区块数据如果大于192 ，会被分成组，每组<code>MaxHeaderFetch</code>，剩余的不足192个的不会填充进<code>skeleton</code>，具体步骤如下图所示：</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glszpqzeuwj313u0msq73.jpg" alt="image-20201219111103965"></p>
+<p>此种方式可以<strong>避免从同一节点下载过多错误数据</strong>，如果我们连接到了一个恶意节点，它可以创造一个链条很长且<code>TD</code>值也非常高的区块链数据。如果我们的区块从 0 开始全部从它那同步，也就下载了一些根本不被别人承认的数据。如果我只从它那同步 <code>MaxHeaderFetch</code> 个区块，然后发现这些区块无法正确填充我之前的 <code>skeleton</code>（可能是 <code>skeleton</code> 的数据错了，或者用来填充 <code>skeleton</code> 的数据错了），就会丢掉这些数据。</p>
+<p>接下来查看下代码如何实现：</p>
+<p>①：发起获取<code>header</code>的请求</p>
+<p>如果是下载<code>skeleton</code>，则会从高度 <code>from+MaxHeaderFetch-1</code> 开始（包括），每隔 <code>MaxHeaderFetch-1</code> 的高度请求一个 <code>header</code>，最多请求 <code>MaxSkeletonSize</code> 个。如果不是的话，则要获取完整的<code>headers</code> 。</p>
+<p>②：等待并处理<code>headerCh</code>中的<code>header</code>数据</p>
+<p>2.1 确保远程节点正在返回我们需要填充<code>skeleton</code>所需的<code>header</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> packet.PeerId() != p.id &#123;</span><br><span class="line">				log.Debug(<span class="string">&quot;Received skeleton from incorrect peer&quot;</span>, <span class="string">&quot;peer&quot;</span>, packet.PeerId())</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.2 如果<code>skeleton</code>已经下载完毕，则需要继续填充<code>skeleton</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> packet.Items() == <span class="number">0</span> &amp;&amp; skeleton &#123;</span><br><span class="line">				skeleton = <span class="literal">false</span></span><br><span class="line">				getHeaders(from)</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.3 整个<code>skeleton</code>填充完成，并且没有要获取的<code>header</code>了，要通知<code>headerProcCh</code>全部完成</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> packet.Items() == <span class="number">0</span> &#123;</span><br><span class="line">				<span class="comment">//下载pivot时不要中止标头的提取</span></span><br><span class="line">				<span class="keyword">if</span> atomic.LoadInt32(&amp;d.committed) == <span class="number">0</span> &amp;&amp; pivot &lt;= from &#123;</span><br><span class="line">					p.log.Debug(<span class="string">&quot;No headers, waiting for pivot commit&quot;</span>)</span><br><span class="line">					<span class="keyword">select</span> &#123;</span><br><span class="line">					<span class="keyword">case</span> &lt;-time.After(fsHeaderContCheck):</span><br><span class="line">						getHeaders(from)</span><br><span class="line">						<span class="keyword">continue</span></span><br><span class="line">					<span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">						<span class="keyword">return</span> errCanceled</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="comment">//完成Pivot操作（或不进行快速同步），并且没有头文件，终止该过程</span></span><br><span class="line">				p.log.Debug(<span class="string">&quot;No more headers available&quot;</span>)</span><br><span class="line">				<span class="keyword">select</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> d.headerProcCh &lt;- <span class="literal">nil</span>:</span><br><span class="line">					<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">				<span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">					<span class="keyword">return</span> errCanceled</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.4 当<code>header</code>有数据并且是在获取<code>skeleton</code>的时候，调用<code>fillHeaderSkeleton</code>填充<code>skeleton</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> skeleton &#123;</span><br><span class="line">				filled, proced, err := d.fillHeaderSkeleton(from, headers)</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					p.log.Debug(<span class="string">&quot;Skeleton chain invalid&quot;</span>, <span class="string">&quot;err&quot;</span>, err)</span><br><span class="line">					<span class="keyword">return</span> errInvalidChain</span><br><span class="line">				&#125;</span><br><span class="line">				headers = filled[proced:]</span><br><span class="line">				from += <span class="type">uint64</span>(proced)</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.5 如果当前处理的不是 <code>skeleton</code>，表明区块同步得差不多了，处理尾部的一些区块</p>
+<p>判断本地的主链高度与新收到的 header 的最高高度的高度差是否在 <code>reorgProtThreshold</code> 以内，如果不是，就将高度最高的 <code>reorgProtHeaderDelay</code> 个 header 丢掉。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> head+<span class="type">uint64</span>(reorgProtThreshold) &lt; headers[n<span class="number">-1</span>].Number.Uint64() &#123;</span><br><span class="line">						delay := reorgProtHeaderDelay</span><br><span class="line">						<span class="keyword">if</span> delay &gt; n &#123;</span><br><span class="line">							delay = n</span><br><span class="line">						&#125;</span><br><span class="line">						headers = headers[:n-delay]</span><br><span class="line">					&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.6 如果还有 <code>header</code> 未处理，发给 <code>headerProcCh</code> 进行处理，<code>Downloader.processHeaders</code> 会等待这个 channel 的消息并进行处理；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(headers) &gt; <span class="number">0</span> &#123;</span><br><span class="line">				...</span><br><span class="line">				<span class="keyword">select</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> d.headerProcCh &lt;- headers:</span><br><span class="line">				<span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">					<span class="keyword">return</span> errCanceled</span><br><span class="line">				&#125;</span><br><span class="line">				from += <span class="type">uint64</span>(<span class="built_in">len</span>(headers))</span><br><span class="line">  getHeaders(from)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.7 如果没有发送标头，或者所有标头等待 <code>fsHeaderContCheck</code> 秒，再次调用 <code>getHeaders</code> 请求区块</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">p.log.Trace(<span class="string">&quot;All headers delayed, waiting&quot;</span>)</span><br><span class="line">				<span class="keyword">select</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> &lt;-time.After(fsHeaderContCheck):</span><br><span class="line">					getHeaders(from)</span><br><span class="line">					<span class="keyword">continue</span></span><br><span class="line">				<span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">					<span class="keyword">return</span> errCanceled</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码后来才加上的，其 commit 的记录在<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/commit/6ee3b26f447459d3f3a316dbb572e461a273e193#diff-c2fa15e758e986688c646459d8970a50">这里</a>，而 「pull request」 在<a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/pull/17839">这里</a>。从 「pull request」 中作者的解释我们可以了解这段代码的逻辑和功能：这个修改主要是为了解决经常出现的 「invalid hash chain」 错误，出现这个错误的原因是因为在我们上一次从远程节点获取到一些区块并将它们加入到本地的主链的过程中，远程节点发生了 reorg 操作（参见<a target="_blank" rel="noopener" href="https://yangzhe.me/2019/03/24/ethereum-blockchain/">这篇文章</a>里关于「主链与侧链」的介绍 ）；当我们再次根据高度请求新的区块时，对方返回给我们的是它的新的主链上的区块，而我们没有这个链上的历史区块，因此在本地写入区块时就会返回 「invalid hash chain」 错误。</p>
+<p>要想发生 「reorg」 操作，就需要有新区块加入。在以太坊主网上，新产生一个区块的间隔是 10 秒到 20 秒左右。一般情况下，如果仅仅是区块数据，它的同步速度还是很快的，每次下载也有最大数量的限制。所以在新产生一个区块的这段时间里，足够同步完成一组区块数据而对方节点不会发生 「reorg」 操作。但是注意刚才说的「仅仅是区块数据」的同步较快，<strong>state 数据的同步就非常慢了</strong>。简单来说在完成同步之前可能会有多个 「pivot」 区块，这些区块的 state 数据会从网络上下载，这就大大拖慢了整个区块的同步速度，使得本地在同步一组区块的同时对方发生 「reorg」 操作的机率大大增加。</p>
+<p>作者认为这种情况下发生的 「reorg」 操作是由新产生的区块的竞争引起的，所以最新的几个区块是「不稳定的」，如果本次同步的区块数量较多（也就是我们同步时消耗的时间比较长）（在这里「本次同步的区数数量较多」的表现是新收到的区块的最高高度与本地数据库中的最高高度的差距大于 <code>reorgProtThreshold</code>），那么在同步时可以先避免同步最新区块，这就是 <code>reorgProtThreshold</code> 和 <code>reorgProtHeaderDelay</code> 这个变量的由来。</p>
+<p>至此，<code>Downloader.fetchHeaders</code> 方法就结束了，所有的区块头也就同步完成了。在上面我们提到填充<code>skeleton</code>的时候，是由<code>fillHeaderSkeleton</code>函数来完成，接下来就要细讲填充<code>skeleton</code>的细节。</p>
+<hr>
+<h3 id="fillHeaderSkeleton"><a href="#fillHeaderSkeleton" class="headerlink" title="fillHeaderSkeleton"></a>fillHeaderSkeleton</h3><p>首先我们知道以太坊在同步区块时，先确定要下载的区块的高度区间，然后将这个区间按 <code>MaxHeaderFetch</code> 切分成很多组，每一组的最后一个区块组成了 「skeleton」（最后一组不满 <code>MaxHeaderFetch</code> 个区块不算作一组）。不清楚的可以查看上面的图。</p>
+<p>①：将一批<code>header</code>检索任务添加到队列中，以填充<code>skeleton</code>。</p>
+<p>这个函数参照上面<strong>queue详解</strong>的分析</p>
+<blockquote>
+<p>func (q *queue) ScheduleSkeleton(from uint64, skeleton []*types.Header) {}</p>
+</blockquote>
+<p>②：调用<code>fetchParts</code> 获取<code>headers</code>数据</p>
+<p><code>fetchParts</code>是很核心的函数，下面的<code>Fetchbodies</code>和<code>FetchReceipts</code>都会调用。先来大致看一下<code>fetchParts</code>的结构：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Downloader)</span></span> fetchParts(...) <span class="type">error</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">		<span class="keyword">case</span> packet := &lt;-deliveryCh:</span><br><span class="line">		<span class="keyword">case</span> cont := &lt;-wakeCh:</span><br><span class="line">		<span class="keyword">case</span> &lt;-ticker.C:</span><br><span class="line">		<span class="keyword">case</span> &lt;-update:</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>简化下来就是这 5 个<code>channel</code>在处理，前面 4 个<code>channel</code>负责循环等待消息，<code>update</code>用来等待其他 4 个<code>channel</code>的通知来处理逻辑，先分开分析一个个的<code>channel</code>。</p>
+<p>2.1 deliveryCh 传递下载的数据</p>
+<p><code>deliveryCh</code> 作用就是传递下载的数据，当有数据被真正下载下来时，就会给这个 <code>channel</code> 发消息将数据传递过来。这个 channel 对应的分别是：<code>d.headerCh</code>、<code>d.bodyCh</code>、<code>d.receiptCh</code>，而这三个 <code>channel</code> 分别在以下三个方法中被写入数据：<code>DeliverHeaders</code>、<code>DeliverBodies</code>、<code>DeliverReceipts</code>。 看下<code>deliveryCh</code>如何处理数据：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> packet := &lt;-deliveryCh:</span><br><span class="line">			<span class="keyword">if</span> peer := d.peers.Peer(packet.PeerId()); peer != <span class="literal">nil</span> &#123;</span><br><span class="line">				accepted, err := deliver(packet)<span class="comment">//传递接收到的数据块并检查链有效性</span></span><br><span class="line">				<span class="keyword">if</span> err == errInvalidChain &#123;</span><br><span class="line">					<span class="keyword">return</span> err</span><br><span class="line">        &#125;</span><br><span class="line">				<span class="keyword">if</span> err != errStaleDelivery &#123;</span><br><span class="line">					setIdle(peer, accepted)</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">switch</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> err == <span class="literal">nil</span> &amp;&amp; packet.Items() == <span class="number">0</span>:</span><br><span class="line">					...</span><br><span class="line">				<span class="keyword">case</span> err == <span class="literal">nil</span>:</span><br><span class="line">				...</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> update &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;:</span><br><span class="line">			<span class="keyword">default</span>:</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>收到下载数据后判断节点是否有效，如果节点没有被移除，则会通过<code>deliver</code>传递接收到的下载数据。如果没有任何错误，则通知<code>update</code>处理。</p>
+<p>要注意<code>deliver</code>是一个回调函数，它调用了 queue 对象的 Deliver 方法：<code>queue.DeliverHeaders</code>、<code>queue.DeliverBodies</code>、<code>queue.DeliverReceipts</code>，在收到下载数据就会调用此回调函数（<strong>queue相关函数分析参照queue详解部分</strong>）。</p>
+<p>在上面处理错误部分，有一个<code>setIdle</code>函数，它也是回调函数，其实现都是调用了 <code>peerConnection</code> 对象的相关方法：<code>SetHeadersIdle</code>、<code>SetBodiesIdle</code>、<code>SetReceiptsIdle</code>。它这个函数是指某些节点针对某类数据是空闲的，比如<code>header</code>、<code>bodies</code>、<code>receipts</code>，如果需要下载这几类数据，就可以从空闲的节点下载这些数据。</p>
+<p>2.2 <code>wakeCh</code> 唤醒<code>fetchParts</code> ，下载新数据或下载已完成</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> cont := &lt;-wakeCh:</span><br><span class="line">			<span class="keyword">if</span> !cont &#123;</span><br><span class="line">				finished = <span class="literal">true</span></span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> update &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;:</span><br><span class="line">			<span class="keyword">default</span>:</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先我们通过调用fetchParts传递的参数知道，<code>wakeCh</code> 的值其实是 <code>queue.headerContCh</code>。在 <code>queue.DeliverHeaders</code> 中发现所有需要下戴的 header 都下载完成了时，才会发送 false 给这个 channel。<code>fetchParts</code> 在收到这个消息时，就知道没有 header 需要下载了。代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(q *queue)</span></span> DeliverHeaders(......) (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(q.headerTaskPool) == <span class="number">0</span> &#123;</span><br><span class="line">        q.headerContCh &lt;- <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同样如此，<code>body</code>和<code>receipt</code>则是<code>bodyWakeCh</code>和<code>receiptWakeCh</code>，在 <code>processHeaders</code> 中，如果所有 <code>header</code> 已经下载完成了，那么发送 <code>false</code> 给这两个 <code>channel</code>，通知它们没有新的 <code>header</code> 了。 <code>body</code> 和 <code>receipt</code> 的下载依赖于 <code>header</code>,需要 <code>header</code> 先下载完成才能下载，所以对于下戴 <code>body</code> 或 <code>receipt</code> 的 <code>fetchParts</code> 来说，收到这个 <code>wakeCh</code> 就代表不会再有通知让自己下载数据了.</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Downloader)</span></span> processHeaders(origin <span class="type">uint64</span>, pivot <span class="type">uint64</span>, td *big.Int) <span class="type">error</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> headers := &lt;-d.headerProcCh:</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">len</span>(headers) == <span class="number">0</span> &#123;</span><br><span class="line">                <span class="keyword">for</span> _, ch := <span class="keyword">range</span> []<span class="keyword">chan</span> <span class="type">bool</span>&#123;d.bodyWakeCh, d.receiptWakeCh&#125; &#123;</span><br><span class="line">                    <span class="keyword">select</span> &#123;</span><br><span class="line">                    <span class="keyword">case</span> ch &lt;- <span class="literal">false</span>:</span><br><span class="line">                    <span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">						...</span><br><span class="line">            &#125;</span><br><span class="line">            ...</span><br><span class="line">            <span class="keyword">for</span> _, ch := <span class="keyword">range</span> []<span class="keyword">chan</span> <span class="type">bool</span>&#123;d.bodyWakeCh, d.receiptWakeCh&#125; &#123;</span><br><span class="line">                <span class="keyword">select</span> &#123;</span><br><span class="line">                <span class="keyword">case</span> ch &lt;- <span class="literal">true</span>:</span><br><span class="line">                <span class="keyword">default</span>:</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.3 ticker 负责周期性的激活 <code>update</code>进行消息处理</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> &lt;-ticker.C:</span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> update &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;:</span><br><span class="line">			<span class="keyword">default</span>:</span><br><span class="line">			&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>2.4 <code>update</code> （处理此前几个<code>channel</code>的数据）(<strong>重要</strong>)</p>
+<p>2.4.1 判断是否有效节点，并获取超时数据的信息</p>
+<p>获取超时数据的节点ID和数据数量，如果大于两个的话，就将这个节点设置为空闲状态(<code>setIdle</code>)，小于两个的话直接断开节点连接。</p>
+<p><code>expire</code> 是一个回调函数，会返回当前所有的超时数据信息。这个函数的实际实现都是调用了 <code>queue</code> 对象的 <code>Expire</code> 方法：<code>ExpireHeaders</code>、<code>ExpireBodies</code>、<code>ExpireReceipts</code>,此函数会统计当前正在下载的数据中，起始时间与当前时间的差距超过给定阈值（<code>downloader.requestTTL</code> 方法的返回值）的数据，并将其返回。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> d.peers.Len() == <span class="number">0</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> errNoPeers</span><br><span class="line">			&#125;</span><br><span class="line"><span class="keyword">for</span> pid, fails := <span class="keyword">range</span> expire() &#123;</span><br><span class="line">  <span class="keyword">if</span> peer := d.peers.Peer(pid); peer != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> fails &gt; <span class="number">2</span> &#123;</span><br><span class="line">						...</span><br><span class="line">						setIdle(peer, <span class="number">0</span>)</span><br><span class="line">					&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					...</span><br><span class="line">						<span class="keyword">if</span> d.dropPeer == <span class="literal">nil</span> &#123;</span><br><span class="line">						&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">							d.dropPeer(pid)</span><br><span class="line">							....</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.4.2 处理完超时数据，判断是否还有下载的数据</p>
+<p>如果没有其他可下载的内容，请等待或终止，这里<code>pending()</code>和<code>inFlight()</code>都是回调函数，<code>pending</code>分别对应了<code>queue.PendingHeaders</code>、<code>queue.PendingBlocks</code>、<code>queue.PendingReceipts</code>,用来返回各自要下载的任务数量。<code>inFlight()</code>分别对应了<code>queue.InFlightHeaders</code>、<code>queue.InFlightBlocks</code>、<code>queue.InFlightReceipts</code>,用来返回正在下载的数据数量。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> pending() == <span class="number">0</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> !inFlight() &amp;&amp; finished &#123;</span><br><span class="line">				...</span><br><span class="line">					<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.4.3 使用空闲节点，调用<code>fetch</code>函数发送数据请求</p>
+<p><code>Idle()</code>回调函数在上面已经提过了，<code>throttle()</code>回调函数则分别对<code>queue.ShouldThrottleBlocks</code>、<code>queue.ShouldThrottleReceipts</code>,用来表示是否应该下载<code>bodies</code>或者<code>receipts</code>。</p>
+<p><code>reserve</code>函数分别对应<code>queue.ReserveHeaders</code>、<code>queue.ReserveBodies</code>、<code>queue.ReserveReceipts</code>,用来从从下载任务中选取一些可以下载的任务，并构造一个 <code>fetchRequest</code> 结构。它还返回一个 <code>process</code> 变量，标记着是否有空的数据正在被处理。比如有可能某区块中未包含任何一条交易，因此它的 <code>body</code> 和 <code>receipt</code> 都是空的，这种数据其实是不需要下载的。在 <code>queue</code> 对象的 <code>Reserve</code> 方法中，会对这种情况进行识别。如果遇到空的数据，这些数据会被直接标记为下载成功。在方法返回时，就将是否发生过「直接标记为下载成功」的情况返回。</p>
+<p><code>capacity</code>回调函数分别对应<code>peerConnection.HeaderCapacity</code>、<code>peerConnection.BlockCapacity</code>、<code>peerConnection.ReceiptCapacity</code>,用来决定下载需要请求数据的个数。</p>
+<p><code>fetch</code>回调函数分别对应<code>peer.FetchHeaders</code>、<code>peer.Fetchbodies</code>、<code>peer.FetchReceipts</code>,用来发送获取各类数据的请求。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">progressed, throttled, running := <span class="literal">false</span>, <span class="literal">false</span>, inFlight()</span><br><span class="line">			idles, total := idle()</span><br><span class="line">			<span class="keyword">for</span> _, peer := <span class="keyword">range</span> idles &#123;</span><br><span class="line">				<span class="keyword">if</span> throttle() &#123;</span><br><span class="line">					...</span><br><span class="line">        &#125;</span><br><span class="line">				<span class="keyword">if</span> pending() == <span class="number">0</span> &#123;</span><br><span class="line">					<span class="keyword">break</span></span><br><span class="line">				&#125;</span><br><span class="line">				request, progress, err := reserve(peer, capacity(peer))</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> err</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span> progress &#123;</span><br><span class="line">					progressed = <span class="literal">true</span></span><br><span class="line">				&#125;</span><br><span class="line">        <span class="keyword">if</span> request == <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">continue</span></span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span> request.From &gt; <span class="number">0</span> &#123;</span><br><span class="line">				...</span><br><span class="line">				&#125;</span><br><span class="line">				...</span><br><span class="line">				<span class="keyword">if</span> err := fetch(peer, request); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				...</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> !progressed &amp;&amp; !throttled &amp;&amp; !running &amp;&amp; <span class="built_in">len</span>(idles) == total &amp;&amp; pending() &gt; <span class="number">0</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> errPeersUnavailable</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>简单来概括这段代码就是：使用空闲节点下载数据，判断是否需要暂停，或者数据是否已经下载完成；之后选取数据进行下载；最后，如果没有遇到空块需要下载、且没有暂停下载和所有有效节点都空闲和确实有数据需要下载，但下载没有运行起来，就返回 <code>errPeersUnavailable</code> 错误。</p>
+<p>到此为止<code>fetchParts</code>函数就分析的差不多了。里面涉及的跟<code>queue.go</code>相关的一些函数都在<strong>queue详解</strong>小节里介绍了。</p>
+<hr>
+<h3 id="processHeaders"><a href="#processHeaders" class="headerlink" title="processHeaders"></a>processHeaders</h3><p>通过<code>headerProcCh</code>接收<code>header</code>数据，并处理的过程是在<code>processHeaders</code>函数中完成的。整个处理过程集中在：<code>case headers := &lt;-d.headerProcCh中</code>:</p>
+<p>①：如果<code>headers</code>的长度为0 ，则会有以下操作：</p>
+<p>1.1 通知所有人<code>header</code>已经处理完毕</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, ch := <span class="keyword">range</span> []<span class="keyword">chan</span> <span class="type">bool</span>&#123;d.bodyWakeCh, d.receiptWakeCh&#125; &#123;</span><br><span class="line">					<span class="keyword">select</span> &#123;</span><br><span class="line">					<span class="keyword">case</span> ch &lt;- <span class="literal">false</span>:</span><br><span class="line">					<span class="keyword">case</span> &lt;-d.cancelCh:</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1.2 若没有检索到任何<code>header</code>，说明他们的<code>TD</code>小于我们的，或者已经通过我们的<code>fetcher</code>模块进行了同步。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> d.mode != LightSync &#123;</span><br><span class="line">					head := d.blockchain.CurrentBlock()</span><br><span class="line">					<span class="keyword">if</span> !gotHeaders &amp;&amp; td.Cmp(d.blockchain.GetTd(head.Hash(), head.NumberU64())) &gt; <span class="number">0</span> &#123;</span><br><span class="line">						<span class="keyword">return</span> errStallingPeer</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1.3 如果是<code>fast</code>或者<code>light</code> 同步，确保传递了<code>header</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> d.mode == FastSync || d.mode == LightSync &#123;</span><br><span class="line">					head := d.lightchain.CurrentHeader()</span><br><span class="line">					<span class="keyword">if</span> td.Cmp(d.lightchain.GetTd(head.Hash(), head.Number.Uint64())) &gt; <span class="number">0</span> &#123;</span><br><span class="line">						<span class="keyword">return</span> errStallingPeer</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：如果<code>headers</code>的长度大于 0</p>
+<p>2.1 如果是fast或者light 同步，调用**ightchain.InsertHeaderChain()**写入<code>header</code>到<code>leveldb</code>数据库；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> d.mode == FastSync || d.mode == LightSync &#123;</span><br><span class="line">  ....</span><br><span class="line">  d.lightchain.InsertHeaderChain(chunk, frequency);</span><br><span class="line">  ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.2 如果是<code>fast</code>或者<code>full sync</code>模式，则调用 d.queue.Schedule进行内容(body和receipt)检索。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> d.mode == FullSync || d.mode == FastSync &#123;</span><br><span class="line">  ...</span><br><span class="line">  inserts := d.queue.Schedule(chunk, origin)</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：如果找到更新的块号，则要发信号通知新任务</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> d.syncStatsChainHeight &lt; origin &#123;</span><br><span class="line">				d.syncStatsChainHeight = origin - <span class="number">1</span></span><br><span class="line">			&#125;</span><br><span class="line"><span class="keyword">for</span> _, ch := <span class="keyword">range</span> []<span class="keyword">chan</span> <span class="type">bool</span>&#123;d.bodyWakeCh, d.receiptWakeCh&#125; &#123;</span><br><span class="line">				<span class="keyword">select</span> &#123;</span><br><span class="line">				<span class="keyword">case</span> ch &lt;- <span class="literal">true</span>:</span><br><span class="line">				<span class="keyword">default</span>:</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此处理<code>Headers</code>的分析就完成了。</p>
+<hr>
+<h2 id="同步bodies"><a href="#同步bodies" class="headerlink" title="同步bodies"></a>同步bodies</h2><p>同步<code>bodies</code> 则是由<code>fetchBodies</code>函数完成的。</p>
+<h3 id="fetchBodies"><a href="#fetchBodies" class="headerlink" title="fetchBodies"></a>fetchBodies</h3><p>同步bodies的过程跟同步header类似，大致讲下步骤：</p>
+<ol>
+<li>调用<code>fetchParts</code></li>
+<li><code>ReserveBodies</code>()从<code>bodyTaskPool</code>中取出要同步的<code>body</code>；</li>
+<li>调用<code>fetch</code>，也就是调用这里的<code>FetchBodies</code>从节点获取<code>body</code>，发送<code>GetBlockBodiesMsg</code>消息；</li>
+<li>收到<code>bodyCh</code>的数据后，调用<code>deliver</code>函数，将Transactions和<code>Uncles</code>写入<code>resultCache</code>。</li>
+</ol>
+<hr>
+<h2 id="同步Receipts"><a href="#同步Receipts" class="headerlink" title="同步Receipts"></a>同步Receipts</h2><h3 id="fetchReceipts"><a href="#fetchReceipts" class="headerlink" title="fetchReceipts"></a>fetchReceipts</h3><p>同步<code>receipts</code>的过程跟同步<code>header</code>类似，大致讲下步骤：</p>
+<ol>
+<li>调用<code>fetchParts</code>()</li>
+<li><code>ReserveBodies</code>()从<code>ReceiptTaskPool</code>中取出要同步的<code>Receipt</code></li>
+<li>调用这里的<code>FetchReceipts</code>从节点获取<code>receipts</code>，发送<code>GetReceiptsMsg</code>消息；</li>
+<li>收到<code>receiptCh</code>的数据后，调用<code>deliver</code>函数，将<code>Receipts</code>写入<code>resultCache</code>。</li>
+</ol>
+<hr>
+<h2 id="同步状态"><a href="#同步状态" class="headerlink" title="同步状态"></a>同步状态</h2><p>这里我们讲两种模式下的状态同步：</p>
+<ul>
+<li><strong>fullSync</strong>: <code>processFullSyncContent</code>，<code>full</code>模式下<code>Receipts</code>没有缓存到<code>resultCache</code>中，直接先从缓存中取出<code>body</code>数据，然后执行交易生成状态，最后写入区块链。</li>
+<li><strong>fastSync</strong>:<code>processFastSyncContent</code>：fast模式的Receipts、Transaction、Uncles都在resultCache中，所以还需要下载”state”，进行校验，再写入区块链。</li>
+</ul>
+<p>接下来大致的讨论下这两种方式。</p>
+<h3 id="processFullSyncContent"><a href="#processFullSyncContent" class="headerlink" title="processFullSyncContent"></a>processFullSyncContent</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Downloader)</span></span> processFullSyncContent() <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		results := d.queue.Results(<span class="literal">true</span>)</span><br><span class="line">		...</span><br><span class="line">		<span class="keyword">if</span> err := d.importBlockResults(results); err != <span class="literal">nil</span> ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *Downloader)</span></span> importBlockResults(results []*fetchResult) <span class="type">error</span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">...</span><br><span class="line">	blocks := <span class="built_in">make</span>([]*types.Block, <span class="built_in">len</span>(results))</span><br><span class="line">	<span class="keyword">for</span> i, result := <span class="keyword">range</span> results &#123;</span><br><span class="line">		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> index, err := d.blockchain.InsertChain(blocks); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>直接从<code>result</code>中获取数据并生成<code>block</code>，直接插入区块链中，就结束了。</p>
+<hr>
+<h3 id="processFastSyncContent"><a href="#processFastSyncContent" class="headerlink" title="processFastSyncContent"></a>processFastSyncContent</h3><p>fast模式同步状态内容比较多，大致也就如下几部分，我们开始简单分析以下。</p>
+<p>①：下载最新的区块状态</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sync := d.syncState(latest.Root)</span><br></pre></td></tr></table></figure>
+
+<p>我们直接用一张图来表示整个大致流程：</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glxk6y6zhjj31180jstcl.jpg" alt="image-20201223100153241"></p>
+<p>具体的代码读者自己翻阅，大致就是这么个简单过程。</p>
+<p>②：计算出pivot块</p>
+<p><code>pivot</code>为<code>latestHeight - 64</code>，调用<code>splitAroundPivot</code>()方法以pivot为中心，将<code>results</code>分为三个部分：<code>beforeP</code>，<code>P</code>，<code>afterP</code>；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pivot := <span class="type">uint64</span>(<span class="number">0</span>)</span><br><span class="line">	<span class="keyword">if</span> height := latest.Number.Uint64(); height &gt; <span class="type">uint64</span>(fsMinFullBlocks) &#123;</span><br><span class="line">		pivot = height - <span class="type">uint64</span>(fsMinFullBlocks)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">P, beforeP, afterP := splitAroundPivot(pivot, results)</span><br></pre></td></tr></table></figure>
+
+<p>③： 对<code>beforeP</code>的部分调用<code>commitFastSyncData</code>，将<code>body</code>和<code>receipt</code>都写入区块链</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">d.commitFastSyncData(beforeP, sync); </span><br></pre></td></tr></table></figure>
+
+<p>④：对<strong>P</strong>的部分更新状态信息为<code>P block</code>的状态，把<strong>P</strong>对应的<strong>result</strong>（包含<strong>body</strong>和<strong>receipt</strong>）调用<strong>commitPivotBlock</strong>插入本地区块链中，并调用<strong>FastSyncCommitHead</strong>记录这个<strong>pivot</strong>的<strong>hash</strong>值，存在<strong>downloader</strong>中，标记为快速同步的最后一个区块<strong>hash</strong>值；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := d.commitPivotBlock(P); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					<span class="keyword">return</span> err</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑤：对<code>afterP</code>调用<code>d.importBlockResults</code>，将<code>body</code>插入区块链，而不插入<code>receipt</code>。因为是最后 64 个区块，所以此时数据库中只有<code>header</code>和<code>body</code>，没有<code>receipt</code>和状态，要通过<code>fullSync</code>模式进行最后的同步。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := d.importBlockResults(afterP); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此为止整个Downloader同步完成了。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://mindcarver.cn/">https://mindcarver.cn</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/ethereum/go-ethereum/pull/1889">https://github.com/ethereum/go-ethereum/pull/1889</a></p>
+<p><a target="_blank" rel="noopener" href="https://yangzhe.me/2019/05/09/ethereum-downloader/#fetchparts">https://yangzhe.me/2019/05/09/ethereum-downloader/#fetchparts</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BblockChain%E5%88%86%E6%9E%90-11/" rel="prev" title="死磕以太坊源码分析之blockChain分析">
+      <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之blockChain分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BEthash%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95-9/" rel="next" title="死磕以太坊源码分析之Ethash共识算法">
+      死磕以太坊源码分析之Ethash共识算法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%A7%88"><span class="nav-number">1.</span> <span class="nav-text">概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">同步模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#full-sync"><span class="nav-number">2.1.</span> <span class="nav-text">full  sync</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fast-sync"><span class="nav-number">2.2.</span> <span class="nav-text">fast sync</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#light-sync"><span class="nav-number">2.3.</span> <span class="nav-text">light sync</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8C%BA%E5%9D%97%E4%B8%8B%E8%BD%BD%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">区块下载流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#synchronise"><span class="nav-number">4.</span> <span class="nav-text">synchronise</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#findAncestor"><span class="nav-number">5.</span> <span class="nav-text">findAncestor</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#queue%E8%AF%A6%E8%A7%A3"><span class="nav-number">6.</span> <span class="nav-text">queue详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#queue%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">6.1.</span> <span class="nav-text">queue结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E7%BB%86%E5%88%86%E5%8A%9F%E8%83%BD"><span class="nav-number">6.2.</span> <span class="nav-text">主要细分功能</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%8B%E8%BD%BD%E5%BC%80%E5%A7%8B%E5%AE%89%E6%8E%92%E4%BB%BB%E5%8A%A1"><span class="nav-number">6.2.1.</span> <span class="nav-text">数据下载开始安排任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%8B%E8%BD%BD%E4%B8%AD%E7%9A%84%E5%90%84%E7%B1%BB%E7%8A%B6%E6%80%81"><span class="nav-number">6.2.2.</span> <span class="nav-text">数据下载中的各类状态</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%8B%E8%BD%BD%E5%AE%8C%E6%88%90%E8%8E%B7%E5%8F%96%E5%8C%BA%E5%9D%97%E6%95%B0%E6%8D%AE"><span class="nav-number">6.2.3.</span> <span class="nav-text">数据下载完成获取区块数据</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E5%AE%9E%E7%8E%B0"><span class="nav-number">6.3.</span> <span class="nav-text">函数实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ScheduleSkeleton"><span class="nav-number">6.3.1.</span> <span class="nav-text">ScheduleSkeleton</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ReserveHeaders"><span class="nav-number">6.3.2.</span> <span class="nav-text">ReserveHeaders</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DeliverHeaders"><span class="nav-number">6.3.3.</span> <span class="nav-text">DeliverHeaders</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Schedule"><span class="nav-number">6.3.4.</span> <span class="nav-text">Schedule</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ReserveBody-Receipt"><span class="nav-number">6.3.5.</span> <span class="nav-text">ReserveBody&amp;Receipt</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DeliverBodies-Receipts"><span class="nav-number">6.3.6.</span> <span class="nav-text">DeliverBodies&amp;Receipts</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Results"><span class="nav-number">6.3.7.</span> <span class="nav-text">Results</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5headers"><span class="nav-number">7.</span> <span class="nav-text">同步headers</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#fetchHeaders"><span class="nav-number">7.1.</span> <span class="nav-text">fetchHeaders</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fillHeaderSkeleton"><span class="nav-number">7.2.</span> <span class="nav-text">fillHeaderSkeleton</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#processHeaders"><span class="nav-number">7.3.</span> <span class="nav-text">processHeaders</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5bodies"><span class="nav-number">8.</span> <span class="nav-text">同步bodies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#fetchBodies"><span class="nav-number">8.1.</span> <span class="nav-text">fetchBodies</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5Receipts"><span class="nav-number">9.</span> <span class="nav-text">同步Receipts</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#fetchReceipts"><span class="nav-number">9.1.</span> <span class="nav-text">fetchReceipts</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E7%8A%B6%E6%80%81"><span class="nav-number">10.</span> <span class="nav-text">同步状态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#processFullSyncContent"><span class="nav-number">10.1.</span> <span class="nav-text">processFullSyncContent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#processFastSyncContent"><span class="nav-number">10.2.</span> <span class="nav-text">processFastSyncContent</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">11.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码|以太坊启动流程 文章以及资料（开源）：github地址     启动参数以太坊是如何启动一个网络节点的呢？ 1.&#x2F;geth --datadir &quot;..&#x2F;data0&quot; --nodekeyhex &quot;27aa615f5fa5430845e4e97229def5f23e9525a20640cc49304f40f3b43824dc&quot; --bootno">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码|以太坊启动流程">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E4%B9%8B%E4%BB%A5%E5%A4%AA%E5%9D%8A%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码|以太坊启动流程 文章以及资料（开源）：github地址     启动参数以太坊是如何启动一个网络节点的呢？ 1.&#x2F;geth --datadir &quot;..&#x2F;data0&quot; --nodekeyhex &quot;27aa615f5fa5430845e4e97229def5f23e9525a20640cc49304f40f3b43824dc&quot; --bootno">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/e6c9d24egy1go6tgnjvkhj20jg0c6mxi.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/007S8ZIlgy1gjmkul302pj31gu0mcnd2.jpg">
+<meta property="article:published_time" content="2024-08-26T05:10:15.211Z">
+<meta property="article:modified_time" content="2024-08-26T05:14:12.922Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/e6c9d24egy1go6tgnjvkhj20jg0c6mxi.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E4%B9%8B%E4%BB%A5%E5%A4%AA%E5%9D%8A%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码|以太坊启动流程 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E4%B9%8B%E4%BB%A5%E5%A4%AA%E5%9D%8A%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码|以太坊启动流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:10:15 / Modified: 13:14:12" itemprop="dateCreated datePublished" datetime="2024-08-26T13:10:15+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E4%B9%8B%E4%BB%A5%E5%A4%AA%E5%9D%8A%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E4%B9%8B%E4%BB%A5%E5%A4%AA%E5%9D%8A%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码|以太坊启动流程</p>
+<p>文章以及资料（开源）：<a target="_blank" rel="noopener" href="https://github.com/mindcarver/blockchain_guide">github地址</a>  </p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/e6c9d24egy1go6tgnjvkhj20jg0c6mxi.jpg" alt="9ff239564d5d1129fa544f25d95c7468"></p>
+<h1 id="启动参数"><a href="#启动参数" class="headerlink" title="启动参数"></a>启动参数</h1><p>以太坊是如何启动一个网络节点的呢？</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./geth --datadir &quot;../data0&quot; --nodekeyhex &quot;27aa615f5fa5430845e4e97229def5f23e9525a20640cc49304f40f3b43824dc&quot; --bootnodes $enodeid --mine --debug --metrics --syncmode=&quot;full&quot; --gcmode=archive  --gasprice 0 --port 30303 --rpc --rpcaddr &quot;0.0.0.0&quot; --rpcport 8545 --rpcapi &quot;db,eth,net,web3,personal&quot; --nat any --allow-insecure-unlock  2&gt;&gt;log 1&gt;&gt;log 0&gt;&gt;log &gt;&gt;log &amp;</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：</p>
+<ul>
+<li>geth : 编译好的geth程序，可以起别名</li>
+<li>datadir：数据库和keystore密钥的数据目录</li>
+<li>nodekeyhex: 十六进制的P2P节点密钥</li>
+<li>bootnodes:用于P2P发现引导的enode urls</li>
+<li>mine：打开挖矿</li>
+<li>debug:突出显示调用位置日志(文件名及行号)</li>
+<li>metrics: 启用metrics收集和报告</li>
+<li>syncmode:同步模式 (“fast”, “full”, or “light”)</li>
+<li>gcmode:表示即时将内存中的数据写入到文件中，否则重启节点可能会导致区块高度归零而丢失数据</li>
+<li>gasprice:挖矿接受交易的最低gas价格</li>
+<li>port:网卡监听端口(默认值:30303)</li>
+<li>rpc:启用HTTP-RPC服务器</li>
+<li>rpcaddr:HTTP-RPC服务器接口地址(默认值:“localhost”)</li>
+<li>rpcport:HTTP-RPC服务器监听端口(默认值:8545)</li>
+<li>rpcapi:基于HTTP-RPC接口提供的API</li>
+<li>nat: NAT端口映射机制 (any|none|upnp|pmp|extip:<IP>) (默认: “any”)</li>
+<li>allow-insecure-unlock:用于解锁账户</li>
+</ul>
+<p>详细的以太坊启动参数可以参考我的以太坊理论系列，里面有对参数的详细解释。</p>
+<hr>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p><code>geth</code>位于<code>cmd/geth/main.go</code>文件中，入口如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> err := app.Run(os.Args); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Fprintln(os.Stderr, err)</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1gjmkul302pj31gu0mcnd2.jpg" alt="image-20201012152238541"></p>
+<p>我们通过这张图可以看出来：main()并不是真正意义上的入口，在初始化完常量和变量以后，会先调用模块的init()函数，然后才是main()函数。所以初始化的工作是在init()函数里完成的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// Initialize the CLI app and start Geth</span></span><br><span class="line">	app.Action = geth</span><br><span class="line">	app.HideVersion = <span class="literal">true</span> <span class="comment">// we have a command to print the version</span></span><br><span class="line">	app.Copyright = <span class="string">&quot;Copyright 2013-2019 The go-ethereum Authors&quot;</span></span><br><span class="line">	app.Commands = []cli.Command&#123;</span><br><span class="line">    ....</span><br><span class="line">    ....</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>从这我们找到了入口函数geth:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">geth</span><span class="params">(ctx *cli.Context)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> args := ctx.Args(); <span class="built_in">len</span>(args) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;invalid command: %q&quot;</span>, args[<span class="number">0</span>])</span><br><span class="line">	&#125;</span><br><span class="line">	prepare(ctx)</span><br><span class="line">	node := makeFullNode(ctx)</span><br><span class="line">	<span class="keyword">defer</span> node.Close()</span><br><span class="line">	startNode(ctx, node)</span><br><span class="line">	node.Wait()</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>主要做了以下几件事：</p>
+<ol>
+<li>准备操作内存缓存配额并设置度量系统</li>
+<li>加载配置和注册服务</li>
+<li>启动节点</li>
+<li>守护当前线程</li>
+</ol>
+<h2 id="加载配置和注册服务"><a href="#加载配置和注册服务" class="headerlink" title="加载配置和注册服务"></a>加载配置和注册服务</h2><p>makeFullNode</p>
+<h3 id="1-加载配置"><a href="#1-加载配置" class="headerlink" title="1.加载配置"></a>1.加载配置</h3><p>makeConfigNode</p>
+<p>首先加载默认配置(作为主网节点启动)：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cfg := gethConfig&#123;</span><br><span class="line">		Eth:  eth.DefaultConfig,</span><br><span class="line">		Shh:  whisper.DefaultConfig,</span><br><span class="line">		Node: defaultNodeConfig(),</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>eth.DefaultConfig</strong> : 以太坊节点的主要参数配置。主要包括: 同步模式(fast)、chainid、交易池配置、gasprice、挖矿配置等；</li>
+<li><strong>whisper.DefaultConfig</strong> : 主要用于配置网络间通讯；</li>
+<li><strong>defaultNodeConfig()</strong> : 主要用于配置对外提供的RPC节点服务；</li>
+<li><strong>dashboard.DefaultConfig</strong> : 主要用于对外提供看板数据访问服务。</li>
+</ul>
+<p>接着加载自定义配置（适用私有链）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> file := ctx.GlobalString(configFileFlag.Name); file != <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> err := loadConfig(file, &amp;cfg); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        utils.Fatalf(<span class="string">&quot;%v&quot;</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后加载命令窗口参数（开发阶段）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">utils.SetNodeConfig(ctx, &amp;cfg.Node) <span class="comment">// 本地节点配置</span></span><br><span class="line">utils.SetEthConfig(ctx, stack, &amp;cfg.Eth)<span class="comment">// 以太坊配置</span></span><br><span class="line">utils.SetShhConfig(ctx, stack, &amp;cfg.Shh)<span class="comment">// whisper配置</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-RegisterEthService"><a href="#2-RegisterEthService" class="headerlink" title="2.RegisterEthService"></a>2.RegisterEthService</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">RegisterEthService</span><span class="params">(stack *node.Node, cfg *eth.Config)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> err <span class="type">error</span></span><br><span class="line">	<span class="keyword">if</span> cfg.SyncMode == downloader.LightSync &#123;</span><br><span class="line">		err = stack.Register(<span class="function"><span class="keyword">func</span><span class="params">(ctx *node.ServiceContext)</span></span> (node.Service, <span class="type">error</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> les.New(ctx, cfg)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		err = stack.Register(<span class="function"><span class="keyword">func</span><span class="params">(ctx *node.ServiceContext)</span></span> (node.Service, <span class="type">error</span>) &#123;</span><br><span class="line">			fullNode, err := eth.New(ctx, cfg)</span><br><span class="line">			<span class="keyword">if</span> fullNode != <span class="literal">nil</span> &amp;&amp; cfg.LightServ &gt; <span class="number">0</span> &#123;</span><br><span class="line">				ls, _ := les.NewLesServer(fullNode, cfg)</span><br><span class="line">				fullNode.AddLesServer(ls)</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> fullNode, err</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		Fatalf(<span class="string">&quot;Failed to register the Ethereum service: %v&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>出现了两个新类型：ServiceContext和Service。</p>
+<p>先看一下ServiceContext的定义:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> ServiceContext <span class="keyword">struct</span> &#123;</span><br><span class="line">	config         *Config</span><br><span class="line">	services       <span class="keyword">map</span>[reflect.Type]Service <span class="comment">// Index of the already constructed services</span></span><br><span class="line">	EventMux       *event.TypeMux           <span class="comment">// Event multiplexer used for decoupled notifications</span></span><br><span class="line">	AccountManager *accounts.Manager        <span class="comment">// Account manager created by the node.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ServiceContext主要是存储了一些从结点（或者叫协议栈）那里继承过来的、和具体Service无关的一些信息，比如结点config、account manager等。其中有一个services字段保存了当前正在运行的所有Service.</p>
+<p>接下来看一下Service的定义:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Service <span class="keyword">interface</span> &#123;</span><br><span class="line">	<span class="comment">// Protocols retrieves the P2P protocols the service wishes to start.</span></span><br><span class="line">	<span class="comment">// 协议检索服务希望启动的P2P协议</span></span><br><span class="line">	Protocols() []p2p.Protocol</span><br><span class="line"></span><br><span class="line">	<span class="comment">// APIs retrieves the list of RPC descriptors the service provides</span></span><br><span class="line">	<span class="comment">// API检索服务提供的RPC描述符列表</span></span><br><span class="line">	APIs() []rpc.API</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Start is called after all services have been constructed and the networking</span></span><br><span class="line">	<span class="comment">// layer was also initialized to spawn any goroutines required by the service.</span></span><br><span class="line">	<span class="comment">//在所有服务都已构建完毕并且网络层也已初始化以生成服务所需的所有goroutine之后，将调用start。</span></span><br><span class="line">	Start(server *p2p.Server) <span class="type">error</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Stop terminates all goroutines belonging to the service, blocking until they</span></span><br><span class="line">	<span class="comment">// are all terminated.</span></span><br><span class="line">	<span class="comment">//Stop终止属于该服务的所有goroutine，直到它们全部终止为止一直阻塞。</span></span><br><span class="line">	Stop() <span class="type">error</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在服务注册过程中，主要注册四个服务：EthService、DashboardService、ShhService、EthStatsService，这四种服务类均扩展自Service接口。其中，EthService根据同步模式的不同，分为两种实现：</p>
+<ul>
+<li>LightEthereum，支持LightSync模式</li>
+<li>Ethereum，支持FullSync、FastSync模式</li>
+</ul>
+<p>LightEthereum作为轻客户端，与Ethereum区别在于，它只需要更新区块头。当需要查询区块体数据时，需要通过调用其他全节点的les服务进行查询；另外，轻客户端本身是不能进行挖矿的。</p>
+<p>回到RegisterEthService代码，分两个来讲：</p>
+<p>LightSync同步：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">err = stack.Register(<span class="function"><span class="keyword">func</span><span class="params">(ctx *node.ServiceContext)</span></span> (node.Service, <span class="type">error</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> les.New(ctx, cfg)</span><br><span class="line">    &#125;)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(ctx *node.ServiceContext, config *eth.Config)</span></span> (*LightEthereum, <span class="type">error</span>) &#123;</span><br><span class="line">  </span><br><span class="line">  <span class="number">1.</span>ctx.OpenDatabase <span class="comment">// 创建leveldb数据库</span></span><br><span class="line">  <span class="number">2.</span>core.SetupGenesisBlockWithOverride<span class="comment">// 根据创世配置初始化链数据目录</span></span><br><span class="line">  <span class="number">3.</span>实例化本地链id、共识引擎、注册peer节点、帐户管理器以及布隆过滤器的初始化</span><br><span class="line">  <span class="number">4.</span>light.NewLightChain<span class="comment">// 使用数据库中可用的信息返回完全初始化的轻链。它初始化默认的以太坊头</span></span><br><span class="line">  <span class="number">5.</span>light.NewTxPool <span class="comment">// 实例化交易池NewTxPool</span></span><br><span class="line">  <span class="number">6.</span>leth.ApiBackend = &amp;LesApiBackend&#123;ctx.ExtRPCEnabled(), leth, <span class="literal">nil</span>&#125; </span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>FullSync&#x2F;Fast同步：</p>
+<ol>
+<li><p>参数校验</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> config.SyncMode == downloader.LightSync &#123;</span><br><span class="line">  ....</span><br><span class="line"><span class="keyword">if</span> !config.SyncMode.IsValid() &#123;</span><br><span class="line">  ....</span><br><span class="line"><span class="keyword">if</span> config.Miner.GasPrice == <span class="literal">nil</span> || config.Miner.GasPrice.Cmp(common.Big0) &lt;= <span class="number">0</span> &#123;</span><br><span class="line">  ....</span><br><span class="line"><span class="keyword">if</span> config.NoPruning &amp;&amp; config.TrieDirtyCache &gt; <span class="number">0</span> &#123;  </span><br></pre></td></tr></table></figure>
+</li>
+<li><p>打开数据库</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ctx.OpenDatabaseWithFreezer</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>根据创世配置初始化链数据目录</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">core.SetupGenesisBlockWithOverride</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实例化Ethereum对象</p>
+</li>
+<li><p>创建BlockChain实例对象</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">core.NewBlockChain</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实例化交易池</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">core.NewTxPool</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实例化协议管理器</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">NewProtocolManager(...)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实例化对外API服务</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&amp;EthAPIBackend&#123;ctx.ExtRPCEnabled(), eth, <span class="literal">nil</span>&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="3-RegisterShhService"><a href="#3-RegisterShhService" class="headerlink" title="3.RegisterShhService"></a>3.RegisterShhService</h3><p>注册Whisper服务，用于p2p网络间加密通信。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">whisper.New(cfg), <span class="literal">nil</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-RegisterEthStatsService"><a href="#4-RegisterEthStatsService" class="headerlink" title="4.RegisterEthStatsService"></a>4.RegisterEthStatsService</h3><p>注册状态推送服务,将当前以太坊网络状态推送至指定URL地址.</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ethstats.New(url, ethServ, lesServ)</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动节点"><a href="#启动节点" class="headerlink" title="启动节点"></a>启动节点</h2><p>启动本地节点以及启动所有注册的服务。</p>
+<h3 id="1-启动节点"><a href="#1-启动节点" class="headerlink" title="1.启动节点"></a>1.启动节点</h3><p>startNode</p>
+<h4 id="1-1-stack-Start"><a href="#1-1-stack-Start" class="headerlink" title="1.1 stack.Start()"></a>1.1 stack.Start()</h4><ol>
+<li><p>实例化p2p.Server对象。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">running := &amp;p2p.Server&#123;Config: n.serverConfig&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>为注册的服务创建上下文</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, constructor := <span class="keyword">range</span> n.serviceFuncs &#123;</span><br><span class="line">  ctx := &amp;ServiceContext&#123;</span><br><span class="line">    ....</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>收集协议并启动新组装的p2p server</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> kind, service := <span class="keyword">range</span> services &#123;</span><br><span class="line">  <span class="keyword">if</span> err := service.Start(running); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>最后启动配置的RPC接口</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">n.startRPC(services)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>startInProc (启动进程内通讯服务)</li>
+<li>startIPC （启动IPC RPC端点）</li>
+<li>startHTTP（启动HTTP RPC端点）</li>
+<li>startWS （启动websocket RPC端点）</li>
+</ul>
+</li>
+</ol>
+<h3 id="2-解锁账户"><a href="#2-解锁账户" class="headerlink" title="2.解锁账户"></a>2.解锁账户</h3><p>unlockAccounts</p>
+<p>在datadir&#x2F;keystore目录主要用于记录在当前节点创建的帐户keystore文件。如果你的keystore文件不在本地是无法进行解锁的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//解锁datadir/keystore目录中帐户</span></span><br><span class="line">ks := stack.AccountManager().Backends(keystore.KeyStoreType)[<span class="number">0</span>].(*keystore.KeyStore)</span><br><span class="line">	passwords := utils.MakePasswordList(ctx)</span><br><span class="line">	<span class="keyword">for</span> i, account := <span class="keyword">range</span> unlocks &#123;</span><br><span class="line">		unlockAccount(ks, account, i, passwords)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-注册钱包事件"><a href="#3-注册钱包事件" class="headerlink" title="3.注册钱包事件"></a>3.注册钱包事件</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">events := <span class="built_in">make</span>(<span class="keyword">chan</span> accounts.WalletEvent, <span class="number">16</span>)</span><br><span class="line">stack.AccountManager().Subscribe(events)</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-监听钱包事件"><a href="#4-监听钱包事件" class="headerlink" title="4.监听钱包事件"></a>4.监听钱包事件</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> event := <span class="keyword">range</span> events &#123;</span><br><span class="line">		<span class="keyword">switch</span> event.Kind &#123;</span><br><span class="line">		<span class="keyword">case</span> accounts.WalletArrived:</span><br><span class="line">			<span class="keyword">if</span> err := event.Wallet.Open(<span class="string">&quot;&quot;</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				log.Warn(<span class="string">&quot;New wallet appeared, failed to open&quot;</span>, <span class="string">&quot;url&quot;</span>, event.Wallet.URL(), <span class="string">&quot;err&quot;</span>, err)</span><br><span class="line">			&#125;</span><br><span class="line">		<span class="keyword">case</span> accounts.WalletOpened:</span><br><span class="line">			status, _ := event.Wallet.Status()</span><br><span class="line">			log.Info(<span class="string">&quot;New wallet appeared&quot;</span>, <span class="string">&quot;url&quot;</span>, event.Wallet.URL(), <span class="string">&quot;status&quot;</span>, status)</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> derivationPaths []accounts.DerivationPath</span><br><span class="line">			<span class="keyword">if</span> event.Wallet.URL().Scheme == <span class="string">&quot;ledger&quot;</span> &#123;</span><br><span class="line">				derivationPaths = <span class="built_in">append</span>(derivationPaths, accounts.LegacyLedgerBaseDerivationPath)</span><br><span class="line">			&#125;</span><br><span class="line">			derivationPaths = <span class="built_in">append</span>(derivationPaths, accounts.DefaultBaseDerivationPath)</span><br><span class="line"></span><br><span class="line">			event.Wallet.SelfDerive(derivationPaths, ethClient)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">case</span> accounts.WalletDropped:</span><br><span class="line">			log.Info(<span class="string">&quot;Old wallet dropped&quot;</span>, <span class="string">&quot;url&quot;</span>, event.Wallet.URL())</span><br><span class="line">			event.Wallet.Close()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;()</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-启动挖矿"><a href="#5-启动挖矿" class="headerlink" title="5.启动挖矿"></a>5.启动挖矿</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ethereum.StartMining(threads)</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动守护线程"><a href="#启动守护线程" class="headerlink" title="启动守护线程"></a>启动守护线程</h2><p>stop通道阻塞当前线程，直到节点被停止。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">node.Wait()</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>以太坊启动主要就做了3件事，包括加载配置注册服务、启动节点相关服务以及启动守护线程。</p>
+<hr>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Btxpool-12/" rel="prev" title="死磕以太坊源码分析之txpool">
+      <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之txpool
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0"><span class="nav-number">1.</span> <span class="nav-text">启动参数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD%E9%85%8D%E7%BD%AE%E5%92%8C%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="nav-number">2.1.</span> <span class="nav-text">加载配置和注册服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%8A%A0%E8%BD%BD%E9%85%8D%E7%BD%AE"><span class="nav-number">2.1.1.</span> <span class="nav-text">1.加载配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-RegisterEthService"><span class="nav-number">2.1.2.</span> <span class="nav-text">2.RegisterEthService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-RegisterShhService"><span class="nav-number">2.1.3.</span> <span class="nav-text">3.RegisterShhService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-RegisterEthStatsService"><span class="nav-number">2.1.4.</span> <span class="nav-text">4.RegisterEthStatsService</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E8%8A%82%E7%82%B9"><span class="nav-number">2.2.</span> <span class="nav-text">启动节点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%90%AF%E5%8A%A8%E8%8A%82%E7%82%B9"><span class="nav-number">2.2.1.</span> <span class="nav-text">1.启动节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-stack-Start"><span class="nav-number">2.2.1.1.</span> <span class="nav-text">1.1 stack.Start()</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%A7%A3%E9%94%81%E8%B4%A6%E6%88%B7"><span class="nav-number">2.2.2.</span> <span class="nav-text">2.解锁账户</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%B3%A8%E5%86%8C%E9%92%B1%E5%8C%85%E4%BA%8B%E4%BB%B6"><span class="nav-number">2.2.3.</span> <span class="nav-text">3.注册钱包事件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E7%9B%91%E5%90%AC%E9%92%B1%E5%8C%85%E4%BA%8B%E4%BB%B6"><span class="nav-number">2.2.4.</span> <span class="nav-text">4.监听钱包事件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E5%90%AF%E5%8A%A8%E6%8C%96%E7%9F%BF"><span class="nav-number">2.2.5.</span> <span class="nav-text">5.启动挖矿</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%AE%88%E6%8A%A4%E7%BA%BF%E7%A8%8B"><span class="nav-number">2.3.</span> <span class="nav-text">启动守护线程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.4.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

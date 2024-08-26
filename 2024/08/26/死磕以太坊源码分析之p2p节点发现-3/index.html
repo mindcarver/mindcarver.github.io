@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码分析之p2p节点发现  在阅读节点发现源码之前必须要理解kadmilia算法，可以参考：KAD算法详解。 节点发现概述节点发现，使本地节点得知其他节点的信息，进而加入到p2p网络中。 以太坊的节点发现基于类似的kademlia算法，源码中有两个版本，v4和v5。v4适用于全节点，通过discover.ListenUDP使用，v5适用于轻节点通过discv5.ListenUDP使用，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之p2p节点发现">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0-3/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码分析之p2p节点发现  在阅读节点发现源码之前必须要理解kadmilia算法，可以参考：KAD算法详解。 节点发现概述节点发现，使本地节点得知其他节点的信息，进而加入到p2p网络中。 以太坊的节点发现基于类似的kademlia算法，源码中有两个版本，v4和v5。v4适用于全节点，通过discover.ListenUDP使用，v5适用于轻节点通过discv5.ListenUDP使用，">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gkzetbpzowj30z00egtbh.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gkm6yzncc3j30t00ggdim.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gkzexhy1kqj31d80mqafh.jpg">
+<meta property="article:published_time" content="2024-08-26T05:03:20.913Z">
+<meta property="article:modified_time" content="2024-08-26T05:04:20.785Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gkzetbpzowj30z00egtbh.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0-3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码分析之p2p节点发现 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码分析之p2p节点发现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:03:20 / Modified: 13:04:20" itemprop="dateCreated datePublished" datetime="2024-08-26T13:03:20+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0-3/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0-3/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之p2p节点发现</p>
+</blockquote>
+<p>在阅读节点发现源码之前必须要理解kadmilia算法，<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">可以参考：KAD算法详解</a>。</p>
+<h2 id="节点发现概述"><a href="#节点发现概述" class="headerlink" title="节点发现概述"></a>节点发现概述</h2><p>节点发现，使本地节点得知其他节点的信息，进而加入到p2p网络中。</p>
+<p>以太坊的节点发现基于类似的kademlia算法，源码中有两个版本，v4和v5。v4适用于全节点，通过<code>discover.ListenUDP</code>使用，v5适用于轻节点通过<code>discv5.ListenUDP</code>使用，本文介绍的是v4版本。</p>
+<p>节点发现功能主要涉及 <strong>Server</strong> <strong>Table</strong> <strong>udp</strong> 这几个数据结构，它们有独自的事件响应循环，节点发现功能便是它们互相协作完成的。其中，每个以太坊客户端启动后都会在本地运行一个<strong>Server</strong>，并将网络拓扑中相邻的节点视为<strong>Node</strong>，而<strong>Table</strong>是<strong>Node</strong>的容器，<strong>udp</strong>则是负责维持底层的连接。这些结构的关系如下图：</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gkzetbpzowj30z00egtbh.jpg" alt="image-20201123210628944"></p>
+<h2 id="p2p服务开启节点发现"><a href="#p2p服务开启节点发现" class="headerlink" title="p2p服务开启节点发现"></a>p2p服务开启节点发现</h2><p>在P2p的server.go 的start方法中:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := srv.setupDiscovery(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>进入到<code>setupDiscovery</code>中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Discovery V4</span></span><br><span class="line">	<span class="keyword">var</span> unhandled <span class="keyword">chan</span> discover.ReadPacket</span><br><span class="line">	<span class="keyword">var</span> sconn *sharedUDPConn</span><br><span class="line">	<span class="keyword">if</span> !srv.NoDiscovery &#123;</span><br><span class="line">		...</span><br><span class="line">		ntab, err := discover.ListenUDP(conn, srv.localnode, cfg)</span><br><span class="line">		....</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>discover.ListenUDP</code>方法即开启了节点发现的功能.</p>
+<p>首先解析出监听地址的UDP端口，根据端口返回与之相连的UDP连接，之后返回连接的本地网络地址，接着设置最后一个UDP-on-IPv4端口。到此为止节点发现的一些准备工作做好，接下下来开始UDP的监听：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ntab, err := discover.ListenUDP(conn, srv.localnode, cfg)</span><br></pre></td></tr></table></figure>
+
+<p>然后进行UDP 的监听，下面是监听的过程：</p>
+<h3 id="监听UDP"><a href="#监听UDP" class="headerlink" title="监听UDP"></a>监听UDP</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 监听给定的socket 上的发现的包</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ListenUDP</span><span class="params">(c UDPConn, ln *enode.LocalNode, cfg Config)</span></span> (*UDPv4, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span> ListenV4(c, ln, cfg)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ListenV4</span><span class="params">(c UDPConn, ln *enode.LocalNode, cfg Config)</span></span> (*UDPv4, <span class="type">error</span>) &#123;</span><br><span class="line">	closeCtx, cancel := context.WithCancel(context.Background())</span><br><span class="line">	t := &amp;UDPv4&#123;</span><br><span class="line">		conn:            c,</span><br><span class="line">		priv:            cfg.PrivateKey,</span><br><span class="line">		netrestrict:     cfg.NetRestrict,</span><br><span class="line">		localNode:       ln,</span><br><span class="line">		db:              ln.Database(),</span><br><span class="line">		gotreply:        <span class="built_in">make</span>(<span class="keyword">chan</span> reply),</span><br><span class="line">		addReplyMatcher: <span class="built_in">make</span>(<span class="keyword">chan</span> *replyMatcher),</span><br><span class="line">		closeCtx:        closeCtx,</span><br><span class="line">		cancelCloseCtx:  cancel,</span><br><span class="line">		log:             cfg.Log,</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> t.log == <span class="literal">nil</span> &#123;</span><br><span class="line">		t.log = log.Root()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	tab, err := newTable(t, ln.Database(), cfg.Bootnodes, t.log) <span class="comment">// </span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	t.tab = tab</span><br><span class="line">	<span class="keyword">go</span> tab.loop() <span class="comment">//</span></span><br><span class="line"></span><br><span class="line">	t.wg.Add(<span class="number">2</span>)</span><br><span class="line">	<span class="keyword">go</span> t.loop() <span class="comment">//</span></span><br><span class="line">	<span class="keyword">go</span> t.readLoop(cfg.Unhandled) <span class="comment">//</span></span><br><span class="line">	<span class="keyword">return</span> t, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>主要做了以下几件事：</p>
+<h4 id="1-新建路由表"><a href="#1-新建路由表" class="headerlink" title="1.新建路由表"></a>1.新建路由表</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tab, err := newTable(t, ln.Database(), cfg.Bootnodes, t.log) </span><br></pre></td></tr></table></figure>
+
+<p>新建路由表做了以下几件事：</p>
+<ul>
+<li>初始化table对象</li>
+<li>设置bootnode（setFallbackNodes）<ul>
+<li>节点第一次启动的时候，节点会与硬编码在以太坊源码中的<code>bootnode</code>进行连接，所有的节点加入几乎都先连接了它。连接上<code>bootnode</code>后，获取<code>bootnode</code>部分的邻居节点，然后进行节点发现，获取更多的活跃的邻居节点</li>
+<li>nursery 是在 Table 为空并且数据库中没有存储节点时的初始连接节点（上文中的 6 个节点），通过 bootnode 可以发现新的邻居</li>
+</ul>
+</li>
+<li>tab.seedRand：使用提供的种子值将生成器初始化为确定性状态</li>
+<li>loadSeedNodes：加载种子节点；从保留已知节点的数据库中随机的抽取30个节点，再加上引导节点列表中的节点，放置入k桶中，如果K桶没有空间，则假如到替换列表中。</li>
+</ul>
+<h4 id="2-测试邻居节点连通性"><a href="#2-测试邻居节点连通性" class="headerlink" title="2.测试邻居节点连通性"></a>2.测试邻居节点连通性</h4><p>首先知道UDP协议是没有连接的概念的，所以需要不断的ping 来测试对端节点是否正常，在新建路由表之后，就来到下面的循环，不断的去做上面的事。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> tab.loop()</span><br></pre></td></tr></table></figure>
+
+<p>定时运行<code>doRefresh</code>、<code>doRevalidate</code>、<code>copyLiveNodes</code>进行刷新K桶。</p>
+<p>以太坊的k桶设置：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	alpha           = <span class="number">3</span>  <span class="comment">// Kademlia并发参数, 是系统内一个优化参数,控制每次从K桶最多取出节点个数,ethereum取值3</span></span><br><span class="line">  </span><br><span class="line">	bucketSize      = <span class="number">16</span> <span class="comment">// K桶大小(可容纳节点数)</span></span><br><span class="line">  </span><br><span class="line">	maxReplacements = <span class="number">10</span> <span class="comment">// 每桶更换列表的大小</span></span><br><span class="line">	hashBits          = <span class="built_in">len</span>(common.Hash&#123;&#125;) * <span class="number">8</span> <span class="comment">//每个节点ID长度,32*8=256, 32位16进制</span></span><br><span class="line">	nBuckets          = hashBits / <span class="number">15</span>       <span class="comment">//  K桶个数</span></span><br><span class="line">  ）</span><br></pre></td></tr></table></figure>
+
+<p>首先搞清楚这三个定时器运行的时间：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">refreshInterval    = <span class="number">30</span> * time.Minute</span><br><span class="line">revalidateInterval = <span class="number">10</span> * time.Second</span><br><span class="line">copyNodesInterval  = <span class="number">30</span> * time.Second</span><br></pre></td></tr></table></figure>
+
+<h5 id="doRefresh"><a href="#doRefresh" class="headerlink" title="doRefresh"></a><code>doRefresh</code></h5><p>doRefresh对随机目标执行查找以保持K桶已满。如果表为空（初始引导程序或丢弃的有故障），则插入种子节点。</p>
+<p>主要以下几步：</p>
+<ol>
+<li><p>从数据库加载随机节点和引导节点。这应该会产生一些以前见过的节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tab.loadSeedNodes()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将本地节点ID作为目标节点进行查找最近的邻居节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tab.net.lookupSelf()</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *UDPv4)</span></span> lookupSelf() []*enode.Node &#123;</span><br><span class="line">	<span class="keyword">return</span> t.newLookup(t.closeCtx, encodePubkey(&amp;t.priv.PublicKey)).run()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t *UDPv4)</span></span> newLookup(ctx context.Context, targetKey encPubkey) *lookup &#123;</span><br><span class="line">	...</span><br><span class="line">		<span class="keyword">return</span> t.findnode(n.ID(), n.addr(), targetKey)</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">return</span> it</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>向这些节点发起<code>findnode</code>操作查询离target节点最近的节点列表,将查询得到的节点进行<code>ping-pong</code>测试,将测试通过的节点落库保存</p>
+<p>经过这个流程后,节点的K桶就能够比较均匀地将不同网络节点更新到本地K桶中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">unc (t *UDPv4) findnode(toid enode.ID, toaddr *net.UDPAddr, target encPubkey) ([]*node, <span class="type">error</span>) &#123;</span><br><span class="line">	t.ensureBond(toid, toaddr)</span><br><span class="line">	nodes := <span class="built_in">make</span>([]*node, <span class="number">0</span>, bucketSize)</span><br><span class="line">	nreceived := <span class="number">0</span></span><br><span class="line">  <span class="comment">// 设置回应回调函数，等待类型为neighborsPacket的邻近节点包，如果类型对，就执行回调请求</span></span><br><span class="line">	rm := t.pending(toid, toaddr.IP, p_neighborsV4, <span class="function"><span class="keyword">func</span><span class="params">(r <span class="keyword">interface</span>&#123;&#125;)</span></span> (matched <span class="type">bool</span>, requestDone <span class="type">bool</span>) &#123;</span><br><span class="line">		reply := r.(*neighborsV4)</span><br><span class="line">		<span class="keyword">for</span> _, rn := <span class="keyword">range</span> reply.Nodes &#123;</span><br><span class="line">			nreceived++</span><br><span class="line">      <span class="comment">// 得到一个简单的node结构</span></span><br><span class="line">			n, err := t.nodeFromRPC(toaddr, rn)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				t.log.Trace(<span class="string">&quot;Invalid neighbor node received&quot;</span>, <span class="string">&quot;ip&quot;</span>, rn.IP, <span class="string">&quot;addr&quot;</span>, toaddr, <span class="string">&quot;err&quot;</span>, err)</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			nodes = <span class="built_in">append</span>(nodes, n)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>, nreceived &gt;= bucketSize</span><br><span class="line">	&#125;)</span><br><span class="line">  <span class="comment">//上面了一个管道事件，下面开始发送真正的findnode报文，然后进行等待了</span></span><br><span class="line">	t.send(toaddr, toid, &amp;findnodeV4&#123;</span><br><span class="line">		Target:     target,</span><br><span class="line">		Expiration: <span class="type">uint64</span>(time.Now().Add(expiration).Unix()),</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">return</span> nodes, &lt;-rm.errc</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+<li><p>查找3个随机的目标节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">3</span>; i++ &#123;</span><br><span class="line">		tab.net.lookupRandom()</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h5 id="doRevalidate"><a href="#doRevalidate" class="headerlink" title="doRevalidate"></a><code>doRevalidate</code></h5><p>doRevalidate检查随机存储桶中的最后一个节点是否仍然存在，如果不是，则替换或删除该节点。</p>
+<p>主要以下几步：</p>
+<ol>
+<li><p>返回随机的非空K桶中的最后一个节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">last, bi := tab.nodeToRevalidate()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>对最后的节点执行Ping操作，然后等待Pong</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">remoteSeq, err := tab.net.ping(unwrapNode(last))</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>如果节点ping通了的话，将节点移动到最前面</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tab.bumpInBucket(b, last)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>没有收到回复，选择一个替换节点，或者如果没有任何替换节点，则删除该节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tab.replace(b, last)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h5 id="copyLiveNodes"><a href="#copyLiveNodes" class="headerlink" title="copyLiveNodes"></a><code>copyLiveNodes</code></h5><p>copyLiveNodes将表中的节点添加到数据库,如果节点在表中的时间超过了5分钟。</p>
+<p>这部分代码比较简单，就伸展阐述。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> n.livenessChecks &gt; <span class="number">0</span> &amp;&amp; now.Sub(n.addedAt) &gt;= seedMinTableTime &#123;</span><br><span class="line">				tab.db.UpdateNode(unwrapNode(n))</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-检测各类信息"><a href="#3-检测各类信息" class="headerlink" title="3.检测各类信息"></a>3.检测各类信息</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> t.loop()</span><br></pre></td></tr></table></figure>
+
+<p>loop循环主要监听以下几类消息：</p>
+<ul>
+<li>case &lt;-t.closeCtx.Done()：检测是否停止</li>
+<li>p :&#x3D; &lt;-t.addReplyMatcher：检测是否有添加新的待处理消息</li>
+<li>r :&#x3D; &lt;-t.gotreply：检测是否接收到其他节点的回复消息</li>
+</ul>
+<h4 id="4-处理UDP数据包"><a href="#4-处理UDP数据包" class="headerlink" title="4. 处理UDP数据包"></a>4. 处理UDP数据包</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> t.readLoop(cfg.Unhandled)</span><br></pre></td></tr></table></figure>
+
+<p>主要有以下两件事：</p>
+<ol>
+<li><p>循环接收其他节点发来的udp消息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nbytes, from, err := t.conn.ReadFromUDP(buf)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>处理接收到的UDP消息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">t.handlePacket(from, buf[:nbytes])</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>接下来对这两个函数进行进一步的解析。</p>
+<h5 id="接收UDP消息"><a href="#接收UDP消息" class="headerlink" title="接收UDP消息"></a>接收UDP消息</h5><p>接收UDP消息比较的简单，就是不断的从连接中读取Packet数据，它有以下几种消息：</p>
+<ul>
+<li><p><code>ping</code>：用于判断远程节点是否在线。</p>
+</li>
+<li><p><code>pong</code>：用于回复<code>ping</code>消息的响应。</p>
+</li>
+<li><p><code>findnode</code>：查找与给定的目标节点相近的节点。</p>
+</li>
+<li><p><code>neighbors</code>：用于回复<code>findnode</code>的响应，与给定的目标节点相近的节点列表</p>
+</li>
+</ul>
+<hr>
+<h5 id="处理UDP消息"><a href="#处理UDP消息" class="headerlink" title="处理UDP消息"></a>处理UDP消息</h5><p>主要做了以下几件事：</p>
+<ol>
+<li><p>数据包解码</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">packet, fromKey, hash, err := decodeV4(buf)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>检查数据包是否有效，是否可以处理</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">packet.preverify(t, from, fromID, fromKey)</span><br></pre></td></tr></table></figure>
+
+<p>在校验这一块，涉及不同的消息类型不同的校验，我们来分别对各种消息进行分析。</p>
+<p>①：<code>ping</code></p>
+<ul>
+<li>校验消息是否过期</li>
+<li>校验公钥是否有效</li>
+</ul>
+<p>②：<code>pong</code></p>
+<ul>
+<li>校验消息是否过期</li>
+<li>校验回复是否正确</li>
+</ul>
+<p>③：<code>findNodes</code></p>
+<ul>
+<li>校验消息是否过期</li>
+<li>校验节点是否是最近的节点</li>
+</ul>
+<p>④：<code>neighbors</code></p>
+<ul>
+<li>校验消息是否过期</li>
+<li>用于回复<code>findnode</code>的响应，校验回复是否正确</li>
+</ul>
+</li>
+<li><p>处理packet数据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">packet.handle(t, from, fromID, hash)</span><br></pre></td></tr></table></figure>
+
+<p>相同的，也会有4种消息，但是我们这边重点讲处理findNodes的消息：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(req *findnodeV4)</span></span> handle(t *UDPv4, from *net.UDPAddr, fromID enode.ID, mac []<span class="type">byte</span>) &#123;</span><br><span class="line">   ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们这里就稍微介绍下如何处理<code>findnode</code>的消息：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(req *findnodeV4)</span></span> handle(t *UDPv4, from *net.UDPAddr, fromID enode.ID, mac []<span class="type">byte</span>) &#123;</span><br><span class="line">	<span class="comment">// 确定最近的节点</span></span><br><span class="line">	target := enode.ID(crypto.Keccak256Hash(req.Target[:]))</span><br><span class="line">	t.tab.mutex.Lock()</span><br><span class="line">	<span class="comment">//最接近的返回表中最接近给定id的n个节点</span></span><br><span class="line">	closest := t.tab.closest(target, bucketSize, <span class="literal">true</span>).entries</span><br><span class="line">	t.tab.mutex.Unlock()</span><br><span class="line">	<span class="comment">// 以每个数据包最多maxNeighbors的块的形式发送邻居，以保持在数据包大小限制以下。</span></span><br><span class="line">	p := neighborsV4&#123;Expiration: <span class="type">uint64</span>(time.Now().Add(expiration).Unix())&#125;</span><br><span class="line">	<span class="keyword">var</span> sent <span class="type">bool</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> closest &#123; <span class="comment">//扫描这些最近的节点列表，然后一个包一个包的发送给对方</span></span><br><span class="line">		<span class="keyword">if</span> netutil.CheckRelayIP(from.IP, n.IP()) == <span class="literal">nil</span> &#123;</span><br><span class="line">			p.Nodes = <span class="built_in">append</span>(p.Nodes, nodeToRPC(n))</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(p.Nodes) == maxNeighbors &#123;</span><br><span class="line">			t.send(from, fromID, &amp;p)<span class="comment">//给对方发送 neighborsPacket 包，里面包含节点列表</span></span><br><span class="line">			p.Nodes = p.Nodes[:<span class="number">0</span>]</span><br><span class="line">			sent = <span class="literal">true</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(p.Nodes) &gt; <span class="number">0</span> || !sent &#123;</span><br><span class="line">		t.send(from, fromID, &amp;p)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先先确定最近的节点，再一个包一个包的发给对方，并校验节点的IP，最后把有效的节点发送给请求方。</p>
+</li>
+</ol>
+<hr>
+<h2 id="涉及的结构体："><a href="#涉及的结构体：" class="headerlink" title="涉及的结构体："></a>涉及的结构体：</h2><h3 id="UDP"><a href="#UDP" class="headerlink" title="UDP"></a>UDP</h3><ul>
+<li>conn ：接口，包括了从UDP中读取和写入，关闭UDP连接以及获取本地地址。</li>
+<li>netrestrict：IP网络列表</li>
+<li>localNode：本地节点</li>
+<li>tab：路由表</li>
+</ul>
+<hr>
+<h3 id="Table"><a href="#Table" class="headerlink" title="Table"></a>Table</h3><ul>
+<li><p>buckets：所有节点都加到这个里面，按照距离</p>
+</li>
+<li><p>nursery：启动节点</p>
+</li>
+<li><p>rand：随机来源</p>
+</li>
+<li><p>ips：跟踪IP，确保IP中最多N个属于同一网络范围</p>
+</li>
+<li><p>net: UDP 传输的接口</p>
+<ul>
+<li>返回本地节点</li>
+<li>将enrRequest发送到给定的节点并等待响应</li>
+<li>findnode向给定节点发送一个findnode请求，并等待该节点最多发送了k个邻居</li>
+<li>返回查找最近的节点</li>
+<li>将ping消息发送到给定的节点，然后等待答复</li>
+</ul>
+</li>
+</ul>
+<p>以下是table的结构图：</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gkm6yzncc3j30t00ggdim.jpg" alt="image-20201112104254003"></p>
+<hr>
+<h2 id="思维导图"><a href="#思维导图" class="headerlink" title="思维导图"></a>思维导图</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/blockchainguide/tree/main/%E4%B8%BB%E6%B5%81%E5%8C%BA%E5%9D%97%E9%93%BE/ethereum/%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/p2p">思维导图获取地址</a></p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gkzexhy1kqj31d80mqafh.jpg" alt="image-20201123211034861"></p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="http://mindcarver.cn/">http://mindcarver.cn/</a>     ⭐️⭐️⭐️⭐️</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a> ⭐️⭐️⭐️⭐️</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xiaolincoding/p/12571184.html">https://www.cnblogs.com/xiaolincoding/p/12571184.html</a> </p>
+<p><a target="_blank" rel="noopener" href="http://qjpcpu.github.io/blog/2018/01/29/shen-ru-ethereumyuan-ma-p2pmo-kuai-ji-chu-jie-gou/">http://qjpcpu.github.io/blog/2018/01/29/shen-ru-ethereumyuan-ma-p2pmo-kuai-ji-chu-jie-gou/</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/b232c870dcd2">https://www.jianshu.com/p/b232c870dcd2</a></p>
+<p><a target="_blank" rel="noopener" href="https://bbs.huaweicloud.com/blogs/113684">https://bbs.huaweicloud.com/blogs/113684</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/94d02a41a146">https://www.jianshu.com/p/94d02a41a146</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BKademlia%E7%AE%97%E6%B3%95-2/" rel="prev" title="死磕以太坊源码分析之Kademlia算法">
+      <i class="fa fa-chevron-left"></i> 死磕以太坊源码分析之Kademlia算法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bp2p%E7%BD%91%E7%BB%9C%E5%90%AF%E5%8A%A8-1/" rel="next" title="死磕以太坊源码分析之p2p网络启动">
+      死磕以太坊源码分析之p2p网络启动 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">节点发现概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#p2p%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%90%AF%E8%8A%82%E7%82%B9%E5%8F%91%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">p2p服务开启节点发现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%91%E5%90%ACUDP"><span class="nav-number">2.1.</span> <span class="nav-text">监听UDP</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E6%96%B0%E5%BB%BA%E8%B7%AF%E7%94%B1%E8%A1%A8"><span class="nav-number">2.1.1.</span> <span class="nav-text">1.新建路由表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E6%B5%8B%E8%AF%95%E9%82%BB%E5%B1%85%E8%8A%82%E7%82%B9%E8%BF%9E%E9%80%9A%E6%80%A7"><span class="nav-number">2.1.2.</span> <span class="nav-text">2.测试邻居节点连通性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#doRefresh"><span class="nav-number">2.1.2.1.</span> <span class="nav-text">doRefresh</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#doRevalidate"><span class="nav-number">2.1.2.2.</span> <span class="nav-text">doRevalidate</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#copyLiveNodes"><span class="nav-number">2.1.2.3.</span> <span class="nav-text">copyLiveNodes</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E6%A3%80%E6%B5%8B%E5%90%84%E7%B1%BB%E4%BF%A1%E6%81%AF"><span class="nav-number">2.1.3.</span> <span class="nav-text">3.检测各类信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E5%A4%84%E7%90%86UDP%E6%95%B0%E6%8D%AE%E5%8C%85"><span class="nav-number">2.1.4.</span> <span class="nav-text">4. 处理UDP数据包</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6UDP%E6%B6%88%E6%81%AF"><span class="nav-number">2.1.4.1.</span> <span class="nav-text">接收UDP消息</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%A4%84%E7%90%86UDP%E6%B6%88%E6%81%AF"><span class="nav-number">2.1.4.2.</span> <span class="nav-text">处理UDP消息</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E7%9A%84%E7%BB%93%E6%9E%84%E4%BD%93%EF%BC%9A"><span class="nav-number">3.</span> <span class="nav-text">涉及的结构体：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP"><span class="nav-number">3.1.</span> <span class="nav-text">UDP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Table"><span class="nav-number">3.2.</span> <span class="nav-text">Table</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%9D%E7%BB%B4%E5%AF%BC%E5%9B%BE"><span class="nav-number">4.</span> <span class="nav-text">思维导图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="nav-number">5.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

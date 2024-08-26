@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕以太坊源码分析之区块和交易广播 https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide  (文章及学习资料，给个star哦)  ProtocolManager详解ProtocolManager，从字面上看是协议管理器，负责着p2p通信协议的管理。它连接了p2p的逻辑层peer与顶层peer之间的调用，从顶层将协议传递至逻辑层，再从逻辑层得到message传递到顶层。   fas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕以太坊源码分析之区块和交易广播">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E5%92%8C%E4%BA%A4%E6%98%93%E5%B9%BF%E6%92%AD-5/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕以太坊源码分析之区块和交易广播 https:&#x2F;&#x2F;github.com&#x2F;blockchainGuide  (文章及学习资料，给个star哦)  ProtocolManager详解ProtocolManager，从字面上看是协议管理器，负责着p2p通信协议的管理。它连接了p2p的逻辑层peer与顶层peer之间的调用，从顶层将协议传递至逻辑层，再从逻辑层得到message传递到顶层。   fas">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9hs30wqfj30zw0rodox.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9hyirjjaj31io0rck40.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gl1fp0u7e3j31bw0hkthh.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gl1fwwxfh2j31bi0e4tfv.jpg">
+<meta property="article:published_time" content="2024-08-26T05:03:20.888Z">
+<meta property="article:modified_time" content="2024-08-26T05:03:41.584Z">
+<meta property="article:author" content="mindcarver">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9hs30wqfj30zw0rodox.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E5%92%8C%E4%BA%A4%E6%98%93%E5%B9%BF%E6%92%AD-5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕以太坊源码分析之区块和交易广播 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E5%92%8C%E4%BA%A4%E6%98%93%E5%B9%BF%E6%92%AD-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕以太坊源码分析之区块和交易广播
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 13:03:20 / Modified: 13:03:41" itemprop="dateCreated datePublished" datetime="2024-08-26T13:03:20+08:00">2024-08-26</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E5%92%8C%E4%BA%A4%E6%98%93%E5%B9%BF%E6%92%AD-5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%8C%BA%E5%9D%97%E5%92%8C%E4%BA%A4%E6%98%93%E5%B9%BF%E6%92%AD-5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.1k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕以太坊源码分析之区块和交易广播</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a>  (文章及学习资料，给个star哦)</p>
+</blockquote>
+<h2 id="ProtocolManager详解"><a href="#ProtocolManager详解" class="headerlink" title="ProtocolManager详解"></a>ProtocolManager详解</h2><p><code>ProtocolManager</code>，从字面上看是协议管理器，负责着<code>p2p</code>通信协议的管理。它连接了<code>p2p</code>的逻辑层<code>peer</code>与顶层<code>peer</code>之间的调用，从顶层将协议传递至逻辑层，再从逻辑层得到<code>message</code>传递到顶层。</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9hs30wqfj30zw0rodox.jpg" alt="image-20201202142450663"></p>
+<ol>
+<li><code>fastSync</code>规定了同步的模式 ；</li>
+<li><code>acceptTxs</code>是节点是否接受交易的阀门，只有当<code>pm.acceptTxs == 1</code>时，节点才会接受交易。这个操作只会在同步结束后再开始，即同步的时候节点是不会接受交易的；</li>
+<li><code>SubProtocols</code>中是以太坊的通讯协议，通常只有一个值，即<code>eth63</code>。</li>
+<li><code>downloader</code>是一个下载器，用于主动从远程节点中获取<code>hashes</code>和<code>blocks</code>。</li>
+<li><code>fetcher</code>则被动的收集网络其他以太坊节点发过来的同步通知，进行验证，并做出相应的处理。</li>
+</ol>
+<hr>
+<p><code>ProtocolManager.Start()</code>启动了四条<code>go</code>程，分别是交易订阅广播协程（<code>txBroadcastLoop</code>）、挖矿订阅协程（<code>minedBroadcastLoop</code>）、节点定期同步协程（<code>syncer</code>）和交易同步协程（txsyncLoop）</p>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9hyirjjaj31io0rck40.jpg" alt="image-20201202143101376"></p>
+<ol>
+<li>&#x3D;&#x3D;txBroadcastLoop&#x3D;&#x3D;:广播新出现的交易对象。<code>txBroadcastLoop()</code>会在<code>txCh</code>通道的收端持续等待，一旦接收到有关新交易的事件，会立即调用<code>BroadcastTx()</code>函数广播给那些尚无该交易对象的相邻个体。</li>
+<li>&#x3D;&#x3D;minedBroadcastLoop&#x3D;&#x3D;:广播新挖掘出的区块。<code>minedBroadcastLoop()</code>持续等待本节点的新挖掘出区块事件，然后立即广播给需要的相邻个体。当不再订阅新挖掘区块事件时，这个函数才会结束等待并返回。</li>
+<li>&#x3D;&#x3D;syncer&#x3D;&#x3D;:<strong>定时的和网络其他节点同步，并处理网络节点的相关通知</strong>。定时与相邻个体进行区块全链的强制同步。syncer()首先启动fetcher成员，然后进入一个无限循环，每次循环中都会向相邻peer列表中“最优”的那个peer作一次区块全链同步。发起上述同步的理由分两种：如果有新登记(加入)的相邻个体，则在整个peer列表数目大于5时，发起之；如果没有新peer到达，则以10s为间隔定时的发起之。这里所谓”最优”指的是peer中所维护区块链的TotalDifficulty(td)最高，由于Td是全链中从创世块到最新头块的Difficulty值总和，所以Td值最高就意味着它的区块链是最新的，跟这样的peer作区块全链同步，显然改动量是最小的，此即”最优”。</li>
+<li>&#x3D;&#x3D;txsyncLoop&#x3D;&#x3D;：<strong>把新的交易均匀的同步给网路节点</strong>。</li>
+</ol>
+<hr>
+<h2 id="广播的情形"><a href="#广播的情形" class="headerlink" title="广播的情形"></a>广播的情形</h2><ol>
+<li><code>minedBroadcastLoop()</code>监听到新区块事件后，把新区块和区块<code>hash</code>分别广播出去；</li>
+<li>从远程节点同步完成后，将<code>CurrentBlock</code>广播出去，此时广播的是区块<code>hash</code>；</li>
+<li><code>txBlockcastLoop()</code>监听到区块池的新增交易事件时会广播交易；</li>
+</ol>
+<hr>
+<h2 id="广播区块及区块哈希"><a href="#广播区块及区块哈希" class="headerlink" title="广播区块及区块哈希"></a>广播区块及区块哈希</h2><p>广播区块的入口在<code>pm.minedBroadcastLoop()</code>,进入到<code>BroadcastBlock</code>,这里的参数为<code>bool</code>值，如果传入的为true，则将区块block和总难度td发送给一部分节点，节点数为根号n；如果传入的为false，则将区块的hash发送给所有的节点。<strong>需要注意的是两个广播函数都执行</strong>。</p>
+<p>进入到<code>true</code>分支：<strong>代表只传播区块给一部分节点</strong></p>
+<p>①：首先计算一个临时的TD</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()<span class="number">-1</span>); parent != <span class="literal">nil</span> &#123;</span><br><span class="line">			td = <span class="built_in">new</span>(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()<span class="number">-1</span>))</span><br><span class="line">		&#125; </span><br></pre></td></tr></table></figure>
+
+<p>②：发送块到peers的子集</p>
+<p>对节点数进行开方，16开方得4，然后取前4个节点。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">transferLen := <span class="type">int</span>(math.Sqrt(<span class="type">float64</span>(<span class="built_in">len</span>(peers))))</span><br><span class="line">		<span class="keyword">if</span> transferLen &lt; minBroadcastPeers &#123;</span><br><span class="line">			transferLen = minBroadcastPeers</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> transferLen &gt; <span class="built_in">len</span>(peers) &#123;</span><br><span class="line">			transferLen = <span class="built_in">len</span>(peers)</span><br><span class="line">		&#125;</span><br><span class="line">		transfer := peers[:transferLen]</span><br><span class="line">		<span class="keyword">for</span> _, peer := <span class="keyword">range</span> transfer &#123;</span><br><span class="line">			peer.AsyncSendNewBlock(block, td) <span class="comment">// 块传播</span></span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行完之后直接return出去，再次执行此函数，此时不会走ture分支，直接判断判断本地是否有区块，如果有则发送区区块哈希给剩下的节点，如果没有，则不做发送哈希的操作。</p>
+<blockquote>
+<p>如果本地存在这个要广播的区块(很可能就是出块节点，或者接受块的节点已经插入到区块链中),那就还要像其他没有被广播到区块的节点发送区块哈希。</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl1fp0u7e3j31bw0hkthh.jpg" alt="image-20201125150810051"></p>
+<blockquote>
+<p>如果本地不存在这个要广播的区块哈希(应该是还没接收到区块或者区块哈希的节点)，那它只要向它的节点列表里发送区块即可。</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl1fwwxfh2j31bi0e4tfv.jpg" alt="image-20201125151546035"></p>
+<hr>
+<p>接下来就是重点分析<code>AsyncSendNewBlock</code>和<code>AsyncSendNewBlockHash</code>两个函数了。</p>
+<h3 id="AsyncSendNewBlock"><a href="#AsyncSendNewBlock" class="headerlink" title="AsyncSendNewBlock"></a>AsyncSendNewBlock</h3><blockquote>
+<p>发送块到需要广播的节点的广播队列中</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> p.queuedProps &lt;- &amp;propEvent&#123;block: block, td: td&#125;:</span><br><span class="line">		p.knownBlocks.Add(block.Hash())</span><br><span class="line">		<span class="keyword">for</span> p.knownBlocks.Cardinality() &gt;= maxKnownBlocks &#123;</span><br><span class="line">			p.knownBlocks.Pop()</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>queuedProps</code>是用来存放要广播的块的队列，同时，要把广播的块标记为已知，还不能超过1024（<strong>maxKnownBlocks</strong>）个。超过就会弹出队列第一个<code>propEvent()</code> 。接下来就是处理队列中的块了。</p>
+<p>在<code>eth/peer.go</code>中，有个专门处理广播的循环<code>brodcast</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *peer)</span></span> broadcast() &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> txs := &lt;-p.queuedTxs:</span><br><span class="line">			<span class="keyword">if</span> err := p.SendTransactions(txs); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			p.Log().Trace(<span class="string">&quot;Broadcast transactions&quot;</span>, <span class="string">&quot;count&quot;</span>, <span class="built_in">len</span>(txs))</span><br><span class="line"></span><br><span class="line">		<span class="keyword">case</span> prop := &lt;-p.queuedProps:</span><br><span class="line">			<span class="keyword">if</span> err := p.SendNewBlock(prop.block, prop.td); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			p.Log().Trace(<span class="string">&quot;Propagated block&quot;</span>, <span class="string">&quot;number&quot;</span>, prop.block.Number(), <span class="string">&quot;hash&quot;</span>, prop.block.Hash(), <span class="string">&quot;td&quot;</span>, prop.td)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">case</span> block := &lt;-p.queuedAnns:</span><br><span class="line">			<span class="keyword">if</span> err := p.SendNewBlockHashes([]common.Hash&#123;block.Hash()&#125;, []<span class="type">uint64</span>&#123;block.NumberU64()&#125;); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			p.Log().Trace(<span class="string">&quot;Announced block&quot;</span>, <span class="string">&quot;number&quot;</span>, block.Number(), <span class="string">&quot;hash&quot;</span>, block.Hash())</span><br><span class="line"></span><br><span class="line">		<span class="keyword">case</span> &lt;-p.term:</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>广播新块到远程节点</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">p.SendNewBlock(prop.block, prop.td);</span><br></pre></td></tr></table></figure>
+
+<p>远程节点收到块后同样也会标记哈希存入队列，并且不会超过最大，同时发送一个<code>NewBlockMsg</code>，<code>msgcode</code>为<code>0x07</code>,同时数据会被RLP编码。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">p.knownBlocks.Add(block.Hash())</span><br><span class="line">	<span class="keyword">for</span> p.knownBlocks.Cardinality() &gt;= maxKnownBlocks &#123;</span><br><span class="line">		p.knownBlocks.Pop()</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> p2p.Send(p.rw, NewBlockMsg, []<span class="keyword">interface</span>&#123;&#125;&#123;block, td&#125;)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Send</span><span class="params">(w MsgWriter, msgcode <span class="type">uint64</span>, data <span class="keyword">interface</span>&#123;&#125;)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">	size, r, err := rlp.EncodeToReader(data)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> w.WriteMsg(Msg&#123;Code: msgcode, Size: <span class="type">uint32</span>(size), Payload: r&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此广播区块的过程结束，交由远程节点去处理<code>NewBlockMsg</code>消息。</p>
+<hr>
+<h3 id="AsyncSendNewBlockHash"><a href="#AsyncSendNewBlockHash" class="headerlink" title="AsyncSendNewBlockHash"></a>AsyncSendNewBlockHash</h3><p>广播哈希的过程跟广播区块的过程非常的类似，最终是由远程节点去处理<code>NewBlockHashesMsg</code>消息。</p>
+<p>广播区块的过程完毕之后，会直接进入下一个阶段，调用<code>fetcher</code>模块去同步这些广播的区块，接下的文章会讲到。</p>
+<hr>
+<h2 id="广播交易"><a href="#广播交易" class="headerlink" title="广播交易"></a>广播交易</h2><p>广播交易的入口在<code>pm.txBroadcastLoop()</code>，直接进入到<code>pm.BroadcastTxs(event.Txs)</code>，大概做了以下几件事：</p>
+<p>①：将交易广播给一批没有这个交易的节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, tx := <span class="keyword">range</span> txs &#123;</span><br><span class="line">		peers := pm.peers.PeersWithoutTx(tx.Hash())</span><br><span class="line">		<span class="keyword">for</span> _, peer := <span class="keyword">range</span> peers &#123;</span><br><span class="line">			txset[peer] = <span class="built_in">append</span>(txset[peer], tx)</span><br><span class="line">		&#125;</span><br><span class="line">		log.Trace(<span class="string">&quot;Broadcast transaction&quot;</span>, <span class="string">&quot;hash&quot;</span>, tx.Hash(), <span class="string">&quot;recipients&quot;</span>, <span class="built_in">len</span>(peers))</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：异步发送交易给这些节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> peer, txs := <span class="keyword">range</span> txset &#123;</span><br><span class="line">		peer.AsyncSendTransactions(txs)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着进入到<code>AsyncSendTransactions</code>:</p>
+<p>将所有交易标记为已知交易，同时还要保证没有超过最大的已知交易（32768笔）</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> p.queuedTxs &lt;- txs:</span><br><span class="line">		<span class="keyword">for</span> _, tx := <span class="keyword">range</span> txs &#123;</span><br><span class="line">			p.knownTxs.Add(tx.Hash())</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">for</span> p.knownTxs.Cardinality() &gt;= maxKnownTxs &#123;</span><br><span class="line">			p.knownTxs.Pop()</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> txs := &lt;-p.queuedTxs:</span><br><span class="line">		<span class="keyword">if</span> err := p.SendTransactions(txs); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *peer)</span></span> SendTransactions(txs types.Transactions) <span class="type">error</span> &#123;</span><br><span class="line">...</span><br><span class="line">  <span class="keyword">return</span> p2p.Send(p.rw, TxMsg, txs)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>发送交易最终会发送一个<code>TxMsg</code>消息，接收到这个消息的节点会通过<code>pm.txpool.AddRemotes(txs)</code>处理交易。</p>
+<hr>
+<h2 id="消息处理（handleMsg）"><a href="#消息处理（handleMsg）" class="headerlink" title="消息处理（handleMsg）"></a>消息处理（handleMsg）</h2><p><code>handleMsg</code>从对方连接中读取消息，根据消息码的不同进行处理,从而将广播和同步之间来回的消息进行处理。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(pm *ProtocolManager)</span></span> handleMsg(p *peer) <span class="type">error</span> &#123;</span><br><span class="line">    msg, err := p.rw.ReadMsg()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> msg.Size &gt; ProtocolMaxMsgSize &#123;</span><br><span class="line">        <span class="keyword">return</span> errResp(ErrMsgTooLarge, <span class="string">&quot;%v &gt; %v&quot;</span>, msg.Size, ProtocolMaxMsgSize)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">defer</span> msg.Discard()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> &#123;</span><br><span class="line">    <span class="keyword">case</span> msg.Code == StatusMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == GetBlockHeadersMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == BlockHeadersMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == GetBlockBodiesMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == BlockBodiesMsg: ......</span><br><span class="line">    <span class="keyword">case</span> p.version &gt;= eth63 &amp;&amp; msg.Code == GetNodeDataMsg: ......</span><br><span class="line">    <span class="keyword">case</span> p.version &gt;= eth63 &amp;&amp; msg.Code == NodeDataMsg: ......</span><br><span class="line">    <span class="keyword">case</span> p.version &gt;= eth63 &amp;&amp; msg.Code == GetReceiptsMsg: ......</span><br><span class="line">    <span class="keyword">case</span> p.version &gt;= eth63 &amp;&amp; msg.Code == ReceiptsMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == NewBlockHashesMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == NewBlockMsg: ......</span><br><span class="line">    <span class="keyword">case</span> msg.Code == TxMsg: ......</span><br><span class="line">    <span class="keyword">default</span>: <span class="keyword">return</span> errResp(ErrInvalidMsgCode, <span class="string">&quot;%v&quot;</span>, msg.Code)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://mindcarver.cn/">https://mindcarver.cn</a> 最新发布</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a>  资料更新</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/07/08/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BFetcher%E5%90%8C%E6%AD%A5-6/" rel="next" title="死磕以太坊源码分析之Fetcher同步">
+      死磕以太坊源码分析之Fetcher同步 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ProtocolManager%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.</span> <span class="nav-text">ProtocolManager详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%BF%E6%92%AD%E7%9A%84%E6%83%85%E5%BD%A2"><span class="nav-number">2.</span> <span class="nav-text">广播的情形</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%BF%E6%92%AD%E5%8C%BA%E5%9D%97%E5%8F%8A%E5%8C%BA%E5%9D%97%E5%93%88%E5%B8%8C"><span class="nav-number">3.</span> <span class="nav-text">广播区块及区块哈希</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AsyncSendNewBlock"><span class="nav-number">3.1.</span> <span class="nav-text">AsyncSendNewBlock</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AsyncSendNewBlockHash"><span class="nav-number">3.2.</span> <span class="nav-text">AsyncSendNewBlockHash</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%BF%E6%92%AD%E4%BA%A4%E6%98%93"><span class="nav-number">4.</span> <span class="nav-text">广播交易</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E5%A4%84%E7%90%86%EF%BC%88handleMsg%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">消息处理（handleMsg）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">199k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">3:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
