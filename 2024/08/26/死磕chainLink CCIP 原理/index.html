@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕chainLink CCIP 原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕chainLink CCIP 原理">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20CCIP%20%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕chainLink CCIP 原理">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/Users/carver/Downloads/CCIP%E6%9E%B6%E6%9E%84%E5%9B%BE.webp">
+<meta property="og:image" content="https://p.ipic.vip/csr4p9.png">
+<meta property="article:published_time" content="2024-08-26T07:45:21.032Z">
+<meta property="article:modified_time" content="2024-08-26T07:47:10.034Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="chainlink">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Users/carver/Downloads/CCIP%E6%9E%B6%E6%9E%84%E5%9B%BE.webp">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20CCIP%20%E5%8E%9F%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕chainLink CCIP 原理 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20CCIP%20%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕chainLink CCIP 原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 15:45:21 / Modified: 15:47:10" itemprop="dateCreated datePublished" datetime="2024-08-26T15:45:21+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/chainlink/" itemprop="url" rel="index"><span itemprop="name">chainlink</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20CCIP%20%E5%8E%9F%E7%90%86/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20CCIP%20%E5%8E%9F%E7%90%86/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">死磕chainLink CCIP 原理</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>原文集锦：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+</blockquote>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="互操作性"><a href="#互操作性" class="headerlink" title="互操作性"></a>互操作性</h3><p><strong>跨链互操作性</strong>是指不同区块链网络之间进行信息和价值交换的能力。简单来说，就是让不同的区块链能够“对话”，实现资产、数据在不同区块链之间的自由流动。</p>
+<p><strong>为什么需要跨链互操作性？</strong></p>
+<ul>
+<li><strong>资产流动性:</strong> 将不同区块链上的资产进行整合，提高资产的流动性。</li>
+<li><strong>数据共享:</strong> 实现跨链数据共享，拓展应用场景。</li>
+<li><strong>生态互通:</strong> 打通不同区块链生态，促进创新。</li>
+</ul>
+<p><strong>实现跨链互操作性的方法：</strong></p>
+<ul>
+<li><strong>中继:</strong> 通过一个中继链来传递消息。</li>
+<li><strong>侧链:</strong> 在主链上建立一个侧链，实现部分功能的隔离。</li>
+<li><strong>哈希锁:</strong> 将资产锁定在源链上，在目标链上铸造等值的资产。</li>
+<li><strong>状态通道:</strong> 在链下进行交易，定期将状态同步到链上。</li>
+</ul>
+<h3 id="最终性"><a href="#最终性" class="headerlink" title="最终性"></a>最终性</h3><p><strong>跨链最终性</strong>是指跨链交易一旦完成，就不可逆转，且所有参与节点都达成一致。</p>
+<p><strong>为什么需要跨链最终性？</strong></p>
+<ul>
+<li><strong>信任基础:</strong> 确保跨链交易的可靠性，建立用户信任。</li>
+<li><strong>避免双花:</strong> 防止同一资产在不同链上被重复花费。</li>
+<li><strong>提高安全性:</strong> 增强整个跨链系统的安全性。</li>
+</ul>
+<p><strong>实现跨链最终性的挑战:</strong></p>
+<ul>
+<li><strong>共识机制差异:</strong> 不同区块链的共识机制不同，达成一致比较困难。</li>
+<li><strong>安全性风险:</strong> 跨链过程中可能存在安全漏洞，需要谨慎处理。</li>
+<li><strong>性能瓶颈:</strong> 跨链交易可能导致性能下降。</li>
+</ul>
+<p><strong>常见的跨链最终性解决方案:</strong></p>
+<ul>
+<li><strong>双向锚定:</strong> 在源链和目标链上都锁定资产，确保交易的原子性。</li>
+<li><strong>验证人机制:</strong> 引入验证人来验证跨链交易的有效性。</li>
+<li><strong>侧链验证:</strong> 通过侧链来验证跨链交易。</li>
+</ul>
+<h3 id="通道"><a href="#通道" class="headerlink" title="通道"></a>通道</h3><p>A Chainlink CCIP<em>通道</em>是源和目标之间的一条独特通道blockchain 。通道是单向的。例如，<em>以太坊主网 &#x3D;&gt; Polygon主网</em>和<em>Polygon主网 &#x3D;&gt; 以太坊主网</em>是两个不同的通道。</p>
+<h2 id="CCIP高层架构"><a href="#CCIP高层架构" class="headerlink" title="CCIP高层架构"></a>CCIP高层架构</h2><p><img src="/Users/carver/Downloads/CCIP%E6%9E%B6%E6%9E%84%E5%9B%BE.webp" alt="image-20240820151236273"></p>
+<h2 id="术语"><a href="#术语" class="headerlink" title="术语"></a>术语</h2><p>CCIP 能够使<em>源区块链</em>上的<em>发送者</em>能够向<em>目标区块链</em>上的<em>接收者</em>发送<em>消息</em>。</p>
+<table>
+<thead>
+<tr>
+<th align="center">术语</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Sender（发送者）</td>
+<td align="center">一个智能合约或一个 EOA。</td>
+</tr>
+<tr>
+<td align="center">源区块链（Source Blockchain）</td>
+<td align="center">发送者与 CCIP 交互的区块链。</td>
+</tr>
+<tr>
+<td align="center">Message（消息）</td>
+<td align="center">任意数据（Arbitrary data）和&#x2F;或代币。</td>
+</tr>
+<tr>
+<td align="center">Receiver（接收者）</td>
+<td align="center">一个智能合约或 EOA。<strong>注意</strong>：EOA 不能接收“arbitrary data”。它只能接收代币。</td>
+</tr>
+<tr>
+<td align="center">Destination Blockchain（目标区块链）</td>
+<td align="center">接收者所在的区块链。</td>
+</tr>
+</tbody></table>
+<h2 id="详细架构"><a href="#详细架构" class="headerlink" title="详细架构"></a>详细架构</h2><p><img src="https://p.ipic.vip/csr4p9.png" alt="image-20240820151637994"></p>
+<p><strong>流程概述：</strong></p>
+<ol>
+<li><strong>用户发起交易:</strong> 用户在源区块链上通过Router合约发起跨链交易。</li>
+<li><strong>数据打包与提交:</strong> Router将交易数据发送给OnRamp合约，OnRamp合约将多个交易打包成一个Merkle树，并由Committing DON生成Merkle根。这个Merkle根被提交到CommitStore合约中。</li>
+<li><strong>风险管理:</strong> Risk Management Network对提交的Merkle根进行验证，确保交易的合法性。</li>
+<li><strong>交易执行:</strong> 如果Merkle根通过验证，Executing DON会根据Merkle根中的信息，调用OffRamp合约在目标区块链上执行交易。</li>
+<li><strong>资产转移:</strong> 在整个过程中，Token Pool负责管理资产的锁定、解锁、燃烧和铸造。</li>
+</ol>
+<h3 id="链上组件"><a href="#链上组件" class="headerlink" title="链上组件"></a>链上组件</h3><h4 id="Router"><a href="#Router" class="headerlink" title="Router"></a>Router</h4><ul>
+<li><strong>核心功能:</strong> 作为用户与CCIP交互的主要合约。</li>
+<li>职责:<ul>
+<li>发起跨链交互。</li>
+<li>管理链上token的批准。</li>
+<li>将交易路由到正确的OnRamp合约。</li>
+<li>在目标链上接收消息并交付给用户或智能合约。</li>
+</ul>
+</li>
+</ul>
+<h4 id="CommitStore"><a href="#CommitStore" class="headerlink" title="CommitStore"></a>CommitStore</h4><ul>
+<li><strong>核心功能:</strong> 存储源链上最终化消息的Merkle根。</li>
+<li>职责:<ul>
+<li>与Committing DON交互，存储Merkle根。</li>
+<li>确保消息经过风险管理网络的批准。</li>
+<li>每个链路仅存在一个CommitStore合约。</li>
+</ul>
+</li>
+</ul>
+<h4 id="OnRamp"><a href="#OnRamp" class="headerlink" title="OnRamp"></a>OnRamp</h4><ul>
+<li><strong>核心功能:</strong> 处理源链上的消息。</li>
+<li>职责:<ul>
+<li>验证目标链的地址格式等信息。</li>
+<li>检查消息大小和gas限制。</li>
+<li>管理消息序列号。</li>
+<li>处理token转账（与TokenPool交互）。</li>
+<li>向Committing DON发送事件。</li>
+</ul>
+</li>
+</ul>
+<h4 id="OffRamp"><a href="#OffRamp" class="headerlink" title="OffRamp"></a>OffRamp</h4><ul>
+<li><strong>核心功能:</strong> 处理目标链上的消息。</li>
+<li>职责:<ul>
+<li>验证消息的真实性，检查Merkle根证明。</li>
+<li>防止重复执行交易。</li>
+<li>将消息传递给Router合约。</li>
+<li>处理token转账（与TokenPool交互）。</li>
+</ul>
+</li>
+</ul>
+<h4 id="Token-Pool"><a href="#Token-Pool" class="headerlink" title="Token Pool"></a>Token Pool</h4><ul>
+<li><strong>核心功能:</strong> 管理token的跨链转移。</li>
+<li>职责:<ul>
+<li>提供token相关的操作接口。</li>
+<li>实现token的锁定、解锁、燃烧和铸造。</li>
+<li>提供速率限制功能，防止恶意行为。</li>
+</ul>
+</li>
+<li>机制:<ul>
+<li>Burn and Mint: 直接燃烧和铸造token。</li>
+<li>Lock and Mint: 锁定源链上的token，铸造对应的包装token到目标链。</li>
+<li>Burn and Unlock: 燃烧目标链上的包装token，解锁源链上的token。</li>
+<li>Lock and Unlock: 直接锁定和解锁token。</li>
+</ul>
+</li>
+</ul>
+<p>【举例说明：】</p>
+<p><strong>LINK 代币</strong></p>
+<ul>
+<li><p><strong>特点:</strong> 仅在以太坊主网发行，总供应量固定。</p>
+</li>
+<li><p>处理方式:</p>
+<p> 采用锁定和铸造机制。</p>
+<ul>
+<li><strong>从以太坊主网转出:</strong> 将 LINK 锁定在以太坊主网，并在目标链上铸造相同数量的 LINK。</li>
+<li><strong>从其他链转入以太坊主网:</strong> 将目标链上的 LINK 销毁，并在以太坊主网解锁对应的 LINK。</li>
+</ul>
+</li>
+</ul>
+<p><strong>2. 包装的原生资产（如 WETH）</strong></p>
+<ul>
+<li><strong>特点:</strong> 是原生资产的包装形式，可以代表多个区块链上的原生资产。</li>
+<li>处理方式: 采用锁定和解锁机制。<ul>
+<li><strong>跨链转账:</strong> 在源链上锁定原生资产，在目标链上解锁对应的包装资产。</li>
+</ul>
+</li>
+</ul>
+<p><strong>3. 稳定币（如 USDC）</strong></p>
+<ul>
+<li><strong>特点:</strong> 可以跨多个区块链发行，保持价值稳定。</li>
+<li>处理方式:采用销毁和铸造机制。<ul>
+<li><strong>跨链转账:</strong> 在源链上销毁稳定币，在目标链上铸造相同数量的稳定币。</li>
+</ul>
+</li>
+</ul>
+<p><strong>4. 带有 PoR 的代币</strong></p>
+<ul>
+<li><strong>特点:</strong> 具有证明储备的代币。</li>
+<li><strong>处理方式:</strong> 由于 PoR 的限制，通常采用<strong>锁定和铸造</strong>机制。</li>
+</ul>
+<p><strong>5. 本地 Gas 代币（如 ETH）</strong></p>
+<ul>
+<li>处理方式:<ol>
+<li><strong>包装:</strong> 先将 ETH 包装成 WETH。</li>
+<li><strong>跨链转账:</strong> 使用 CCIP 转移 WETH。</li>
+<li><strong>解包:</strong> 在目标链上将 WETH 解包成 ETH。</li>
+</ol>
+</li>
+</ul>
+<p><strong>6. 新支持的代币</strong></p>
+<ul>
+<li>流程:<ul>
+<li><strong>添加:</strong> 持续支持新的代币。</li>
+<li><strong>配置:</strong> 为每个代币设置速率限制，以控制跨链转账的速度。</li>
+<li><strong>风险评估:</strong> 根据代币的风险特征和使用场景，选择合适的处理机制。</li>
+</ul>
+</li>
+</ul>
+<h4 id="Risk-Management-Network"><a href="#Risk-Management-Network" class="headerlink" title="Risk Management Network"></a>Risk Management Network</h4><ul>
+<li><strong>核心功能:</strong> 管理风险控制。</li>
+<li>职责:<ul>
+<li>维护允许批准或拒绝的节点列表。</li>
+<li>实现批准或拒绝Merkle根的逻辑。</li>
+<li>确保网络的安全性。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="链下组件"><a href="#链下组件" class="headerlink" title="链下组件"></a>链下组件</h3><h4 id="Committing-DON"><a href="#Committing-DON" class="headerlink" title="Committing DON"></a>Committing DON</h4><ul>
+<li><strong>角色:</strong> 负责将源链上的交易数据打包成Merkle树，并提交到目标链上的CommitStore合约。</li>
+<li>职责:<ul>
+<li>监控源链上的OnRamp合约，获取交易数据。</li>
+<li>等待交易确认（达到最终性）。</li>
+<li>将多个交易打包成Merkle树，并生成Merkle根。</li>
+<li>对Merkle根进行签名。</li>
+<li>将签名的Merkle根提交到目标链上的CommitStore合约。</li>
+</ul>
+</li>
+</ul>
+<h4 id="Executing-DON"><a href="#Executing-DON" class="headerlink" title="Executing DON"></a>Executing DON</h4><ul>
+<li><strong>角色:</strong> 负责执行已经提交到CommitStore的交易。</li>
+<li>职责:<ul>
+<li>监控源链上的OnRamp合约，获取交易数据。</li>
+<li>检查交易是否包含在CommitStore中的Merkle根中。</li>
+<li>等待风险管理网络的批准。</li>
+<li>生成Merkle证明，验证交易的合法性。</li>
+<li>调用OffRamp合约执行交易。</li>
+</ul>
+</li>
+</ul>
+<h4 id="Risk-Management-Network-1"><a href="#Risk-Management-Network-1" class="headerlink" title="Risk Management Network"></a>Risk Management Network</h4><ul>
+<li><strong>角色:</strong> 负责监控CommitStore中的Merkle根，并决定是否允许执行交易。</li>
+<li>职责:<ul>
+<li>验证CommitStore中的Merkle根与实际交易数据的一致性。</li>
+<li>对Merkle根进行投票，决定是否批准或拒绝执行。</li>
+<li>在出现异常情况时，暂停CCIP系统。</li>
+</ul>
+</li>
+</ul>
+<h4 id="各组件之间的关系"><a href="#各组件之间的关系" class="headerlink" title="各组件之间的关系"></a>各组件之间的关系</h4><ul>
+<li><strong>Committing DON</strong>负责将交易数据打包成Merkle树并提交到目标链。</li>
+<li><strong>Executing DON</strong>负责检查Merkle树的有效性并执行交易。</li>
+<li><strong>Risk Management Network</strong>负责对Merkle树进行风险评估，决定是否允许执行交易。</li>
+</ul>
+<h4 id="为什么要分离Committing和Executing"><a href="#为什么要分离Committing和Executing" class="headerlink" title="为什么要分离Committing和Executing"></a>为什么要分离Committing和Executing</h4><ul>
+<li><strong>提高效率:</strong> 将打包和执行分开，可以提高系统的吞吐量。</li>
+<li><strong>增强安全性:</strong> 分离这两个过程可以增加攻击难度，提高系统的安全性。</li>
+<li><strong>灵活处理:</strong> 可以对不同的交易类型采取不同的处理策略。</li>
+<li><strong>风险管理:</strong> 可以更有效地进行风险评估和控制。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/chainlink/" rel="tag"># chainlink</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20automation%E5%8E%9F%E7%90%86/" rel="prev" title="死磕chainLink automation原理">
+      <i class="fa fa-chevron-left"></i> 死磕chainLink automation原理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20Data%20Feeds%E5%8E%9F%E7%90%86/" rel="next" title="死磕chainLink Data Feeds原理">
+      死磕chainLink Data Feeds原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%92%E6%93%8D%E4%BD%9C%E6%80%A7"><span class="nav-number">1.1.</span> <span class="nav-text">互操作性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E7%BB%88%E6%80%A7"><span class="nav-number">1.2.</span> <span class="nav-text">最终性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E9%81%93"><span class="nav-number">1.3.</span> <span class="nav-text">通道</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CCIP%E9%AB%98%E5%B1%82%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">CCIP高层架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AF%E8%AF%AD"><span class="nav-number">3.</span> <span class="nav-text">术语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%A6%E7%BB%86%E6%9E%B6%E6%9E%84"><span class="nav-number">4.</span> <span class="nav-text">详细架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%93%BE%E4%B8%8A%E7%BB%84%E4%BB%B6"><span class="nav-number">4.1.</span> <span class="nav-text">链上组件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Router"><span class="nav-number">4.1.1.</span> <span class="nav-text">Router</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CommitStore"><span class="nav-number">4.1.2.</span> <span class="nav-text">CommitStore</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#OnRamp"><span class="nav-number">4.1.3.</span> <span class="nav-text">OnRamp</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#OffRamp"><span class="nav-number">4.1.4.</span> <span class="nav-text">OffRamp</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Token-Pool"><span class="nav-number">4.1.5.</span> <span class="nav-text">Token Pool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Risk-Management-Network"><span class="nav-number">4.1.6.</span> <span class="nav-text">Risk Management Network</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%93%BE%E4%B8%8B%E7%BB%84%E4%BB%B6"><span class="nav-number">4.2.</span> <span class="nav-text">链下组件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Committing-DON"><span class="nav-number">4.2.1.</span> <span class="nav-text">Committing DON</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Executing-DON"><span class="nav-number">4.2.2.</span> <span class="nav-text">Executing DON</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Risk-Management-Network-1"><span class="nav-number">4.2.3.</span> <span class="nav-text">Risk Management Network</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%84%E7%BB%84%E4%BB%B6%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">4.2.4.</span> <span class="nav-text">各组件之间的关系</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%88%86%E7%A6%BBCommitting%E5%92%8CExecuting"><span class="nav-number">4.2.5.</span> <span class="nav-text">为什么要分离Committing和Executing</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">335k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">5:05</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

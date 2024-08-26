@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕chainLink Data Feeds原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕chainLink Data Feeds原理">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20Data%20Feeds%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕chainLink Data Feeds原理">
+<meta property="og:locale">
+<meta property="og:image" content="https://p.ipic.vip/b1k4yf.png">
+<meta property="article:published_time" content="2024-08-26T07:45:21.050Z">
+<meta property="article:modified_time" content="2024-08-26T07:47:19.285Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="chainlink">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p.ipic.vip/b1k4yf.png">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20Data%20Feeds%E5%8E%9F%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕chainLink Data Feeds原理 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20Data%20Feeds%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕chainLink Data Feeds原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 15:45:21 / Modified: 15:47:19" itemprop="dateCreated datePublished" datetime="2024-08-26T15:45:21+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/chainlink/" itemprop="url" rel="index"><span itemprop="name">chainlink</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20Data%20Feeds%E5%8E%9F%E7%90%86/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20Data%20Feeds%E5%8E%9F%E7%90%86/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">死磕chainLink Data Feeds原理</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>聚合数据合约：<a target="_blank" rel="noopener" href="https://github.com/smartcontractkit/libocr/blob/master/contract/AccessControlledOffchainAggregator.sol">https://github.com/smartcontractkit/libocr/blob/master/contract/AccessControlledOffchainAggregator.sol</a></p>
+<p>原文集锦：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+</blockquote>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Chainlink Data Feeds 是将您的智能合约连接到现实世界数据（例如资产价格、储备余额和 L2 序列器健康状况）的最快方法。</p>
+<h2 id="Data-feed-类型"><a href="#Data-feed-类型" class="headerlink" title="Data feed 类型"></a>Data feed 类型</h2><ol>
+<li><p><strong>Prices feed</strong><br> 功能: 提供实时、准确的资产价格。<br> 用途:<br> DeFi 协议: 为借贷、衍生品交易、AMM 等提供实时价格数据，确保交易的公平性和透明度。<br> DEX: 提供流动性池中资产的实时价格，用于计算交易滑点。</p>
+</li>
+<li><p><strong>Proof of Reserve feeds</strong><br> 功能: 提供加密货币交易所或托管机构持有的加密资产储备证明。<br> 用途:<br> 增强用户信任: 证明交易所或托管机构确实持有足够的资产来支持用户的提款。<br> 防止欺诈: 防止交易所或托管机构挪用用户资产。</p>
+</li>
+<li><p><strong>利率和波动率Feeds</strong><br> 功能: 提供利率和资产价格波动率数据。<br> 用途:<br> 衍生品交易: 为期权、期货等衍生品定价提供基础数据。<br> 风险管理: 用于评估投资组合的风险。</p>
+</li>
+<li><p><strong>L2 排序器 uptime Feeds</strong><br> 功能: 提供二层网络（如 Optimism、Arbitrum）排序器的运行时间数据。<br> 用途:<br> 监控网络状态: 监测二层网络的稳定性，确保交易顺利进行。<br> 风险管理: 在排序器出现故障时及时采取措施。</p>
+</li>
+</ol>
+<hr>
+<h2 id="Data-feed-组件"><a href="#Data-feed-组件" class="headerlink" title="Data feed 组件"></a>Data feed 组件</h2><p>Chainlink数据喂价机制中的三个核心概念：消费者（Consumer）、代理合约（Proxy contract）和聚合器合约（Aggregator contract）。</p>
+<p><img src="https://p.ipic.vip/b1k4yf.png" alt="image-20240820104818930"></p>
+<ol>
+<li>消费者（Consumer）</li>
+</ol>
+<ul>
+<li><strong>定义：</strong> 使用数据喂价的链上或链下应用。</li>
+<li><strong>功能：</strong> 通过调用代理合约上的函数，从聚合器合约中获取数据。</li>
+<li><strong>接口：</strong> 使用<code>AggregatorV3Interface</code>接口与代理合约交互。</li>
+</ul>
+<ol start="2">
+<li>代理合约（Proxy contract）</li>
+</ol>
+<ul>
+<li><p><strong>定义：</strong> 指向特定数据喂价的聚合器合约的链上代理。</p>
+</li>
+<li><p>作用：</p>
+<ul>
+<li><strong>隔离消费者与聚合器：</strong> 消费者直接与代理合约交互，而不需要了解聚合器的底层实现细节。</li>
+<li><strong>升级聚合器：</strong> 当需要对聚合器进行升级时，只需更新代理合约的指向，而不需要修改消费者合约。</li>
+</ul>
+</li>
+</ul>
+<ol start="3">
+<li>聚合器合约（Aggregator contract）</li>
+</ol>
+<ul>
+<li><strong>定义：</strong> 从预言机网络接收定期数据更新的合约。</li>
+<li>功能：<ul>
+<li><strong>数据聚合：</strong> 收集来自多个预言机的數據，并进行聚合处理。</li>
+<li><strong>数据存储：</strong> 将聚合后的数据存储在链上。</li>
+<li><strong>数据提供：</strong> 通过代理合约向消费者提供数据。</li>
+</ul>
+</li>
+</ul>
+<p>【整体流程】</p>
+<ol>
+<li><strong>预言机提供数据：</strong> 预言机从链下获取数据，并将其发送给聚合器合约。</li>
+<li><strong>聚合器处理数据：</strong> 聚合器对收到的数据进行验证和处理，然后将结果存储在链上。</li>
+<li><strong>消费者查询数据：</strong> 消费者通过代理合约调用聚合器合约提供的函数，获取所需的数据。</li>
+</ol>
+<p>Chainlink的数据喂价机制通过消费者、代理合约和聚合器三层架构，实现了链上智能合约与链下数据之间的安全、可靠的交互。这种设计使得DeFi应用能够获取实时、准确的链下数据，从而构建更复杂、更强大的金融应用。</p>
+<h2 id="去中心化数据模型"><a href="#去中心化数据模型" class="headerlink" title="去中心化数据模型"></a>去中心化数据模型</h2><h3 id="数据聚合"><a href="#数据聚合" class="headerlink" title="数据聚合"></a>数据聚合</h3><p>每个 data feed 由多个独立的 Chainlink 预言机运营商更新。 <a target="_blank" rel="noopener" href="https://github.com/smartcontractkit/libocr/blob/master/contract/AccessControlledOffchainAggregator.sol">AccessControlledOffchainAggregator</a>聚合链上数据。</p>
+<h4 id="代码解读"><a href="#代码解读" class="headerlink" title="代码解读"></a>代码解读</h4><ul>
+<li>构造函数:<ul>
+<li>初始化一些关键参数，如最大gas价格、LINK token、数据范围、访问控制合约等。这些参数对合约的运行和安全性至关重要。</li>
+</ul>
+</li>
+<li>版本信息:<ul>
+<li><code>typeAndVersion()</code>函数返回合约的类型和版本号，方便版本管理和升级。</li>
+</ul>
+</li>
+<li>数据访问函数:<ul>
+<li>提供一系列函数，如<code>latestAnswer()</code>, <code>getAnswer()</code>, <code>getRoundData()</code>等，用于获取最新的或历史的聚合数据。</li>
+</ul>
+</li>
+<li>访问控制:<ul>
+<li><code>checkAccess()</code>修饰符用于限制对数据访问函数的调用，只有授权的账户才能调用这些函数。</li>
+</ul>
+</li>
+</ul>
+<h4 id="核心功能与特点"><a href="#核心功能与特点" class="headerlink" title="核心功能与特点"></a>核心功能与特点</h4><ul>
+<li><strong>数据聚合:</strong> 合约的主要功能是聚合链下数据，并将其安全可靠地存储在链上。</li>
+<li><strong>访问控制:</strong> 通过访问控制机制，确保只有授权的账户才能访问和修改合约数据。</li>
+<li><strong>可扩展性:</strong> 继承自<code>OffchainAggregator</code>，可以方便地扩展和定制。</li>
+<li><strong>透明度:</strong> 所有数据都存储在链上，可以被任何人验证。</li>
+</ul>
+<h4 id="如何提交数据到合约"><a href="#如何提交数据到合约" class="headerlink" title="如何提交数据到合约"></a>如何提交数据到合约</h4><ol>
+<li><p><strong>数据提供者准备数据:</strong> 数据提供者准备好需要提交到链上的数据，确保数据的准确性和可靠性。</p>
+</li>
+<li><p><strong>Chainlink节点接入:</strong> 数据提供者将数据提供给Chainlink节点。Chainlink节点是一个分布式的节点网络，负责将链下数据传输到链上。</p>
+</li>
+<li><p><strong>节点验证数据:</strong> Chainlink节点会对收到的数据进行验证，确保数据的真实性和有效性。</p>
+</li>
+<li><p><strong>节点生成任务请求:</strong> 节点将验证后的数据打包成一个任务请求，并发送给链上的合约。</p>
+</li>
+<li><p><strong>合约执行任务:</strong> 合约接收到任务请求后，会验证请求的有效性，并执行相应的操作，将数据写入链上。</p>
+</li>
+</ol>
+<h4 id="合约如何验证数据"><a href="#合约如何验证数据" class="headerlink" title="合约如何验证数据"></a>合约如何验证数据</h4><ol>
+<li>范围验证</li>
+</ol>
+<ul>
+<li><strong>设定上下限:</strong> 为每个数据设置一个合理的上下限范围。如果数据超出这个范围，则被认为是异常数据。</li>
+<li><strong>历史数据对比:</strong> 将当前数据与历史数据进行对比，如果偏差过大，则触发警报。</li>
+</ul>
+<ol start="2">
+<li>一致性验证</li>
+</ol>
+<ul>
+<li><strong>多节点对比:</strong> 将多个预言机提供的数据进行对比，如果差异过大，则对数据进行质疑。</li>
+<li><strong>外部数据源对比:</strong> 将链上数据与链下权威数据源（如雅虎财经、CoinMarketCap）进行对比，以验证数据的准确性。</li>
+</ul>
+<ol start="3">
+<li>签名验证</li>
+</ol>
+<ul>
+<li><strong>预言机签名:</strong> 预言机对提供的数据进行签名，以证明数据的来源。</li>
+<li><strong>合约验证:</strong> 合约验证签名的有效性，确保数据是由授权的预言机提供的。</li>
+</ul>
+<ol start="4">
+<li>时间戳验证</li>
+</ol>
+<ul>
+<li><strong>检查时间戳:</strong> 验证数据的时间戳是否合理，防止过旧或过新的数据被利用。</li>
+<li><strong>防止重放攻击:</strong> 通过时间戳来防止攻击者重放旧的数据。</li>
+</ul>
+<ol start="5">
+<li>格式验证</li>
+</ol>
+<ul>
+<li><strong>数据类型:</strong> 验证数据的类型是否符合预期的格式，例如数值型、字符串型等。</li>
+<li><strong>数据结构:</strong> 验证数据的结构是否符合预定义的格式，例如JSON格式。</li>
+</ul>
+<ol start="6">
+<li>业务逻辑验证</li>
+</ol>
+<ul>
+<li><strong>关联关系验证:</strong> 验证不同数据之间的关联关系是否合理，例如价格与交易量之间的关系。</li>
+<li><strong>历史趋势验证:</strong> 验证数据是否符合历史趋势，是否存在异常波动。</li>
+</ul>
+<ol start="7">
+<li>智能合约验证</li>
+</ol>
+<ul>
+<li><strong>自定义验证逻辑:</strong> 开发者可以在智能合约中编写自定义的验证逻辑，以满足特定的需求。</li>
+<li><strong>可编程性:</strong> 智能合约的灵活性和可编程性使得验证逻辑可以根据不同的业务场景进行定制。</li>
+</ul>
+<ol start="8">
+<li>去中心化验证</li>
+</ol>
+<ul>
+<li><strong>多方验证:</strong> 多个节点共同验证数据，提高验证的可靠性。</li>
+<li><strong>激励机制:</strong> 通过激励机制鼓励节点参与验证，提高网络的安全性。</li>
+</ul>
+<h2 id="OCR"><a href="#OCR" class="headerlink" title="OCR"></a>OCR</h2><p>OCR（Off-Chain Reporting）是一种在Chainlink网络中使用的机制，它允许多个节点在链下协同工作，将数据聚合到一个报告中，然后将这个报告作为一个整体提交到链上。这种方式大大提高了Chainlink网络的效率和可扩展性。</p>
+<h3 id="OCR的工作原理"><a href="#OCR的工作原理" class="headerlink" title="OCR的工作原理"></a>OCR的工作原理</h3><ol>
+<li><strong>节点选举：</strong> 节点之间通过选举产生一个领导节点。</li>
+<li><strong>数据收集：</strong> 领导节点定期向其他节点（跟随节点）收集最新的数据。</li>
+<li><strong>报告生成：</strong> 领导节点将收集到的数据进行聚合，生成一个报告。</li>
+<li><strong>报告验证：</strong> 领导节点将报告发送给跟随节点进行验证。</li>
+<li><strong>报告签名：</strong> 如果跟随节点验证通过，则对报告进行签名。</li>
+<li><strong>链上提交：</strong> 领导节点将带有足够多节点签名的报告提交到链上。</li>
+<li><strong>链上验证：</strong> 合约验证报告的签名，并提取其中的数据。</li>
+</ol>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.chain.link/data-feeds/getting-started">使用data feeds</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/chainlink/" rel="tag"># chainlink</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20CCIP%20%E5%8E%9F%E7%90%86/" rel="prev" title="死磕chainLink CCIP 原理">
+      <i class="fa fa-chevron-left"></i> 死磕chainLink CCIP 原理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95chainLink%20data%20Streams%E5%8E%9F%E7%90%86/" rel="next" title="死磕chainLink data Streams原理">
+      死磕chainLink data Streams原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-feed-%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">Data feed 类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-feed-%E7%BB%84%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">Data feed 组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%BB%E4%B8%AD%E5%BF%83%E5%8C%96%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="nav-number">4.</span> <span class="nav-text">去中心化数据模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E8%81%9A%E5%90%88"><span class="nav-number">4.1.</span> <span class="nav-text">数据聚合</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%A7%A3%E8%AF%BB"><span class="nav-number">4.1.1.</span> <span class="nav-text">代码解读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD%E4%B8%8E%E7%89%B9%E7%82%B9"><span class="nav-number">4.1.2.</span> <span class="nav-text">核心功能与特点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%8F%90%E4%BA%A4%E6%95%B0%E6%8D%AE%E5%88%B0%E5%90%88%E7%BA%A6"><span class="nav-number">4.1.3.</span> <span class="nav-text">如何提交数据到合约</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%88%E7%BA%A6%E5%A6%82%E4%BD%95%E9%AA%8C%E8%AF%81%E6%95%B0%E6%8D%AE"><span class="nav-number">4.1.4.</span> <span class="nav-text">合约如何验证数据</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OCR"><span class="nav-number">5.</span> <span class="nav-text">OCR</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#OCR%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="nav-number">5.1.</span> <span class="nav-text">OCR的工作原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">335k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">5:05</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
