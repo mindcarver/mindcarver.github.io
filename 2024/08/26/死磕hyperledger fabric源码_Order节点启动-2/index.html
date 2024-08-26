@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕hyperledger fabric源码|Order节点启动">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕hyperledger fabric源码|Order节点启动">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕hyperledger fabric源码|Order节点启动">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gmytqt8ef1g30zk0m7dn6.gif">
+<meta property="article:published_time" content="2024-08-26T06:59:11.381Z">
+<meta property="article:modified_time" content="2024-08-26T07:02:32.844Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="fabric">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gmytqt8ef1g30zk0m7dn6.gif">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕hyperledger fabric源码|Order节点启动 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕hyperledger fabric源码|Order节点启动
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 14:59:11 / Modified: 15:02:32" itemprop="dateCreated datePublished" datetime="2024-08-26T14:59:11+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fabric/" itemprop="url" rel="index"><span itemprop="name">fabric</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+            <div class="post-description">死磕hyperledger fabric源码|Order节点启动</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕hyperledger fabric源码|Order节点启动</p>
+<p>文章及代码：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>分支：v1.1.0</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gmytqt8ef1g30zk0m7dn6.gif" alt="207f698ab0d8c69266fb6fe4c8f85def"></p>
+<h2 id="Orderer节点启动流程"><a href="#Orderer节点启动流程" class="headerlink" title="Orderer节点启动流程"></a>Orderer节点启动流程</h2><p>节点启动开始在<code>/orderer/common/server/main.go</code>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	fullCmd := kingpin.MustParse(app.Parse(os.Args[<span class="number">1</span>:]))  <span class="comment">// 解析用户命令行</span></span><br><span class="line">	...</span><br><span class="line">	conf, err := config.Load() <span class="comment">//  加载orderer.yaml配置文件</span></span><br><span class="line">	...</span><br><span class="line">	initializeLoggingLevel(conf) <span class="comment">//初始化日志级别</span></span><br><span class="line">	initializeLocalMsp(conf) <span class="comment">//初始化本地MSP组件</span></span><br><span class="line"></span><br><span class="line">	prettyPrintStruct(conf) <span class="comment">// 打印配置信息</span></span><br><span class="line">	Start(fullCmd, conf) <span class="comment">// 启动Orderer排序服务器</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>主要做了以下几件事：</p>
+<ul>
+<li>解析用户命令行</li>
+<li>加载orderer.yaml配置文件</li>
+<li>初始化日志级别</li>
+<li>初始化本地MSP组件</li>
+<li>打印配置信息</li>
+<li>启动Orderer排序服务器</li>
+</ul>
+<p>接下来将会展开的去讲上面比较重要的一些内容。</p>
+<h2 id="加载orderer-yaml配置文件"><a href="#加载orderer-yaml配置文件" class="headerlink" title="加载orderer.yaml配置文件"></a>加载orderer.yaml配置文件</h2><p>是由<code>config.Load()</code>开启的，进入到<code>/orderer/common/localconfig/config.go/Load()</code></p>
+<p>①：初始化viper</p>
+<p>调用<code>InitViper()</code>函数设置配置文件路径，并默认在<code>$FABRIC_CFG_PATH</code>（如<code>/etc/hyperledger/fabric</code>）路径下查找配置文件，找不到文件时再依次查找当前目录、默认开发配置目录 （<code>$GOPATH/src/github.com/hyperledger/fabric/sampleconfig</code>）和系统默认配置路径 （<code>/etc/hyperledger/fabric</code>）。接着开启匹配系统环境变量的模式，即为Viper组件配置项（以.分割的格式）添加指定前缀“ORDERER_”，转换为大写字母形式，再将“.”替换为<code>_</code>。这样，Viper组件就能在查找配置项时，与以“ORDERER_”前缀开头的环境变量进行匹配，获取其在环境变量中的配置值。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">config := viper.New()</span><br><span class="line">	cf.InitViper(config, configName)</span><br><span class="line">	config.SetEnvPrefix(Prefix)</span><br><span class="line">	config.AutomaticEnv()</span><br><span class="line">	replacer := strings.NewReplacer(<span class="string">&quot;.&quot;</span>, <span class="string">&quot;_&quot;</span>)</span><br><span class="line">	config.SetEnvKeyReplacer(replacer)</span><br></pre></td></tr></table></figure>
+
+<p>②：加载Orderer.yaml配置文件</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">err := config.ReadInConfig()</span><br></pre></td></tr></table></figure>
+
+<p>③：解析配置文件成Orderer配置对象</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> uconf TopLevel</span><br><span class="line">err = viperutil.EnhancedExactUnmarshal(config, &amp;uconf)</span><br></pre></td></tr></table></figure>
+
+<p>此配置对象为TopLevel型，结构体如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> TopLevel <span class="keyword">struct</span> &#123;</span><br><span class="line">	General    General    <span class="comment">//通用配置对象</span></span><br><span class="line">	FileLedger FileLedger <span class="comment">//文本账本配置对象</span></span><br><span class="line">	RAMLedger  RAMLedger  <span class="comment">//RAM账本配置对象</span></span><br><span class="line">	Kafka      Kafka      <span class="comment">// Kafka共识组件配置对象</span></span><br><span class="line">	Debug      Debug      <span class="comment">// 调试信息配置对象</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：检查Orderer配置对象conf配置项并设置默认值</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uconf.completeInitialization(filepath.Dir(config.ConfigFileUsed()))</span><br></pre></td></tr></table></figure>
+
+<h2 id="初始化日志与本地MSP组件"><a href="#初始化日志与本地MSP组件" class="headerlink" title="初始化日志与本地MSP组件"></a>初始化日志与本地MSP组件</h2><p>①：初始化日志</p>
+<p><code>initializeLoggingLevel</code>设置<code>Orderer</code>节点上的日志后端输出流、输出格 式与默认日志级别（<code>INFO</code>级别）。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">initializeLoggingLevel</span><span class="params">(conf *config.TopLevel)</span></span> &#123;</span><br><span class="line">	flogging.InitBackend(flogging.SetFormat(conf.General.LogFormat), os.Stderr)</span><br><span class="line">	flogging.InitFromSpec(conf.General.LogLevel)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：初始化本地MSP组件</p>
+<p>首先加载本地的<code>MSP</code>组件，根据MSP配置文件路径、<code>BCCSP</code>密码服务组件配置、<code>MSP</code>名称初始化本地<code>MSP</code>组件 。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">initializeLocalMsp</span><span class="params">(conf *config.TopLevel)</span></span> &#123;</span><br><span class="line">	err := mspmgmt.LoadLocalMsp(conf.General.LocalMSPDir, conf.General.BCCSP, conf.General.LocalMSPID)</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本地<code>MSP</code>组件默认使用<code>bccspmsp</code>类型对象。该类型的<code>MSP</code>组件是基于<code>BCCSP</code>组件提供密码套件服务的，封装了<code>MSP</code>组件（通常对应于一个组织）信任的相关证书列表（包含根<code>CA</code>证书、中间<code>CA</code>证书等）、<code>MSP</code>名称、签名者身份实体与管理员身份实体列表等。MSP组件的关键内容后面会有专门去讲解。</p>
+<h2 id="启动Orderer排序节点"><a href="#启动Orderer排序节点" class="headerlink" title="启动Orderer排序节点"></a>启动Orderer排序节点</h2><p>启动函数在<code>/orderer/common/server/main.go/Start()函数</code>中，接下来一步步的解析：</p>
+<p>①：创建本地MSP签名者实体 signer</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">signer := localmsp.NewSigner()       </span><br></pre></td></tr></table></figure>
+
+<p>②：初始化TLS认证的安全服务器配置项和gRPC服务器</p>
+<p>本地gRPC服务器grpcServer默认端口为7050</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">serverConfig := initializeServerConfig(conf)       </span><br><span class="line">grpcServer := initializeGrpcServer(conf, serverConfig) </span><br></pre></td></tr></table></figure>
+
+<p>③：设置TLS连接认证的回调函数</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tlsCallback := <span class="function"><span class="keyword">func</span><span class="params">(bundle *channelconfig.Bundle)</span></span> &#123;</span><br><span class="line">		<span class="keyword">if</span> grpcServer.MutualTLSRequired() &#123; <span class="comment">// 检测是否需要认证TLS客户端证书</span></span><br><span class="line">			logger.Debug(<span class="string">&quot;Executing callback to update root CAs&quot;</span>)</span><br><span class="line">			updateTrustedRoots(grpcServer, caSupport, bundle) <span class="comment">//执行回调函数更新根CA证书</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>④：创建多通道注册管理器</p>
+<p>多通道注册管理器<code>Registrar</code>对象，用于注册<code>Orderer</code>节点上的所有通道（包括系统通道和应用通道），负责维护通道配置、账本等重要资源。 </p>
+<p>多通道注册管理器<code>Registrar</code>对象相当于<code>Orderer</code>节点上的“资源管理器”，为每个通道创建关联的共识组件链对象，负责交易排序、打包出块、提交账本以及通道管理等工作</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">manager := initializeMultichannelRegistrar(conf, signer, tlsCallback)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">initializeMultichannelRegistrar</span><span class="params">(conf *config.TopLevel, signer crypto.LocalSigner,</span></span></span><br><span class="line"><span class="params"><span class="function">	callbacks ...<span class="keyword">func</span>(bundle *channelconfig.Bundle)</span></span>) *multichannel.Registrar &#123;</span><br><span class="line">	lf, _ := createLedgerFactory(conf) <span class="comment">//创建通道的账本工厂对象</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(lf.ChainIDs()) == <span class="number">0</span> &#123;</span><br><span class="line">		initializeBootstrapChannel(conf, lf) <span class="comment">//初始化系统通道</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		logger.Info(<span class="string">&quot;Not bootstrapping because of existing chains&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//创建并设置共识组件字典</span></span><br><span class="line">	consenters := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]consensus.Consenter)</span><br><span class="line">	consenters[<span class="string">&quot;solo&quot;</span>] = solo.New()</span><br><span class="line">	consenters[<span class="string">&quot;kafka&quot;</span>] = kafka.New(conf.Kafka) <span class="comment">//// Kafka类型共识组件</span></span><br><span class="line">	<span class="keyword">return</span> multichannel.NewRegistrar(lf, consenters, signer, callbacks...)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>4.1 创建通道的账本工厂对象</p>
+<p>代码路径<code>/orderer/common/server/util.go</code>，大概做了以下几件事：</p>
+<ul>
+<li>获取<code>Orderer</code>节点上的区块账本存储目录ld，包括默认目录<code>/var/hyperledger/production/orderer</code>或临时目录中的子目录<code>hyperledger-fabric-ordererledger</code>+随机数后缀（默认目录不存在时使用）</li>
+<li>创建基于文件的区块账本工厂对象lf（<code>fileLedgerFactory</code>类型）</li>
+<li>在区块账本目录下建立以chains命名的子目录（<code>/var/hyperledger/production/orderer/chains</code>），由每个通道账本的区块数据存储对象负责在<code>chains</code>子目录下创建维护以通道ID（即链ID）命名的通道账本子目录，用于保存该通道账本的所有区块数据文件。其中，区块数据文件名都是以<code>blockfile_num</code>命名，<code>num</code>是6位区块文件编号，左侧不足位数用0补齐。</li>
+</ul>
+<p>4.2 初始化系统通道</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">initializeBootstrapChannel</span><span class="params">(conf *config.TopLevel, lf blockledger.Factory)</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">switch</span> conf.General.GenesisMethod &#123; <span class="comment">// 分析创世区块的生成方式</span></span><br><span class="line">	<span class="keyword">case</span> <span class="string">&quot;provisional&quot;</span>: <span class="comment">// 根据配置文件生成创世区块</span></span><br><span class="line">		genesisBlock = encoder.New(genesisconfig.Load(conf.General.GenesisProfile)).GenesisBlockForChannel(conf.General.SystemChannel)</span><br><span class="line">	<span class="keyword">case</span> <span class="string">&quot;file&quot;</span>: <span class="comment">// 根据创世区块文件生成创世区块</span></span><br><span class="line">		genesisBlock = file.New(conf.General.GenesisFile).GenesisBlock()</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	chainID, err := utils.GetChainIDFromBlock(genesisBlock) <span class="comment">// 从创世区块中解析获取通道ID</span></span><br><span class="line">	...</span><br><span class="line">	gl, err := lf.GetOrCreate(chainID) <span class="comment">// 创建系统通道的区块账本对象</span></span><br><span class="line">	...</span><br><span class="line">	err = gl.Append(genesisBlock) <span class="comment">// 添加区块到系统通道账本上</span></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑤：创建Orderer排序服务器</p>
+<p><code>Orderer</code>排序服务器，提供<code>Orderer</code>服务与管理所有通道资源及其账本、共识组件等。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">server := NewServer(manager, signer, &amp;conf.Debug, conf.General.Authentication.TimeWindow, mutualTLS)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewServer</span><span class="params">(r *multichannel.Registrar, _ crypto.LocalSigner, debug *localconfig.Debug, timeWindow time.Duration, mutualTLS <span class="type">bool</span>)</span></span> ab.AtomicBroadcastServer &#123;</span><br><span class="line">	s := &amp;server&#123;</span><br><span class="line">		dh:        deliver.NewHandlerImpl(deliverSupport&#123;Registrar: r&#125;, timeWindow, mutualTLS),</span><br><span class="line">		bh:        broadcast.NewHandlerImpl(broadcastSupport&#123;Registrar: r&#125;),</span><br><span class="line">		debug:     debug,</span><br><span class="line">		Registrar: r,</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>bh：Broadcast</code>服务处理句柄（<code>deliverHandler</code>类型）。该对象实现了<code>Broadcast</code>交易广播服务的<code>Handle(srv ab.AtomicBroadcast_BroadcastServer)</code>消息处理接口，负责接收客户端提交的普通交易消息与配置交易消息，并分别进行处理，过滤后转发给通道绑定的共识组件链对象进行处理； </p>
+</li>
+<li><p><code>dh：Deliver</code>服务处理句柄（<code>handlerImpl</code>类型）。该对象实现了<code>Deliver</code>区块分发服务的<code>Handle(srv*DeliverServer)</code>消息处理接口，负责接收客户端提交的区块请求消息，从<code>Orderer</code>节点区块账本中读取指定的区块数据，并返回给请求节点。如果请求的指定区块还没有生成，则默认阻塞等待直到该区块创建和提交完毕； </p>
+</li>
+<li><p><code>Registrar：Orderer</code>节点的多通道注册管理器（<code>Registrar</code>类型）。该对象封装了<code>Orderer</code>节点上所有通道的链支持对象字典<code>chains</code>、共识组件字典<code>consenters</code>、区块账本工厂对象<code>ledgerFactory</code>、系统通道链支持对象与ID、本地签名者实体<code>signer</code>等，用于管理通道配置、区块账本对象、共识组件等核心资源，相当于<code>Orderer</code>节点上的“资源管理器”。</p>
+</li>
+</ul>
+<p>⑥：解析执行子命令</p>
+<ul>
+<li>start子命令：启动<code>profile</code>服务与<code>Orderer</code>排序服务器，支持<code>go tool pprof</code>命令查看与分析程序性能瓶颈</li>
+<li>benchmark子命令：用于启动测试服务器</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">switch</span> cmd &#123; <span class="comment">//分析命令类型</span></span><br><span class="line">	<span class="keyword">case</span> start.FullCommand(): <span class="comment">// &quot;start&quot; command // start启动子命令</span></span><br><span class="line">		logger.Infof(<span class="string">&quot;Starting %s&quot;</span>, metadata.GetVersionInfo())</span><br><span class="line">		initializeProfilingService(conf) <span class="comment">// goroutine启动go profile服务</span></span><br><span class="line">		ab.RegisterAtomicBroadcastServer(grpcServer.Server(), server)</span><br><span class="line">		logger.Info(<span class="string">&quot;Beginning to serve requests&quot;</span>)</span><br><span class="line">		grpcServer.Start() <span class="comment">// 启动gRPC服务器提供Orderer服务</span></span><br><span class="line">	<span class="keyword">case</span> benchmark.FullCommand(): <span class="comment">// &quot;benchmark&quot; command // &quot;benchmark&quot; 测试用例子命令</span></span><br><span class="line">		logger.Info(<span class="string">&quot;Starting orderer in benchmark mode&quot;</span>)</span><br><span class="line">		benchmarkServer := performance.GetBenchmarkServer()</span><br><span class="line">		benchmarkServer.RegisterService(server)</span><br><span class="line">		benchmarkServer.Start()</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/fabric/" rel="tag"># fabric</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/" rel="prev" title="死磕hyperledger fabric源码|Order节点概述">
+      <i class="fa fa-chevron-left"></i> 死磕hyperledger fabric源码|Order节点概述
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Peer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-6/" rel="next" title="死磕hyperledger fabric源码|Peer节点启动">
+      死磕hyperledger fabric源码|Peer节点启动 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Orderer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">Orderer节点启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BDorderer-yaml%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">加载orderer.yaml配置文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%97%A5%E5%BF%97%E4%B8%8E%E6%9C%AC%E5%9C%B0MSP%E7%BB%84%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">初始化日志与本地MSP组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8Orderer%E6%8E%92%E5%BA%8F%E8%8A%82%E7%82%B9"><span class="nav-number">4.</span> <span class="nav-text">启动Orderer排序节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

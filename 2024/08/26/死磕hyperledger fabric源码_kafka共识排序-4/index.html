@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕hyperledger fabric源码|kafka共识排序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕hyperledger fabric源码|kafka共识排序">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F-4/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕hyperledger fabric源码|kafka共识排序">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gmzuqmak04j30zk0m8weu.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn0u9hflmfj318e0u0wj5.jpg">
+<meta property="article:published_time" content="2024-08-26T06:59:11.351Z">
+<meta property="article:modified_time" content="2024-08-26T07:02:39.218Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="fabric">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gmzuqmak04j30zk0m8weu.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F-4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕hyperledger fabric源码|kafka共识排序 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F-4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕hyperledger fabric源码|kafka共识排序
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 14:59:11 / Modified: 15:02:39" itemprop="dateCreated datePublished" datetime="2024-08-26T14:59:11+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fabric/" itemprop="url" rel="index"><span itemprop="name">fabric</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F-4/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F-4/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>11k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>10 mins.</span>
+            </span>
+            <div class="post-description">死磕hyperledger fabric源码|kafka共识排序</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕hyperledger fabric源码|kafka共识排序</p>
+<p>文章及代码：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>分支：v1.1.0</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gmzuqmak04j30zk0m8weu.jpg" alt="d1e794177969e09552b173b7d6eaea19"></p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Orderer共识组件提供HandleChain()方法创建通道绑定的共识组件链对象（<code>consensus.Chain</code>接口），包括<code>Solo</code>（<code>solo.chain</code>类型）、<code>Kafka</code>（<code>kafka.chainImpl</code>类型）等类型，属于通道共识组件的重要实现模块，并设置到链支持对象的<code>cs.Chain</code>字段。共识组件链对象提供Orderer共识排序服务，负责关联通道上交易排序、打包出块、提交账本、通道管理等工作，目前采用<code>Golang</code>通道或<code>Kafka</code>集群作为共识排序后端，<strong>接收来自<code>Broadcast</code>服务过滤转发的交易消息</strong>并进行排序。  </p>
+<h2 id="kafka共识排序服务"><a href="#kafka共识排序服务" class="headerlink" title="kafka共识排序服务"></a>kafka共识排序服务</h2><h3 id="orderer服务集群"><a href="#orderer服务集群" class="headerlink" title="orderer服务集群"></a>orderer服务集群</h3><p><code>Orderer</code>节点采用<code>Sarama</code>开源的<code>Kafka</code>第三方库构建<code>Kafka</code>共识组件，可以同时接受处理多个客户端发送的交易消息请求，能够有效提高<code>Orderer</code>节点处理交易消息的并发能力。同时，可利用<code>Kafka</code>集群在<strong>单一分区内</strong>按序收集相同主题消息（<strong>消息序号唯一</strong>）的功能，来保证交易消息具有确定性的顺序（以消息序号排序），从而实现对交易排序达成全局共识的目的。 </p>
+<p><code>Kafka</code>生产者按照主题（<code>Topic</code>）生产消息并进行发布，<code>Kafka</code>服务器集群自动对消息主题进行分类。同一个主题的消息都会被收集到一个或多个分区文件中，按照<code>FIFO</code>的顺序追加到文件尾部，并且每个消息在分区中都会有一个<code>OFFSET</code>位置偏移量作为该消息的唯一标识ID。目前，<code>Hyperledger Fabric</code>基于<code>Kafka</code>集群为<strong>每个通道</strong>创建绑定了一个主题（即链ID，<code>chainID</code>），并且只设置一个分区（分区号为0）。Kafka消费者管理多个分区消费者并订阅指定分区的主题消息，包括主题（即<code>chainID</code>）、分区号（目前只有1个分区号为0的分区）、起始偏移量（开始订阅的消息位置<code>offset</code>）等。</p>
+<p>Hyperledger Fabric采用<code>Kafka</code>集群对单个或多个<code>Orderer</code>排序节点提交的交易消息进行排序。此时，<code>Orderer</code>排序节点同时充当<code>Kafka</code>集群的消息生产者（分区）和消费者，发布消息与订阅消息到Kafka集群上的同一个主题分区，即先将<code>Peer</code>节点提交的交易消息转发给Kafka服务端，同时，从指定主题的<code>Kafka</code>分区上按顺序获取排序后的交易消息并自动过滤重启的交易消息。这期间可能会存在网络时延造成获取消息时间的差异。如果不考虑丢包造成消息丢失的情况，则所有<code>Orderer</code>节点获取消息的顺序与数量应该是确定的和一致的。同时，采用相同的Kafka共识组件链对象与出块规则等，以保证所有Orderer节点都可以创建与更新相同配置的通道，并切割生成相同的批量交易集合出块，再“同步”构造出相同的区块数据，从而基于<code>Kafka</code>集群达成全局共识，以保证区块数据的全局一致性。</p>
+<h3 id="启动共识组件链对象"><a href="#启动共识组件链对象" class="headerlink" title="启动共识组件链对象"></a>启动共识组件链对象</h3><p>启动入口：</p>
+<blockquote>
+<p>orderer&#x2F;consensus&#x2F;kafka&#x2F;chain.go&#x2F;Start()</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(chain *chainImpl)</span></span> Start() &#123;</span><br><span class="line">	<span class="keyword">go</span> startThread(chain)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startThread</span><span class="params">(chain *chainImpl)</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">//创建kafka生产者</span></span><br><span class="line">	chain.producer, err = setupProducerForChannel(chain.consenter.retryOptions(), chain.haltChan, chain.SharedConfig().KafkaBrokers(), chain.consenter.brokerConfig(), chain.channel)</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">// Kafka生产者发送CONNECT消息建立连接</span></span><br><span class="line">	<span class="keyword">if</span> err = sendConnectMessage(chain.consenter.retryOptions(), chain.haltChan, chain.producer, chain.channel); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		logger.Panicf(<span class="string">&quot;[channel: %s] Cannot post CONNECT message = %s&quot;</span>, chain.channel.topic(), err)</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">//创建Kafka消费者</span></span><br><span class="line">	chain.parentConsumer, err = setupParentConsumerForChannel(chain.consenter.retryOptions(), chain.haltChan, chain.SharedConfig().KafkaBrokers(), chain.consenter.brokerConfig(), chain.channel)</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">//创建Kafka分区消费者</span></span><br><span class="line">	chain.channelConsumer, err = setupChannelConsumerForChannel(chain.consenter.retryOptions(), chain.haltChan, chain.parentConsumer, chain.channel, chain.lastOffsetPersisted+<span class="number">1</span>)</span><br><span class="line">	...</span><br><span class="line">	<span class="built_in">close</span>(chain.startChan) <span class="comment">// 已经启动共识组件链对象，不阻塞Broadcast</span></span><br><span class="line">	chain.errorChan = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) <span class="comment">// 创建errorChan通道，不阻塞Deliver服务处理句柄</span></span><br><span class="line">	...</span><br><span class="line">	chain.processMessagesToBlocks() <span class="comment">//创建消息处理循环，循环处理订阅分区上接收到的消息</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>startThread</code>函数首先创建<code>kafka</code>生产者，发布消息到指定主题（即通道ID）和分区号的通道分区（chain.channel）上。</p>
+<p> 然后发送<code>CONNECT</code>消息建立连接，该消息指定了主题<code>Topic</code>字段为链ID、<code>Key</code>字段为分区号0、<code>Value</code>字段为<code>CONNECT</code>类型消息负载等。订阅该主题的<code>Kafka</code>（分区）消费者会接收到该消息。</p>
+<p>接着创建指定<code>Kafka</code>分区和<code>Broker</code>服务器配置的<code>Kafka</code>消费者对象，并设置从指定主题（链ID）和分区号（0）的<code>Kafka</code>分区上获取消息。</p>
+<p>最后，调用<code>processMessagesToBlocks()</code>方法创建消息处理循环，负责处理从<code>Kafka</code>集群中接收到的订阅消息。</p>
+<h3 id="处理消息"><a href="#处理消息" class="headerlink" title="处理消息"></a>处理消息</h3><p><code>processMessagesToBlocks</code>接收到正常的<code>Kafka</code>分区消费者消息会根据<code>kafka</code>的消息类型进行处理，包括以下几种类型：</p>
+<ul>
+<li>Kafka- Message_Regular</li>
+<li>KafkaMessage_TimeToCut</li>
+<li>KafkaMessage_Connect</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(chain *chainImpl)</span></span> processMessagesToBlocks() ([]<span class="type">uint64</span>, <span class="type">error</span>) &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">for</span> &#123; <span class="comment">// 消息处理循环</span></span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		...</span><br><span class="line">		<span class="keyword">case</span> in, ok := &lt;-chain.channelConsumer.Messages(): <span class="comment">//接收到正常的Kafka分区消费者消息</span></span><br><span class="line">			...</span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> &lt;-chain.errorChan: <span class="comment">// If this channel was closed...  // 如果该通道已经关闭，则重新创建该通道</span></span><br><span class="line">				...</span><br><span class="line">			<span class="keyword">switch</span> msg.Type.(<span class="keyword">type</span>) &#123; <span class="comment">//分析Kafka消息类型</span></span><br><span class="line">			<span class="keyword">case</span> *ab.KafkaMessage_Connect: <span class="comment">//Kafka连接消息  由于错误而重新恢复Kafka消费者分区订阅流程</span></span><br><span class="line">				_ = chain.processConnect(chain.ChainID()) <span class="comment">//处理CONNECT连接消息， 不做任何事情</span></span><br><span class="line">				counts[indexProcessConnectPass]++         <span class="comment">// 成功处理消息计数增1</span></span><br><span class="line">			<span class="keyword">case</span> *ab.KafkaMessage_TimeToCut: <span class="comment">// Kafka定时切割生成区块消息</span></span><br><span class="line">				<span class="keyword">if</span> err := chain.processTimeToCut(msg.GetTimeToCut(), in.Offset); err != <span class="literal">nil</span> &#123;</span><br><span class="line">					logger.Warningf(<span class="string">&quot;[channel: %s] %s&quot;</span>, chain.ChainID(), err)</span><br><span class="line">					logger.Criticalf(<span class="string">&quot;[channel: %s] Consenter for channel exiting&quot;</span>, chain.ChainID())</span><br><span class="line">					counts[indexProcessTimeToCutError]++</span><br><span class="line">					<span class="keyword">return</span> counts, err <span class="comment">// TODO Revisit whether we should indeed stop processing the chain at this point</span></span><br><span class="line">				&#125;</span><br><span class="line">				counts[indexProcessTimeToCutPass]++ <span class="comment">// 成功处理消息计数增1</span></span><br><span class="line">			<span class="keyword">case</span> *ab.KafkaMessage_Regular: <span class="comment">// Kafka常规消息</span></span><br><span class="line">				<span class="keyword">if</span> err := chain.processRegular(msg.GetRegular(), in.Offset); err != <span class="literal">nil</span> &#123; <span class="comment">// 处理Kafka常 规消息</span></span><br><span class="line">					...</span><br><span class="line">					counts[indexProcessRegularError]++</span><br><span class="line">        &#125;...</span><br><span class="line">      &#125;</span><br><span class="line">		<span class="keyword">case</span> &lt;-chain.timer: <span class="comment">// 超时定时器</span></span><br><span class="line">			<span class="keyword">if</span> err := sendTimeToCut(chain.producer, chain.channel, chain.lastCutBlockNumber+<span class="number">1</span>, &amp;chain.timer); err != <span class="literal">nil</span> &#123; <span class="comment">//发送TimeToCut类型消息，请求打包出块</span></span><br><span class="line">			...</span><br><span class="line">				counts[indexSendTimeToCutError]++</span><br><span class="line">			&#125; ...</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>①：KafkaMessage_Connect类型消息</p>
+<p><code>Kafka</code>连接消息用于测试连通<code>Kafka</code>分区消费者的工作状态，用于验证<code>Kafka</code>共识组件的正常工作状态与排除故障，并调用<code>chain.processConnect(chain.ChainID())</code>方法处理该消息。</p>
+<p>②：KafkaMessage_TimeToCut类型消息</p>
+<p><code>processMessagesToBlocks</code>()方法可调用<code>chain.processTimeToCut()</code>方法处理<code>TIMETOCUT</code>类型消息。如果消息中的区块号<code>ttcNumber</code>不是当前<code>Orderer</code>节点当前通道账本中下一个打包出块的区块号（最新区块号<code>lastCutBlockNumber</code>+1），则直接丢弃不处理。否则，调用<code>BlockCutter().Cut()</code>方法，切割当前该通道上待处理的缓存交易消息列表为批量交易集合<code>batch（[]*cb.Envelope）</code>，再调用<code>CreateNextBlock(batch)</code>方法构造新区块并提交账本。最后，调用<code>WriteBlock(block，metadata)</code>方法，更新区块元数据并提交账本，同时更新Kafka共识组件链对象的最新区块号<code>lastCutBlockNumber</code>增1。</p>
+<p>事实上，<code>Orderer</code>服务集群节点独立打包出块的时间点通常不是完全同步的，同时还可能会重复接收其他Orderer节点提交的TIMETOCUT类型消息（重复区块号）。此时，<code>Orderer</code>节点以接收到的第一个<code>TIMETOCUT</code>类型消息为准，打包出块并提交到账本，再更新当前通道的最新区块号<code>lastCutBlockNumber</code>。这样，<code>processTimeToCut</code>()方法就能利用最新的<code>lastCutBlockNumber</code>过滤掉其他重复的<code>TIMETOCUT</code>类型消息，以保证所有<code>Orderer</code>节点上账本区块文件的数据同步，实际上是将原先的时间同步机制转换为消息同步机制。</p>
+<p>③：KafkaMessage_Regular类型消息</p>
+<p>包括通道配置交易消息（KafkaMessageRegular_CONFIG类型）和普通交易消息（KafkaMessageRegular_NORMAL类型）。 详细的分析将会在<code>processRegular</code>方法中体现。</p>
+<h2 id="处理配置交易消息"><a href="#处理配置交易消息" class="headerlink" title="处理配置交易消息"></a>处理配置交易消息</h2><p>我们先大概的看一下ProcessRegular中关于处理配置交易消息的代码部分,因为这部分相当的长，必须先看个概览：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(chain *chainImpl)</span></span> processRegular(regularMessage *ab.KafkaMessageRegular, receivedOffset <span class="type">int64</span>) <span class="type">error</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  commitConfigMsg := <span class="function"><span class="keyword">func</span><span class="params">(message *cb.Envelope, newOffset <span class="type">int64</span>)</span></span>&#123;...&#125;</span><br><span class="line">  seq := chain.Sequence() <span class="comment">// 获取当前通道的最新配置序号</span></span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">switch</span> regularMessage.Class &#123;</span><br><span class="line">	<span class="keyword">case</span> ab.KafkaMessageRegular_UNKNOWN: <span class="comment">// 未知消息类型</span></span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">case</span> ab.KafkaMessageRegular_NORMAL: <span class="comment">// 普通交易消息类型</span></span><br><span class="line">		...</span><br><span class="line">	<span class="keyword">case</span> ab.KafkaMessageRegular_CONFIG: <span class="comment">// 通道配置交易消息</span></span><br><span class="line">	...</span><br><span class="line">		&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们直接跳转到<code>case ab.KafkaMessageRegular_CONFIG</code>进行分析：</p>
+<p>①：如果regularMessage.OriginalOffset 不为 0</p>
+<p>说明这是重新过滤验证和排序的通道配置交易消息。</p>
+<p>1.1 过滤重复提交的消息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> regularMessage.OriginalOffset &lt;= chain.lastOriginalOffsetProcessed &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1.2 确认是否是最近重新验证且重新排序的配置交易消息，并且通道配置序号是最新的</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> regularMessage.OriginalOffset == chain.lastResubmittedConfigOffset &amp;&amp;regularMessage.ConfigSeq == seq &#123;</span><br><span class="line">  <span class="comment">// 因此，关闭通道并解除Broadcast服务处理句柄阻塞等待，通知重新接收消息进行处理</span></span><br><span class="line">  <span class="built_in">close</span>(chain.doneReprocessingMsgInFlight) </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1.3 主动更新本通道的最近重新提交排序的配置交易消息初始偏移量lastResubmitted</p>
+<p>存在其他<code>Orderer</code>节点重新提交了配置消息，但是本地<code>Orderer</code>节点没有重新提交该消息。因此这里需要更新本通道的最近重新提交排序的配置交易消息初始偏移量lastResubmitted。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> chain.lastResubmittedConfigOffset &lt; regularMessage.OriginalOffset &#123;</span><br><span class="line">				chain.lastResubmittedConfigOffset = regularMessage.OriginalOffset</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：regularMessage.OriginalOffset为 0</p>
+<p>说明是第一次提交通道配置交易消息，而不是重新验证和重新排序的。</p>
+<p>2.1 如果消息中的配置序号regularMessage.ConfigSeq小于当前通道的最新配置序号seq</p>
+<p>则说明已经更新了通道配置（配置序号较高），然后再处理当前配置交易消息（配置序号较低）。将会调用<code>ProcessConfigMsg</code>重新过滤和处理该消息。</p>
+<p>接着通过<code>configure</code>重新提交该配置消息进行排序，重置消息初始偏移量。然后再更新最近重新提交消息的偏移量。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> regularMessage.ConfigSeq &lt; seq &#123;</span><br><span class="line">  ...</span><br><span class="line">	configEnv, configSeq, err := chain.ProcessConfigMsg(env)</span><br><span class="line">  <span class="keyword">if</span> err := chain.configure(configEnv, configSeq, receivedOffset); err != <span class="literal">nil</span> &#123;...&#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 阻塞接收消息处理，更新最近重新提交消息的偏移量</span></span><br><span class="line">  chain.lastResubmittedConfigOffset = receivedOffset </span><br><span class="line">  <span class="comment">//创建通道阻塞Broadcast服务接收处理消息</span></span><br><span class="line">  chain.doneReprocessingMsgInFlight = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：提交配置交易消息执行通道管理操作</p>
+<p>经过上面的①和②过滤掉不符合条件的情况，接下来就提交配置交易消息执行通道管理操作，核心函数：<code>commitConfigMsg(env, offset)</code></p>
+<p>3.1 将当前缓存交易消息切割成批量交易集合</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">batch := chain.BlockCutter().Cut()</span><br></pre></td></tr></table></figure>
+
+<p>3.2 创建新区块block</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">block := chain.CreateNextBlock(batch)</span><br></pre></td></tr></table></figure>
+
+<p>3.3 构造Kafka元数据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">metadata := utils.MarshalOrPanic(&amp;ab.KafkaMetadata&#123; <span class="comment">//构造Kafka元数据</span></span><br><span class="line">				LastOffsetPersisted:         receivedOffset - <span class="number">1</span>, <span class="comment">// 偏移量减1</span></span><br><span class="line">				LastOriginalOffsetProcessed: chain.lastOriginalOffsetProcessed,</span><br><span class="line">				LastResubmittedConfigOffset: chain.lastResubmittedConfigOffset,</span><br><span class="line">			&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>3.4 写入区块</p>
+<p>通过区块写组件提交新区块到账本，更新当前通道的最新区块号chain.lastCutBlockNumber增1</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chain.WriteBlock(block, metadata)</span><br><span class="line">chain.lastCutBlockNumber++  </span><br></pre></td></tr></table></figure>
+
+<p>接着更新本链的lastOriginal- OffsetProcessed为newOffset参数，然后做和上面差不多的事情：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">chain.lastOriginalOffsetProcessed = newOffset</span><br><span class="line">		block := chain.CreateNextBlock([]*cb.Envelope&#123;message&#125;) <span class="comment">// 构造新区块</span></span><br><span class="line">		metadata := utils.MarshalOrPanic(&amp;ab.KafkaMetadata&#123;     <span class="comment">// 构造Kafka元数据</span></span><br><span class="line">			LastOffsetPersisted:         receivedOffset,</span><br><span class="line">			LastOriginalOffsetProcessed: chain.lastOriginalOffsetProcessed,</span><br><span class="line">			LastResubmittedConfigOffset: chain.lastResubmittedConfigOffset,</span><br><span class="line">		&#125;)</span><br><span class="line">		chain.WriteConfigBlock(block, metadata) <span class="comment">// 写入配置区块</span></span><br><span class="line">		chain.lastCutBlockNumber++              <span class="comment">// 最新区块号增1</span></span><br></pre></td></tr></table></figure>
+
+<p>不管是上面的<code>WriteBlock</code>还是<code>WriteConfigBlock</code>底层都是调用的<code>commitBlock</code>，如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(bw *BlockWriter)</span></span> commitBlock(encodedMetadataValue []<span class="type">byte</span>) &#123;</span><br><span class="line">	... <span class="comment">// 添加块签名</span></span><br><span class="line">	bw.addBlockSignature(bw.lastBlock)</span><br><span class="line">  <span class="comment">// 添加最新的配置签名</span></span><br><span class="line">	bw.addLastConfigSignature(bw.lastBlock)</span><br><span class="line">	<span class="comment">// 写入新块</span></span><br><span class="line">	err := bw.support.Append(bw.lastBlock)</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来再讨论kafka共识组件如何处理普通交易消息的。</p>
+<h2 id="处理普通交易消息"><a href="#处理普通交易消息" class="headerlink" title="处理普通交易消息"></a>处理普通交易消息</h2><p>还是先回到 <code>processRegular</code>方法，关于处理普通消息的方法大概如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(chain *chainImpl)</span></span> processRegular(regularMessage *ab.KafkaMessageRegular, receivedOffset <span class="type">int64</span>) <span class="type">error</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">case</span> ab.KafkaMessageRegular_NORMAL: <span class="comment">// 普通交易消息类型</span></span><br><span class="line">		<span class="comment">// 如果OriginalOffset不是0，则说明该消息是重新验证且重新提交排序的</span></span><br><span class="line">		<span class="keyword">if</span> regularMessage.OriginalOffset != <span class="number">0</span> &#123;</span><br><span class="line">			...</span><br><span class="line">			<span class="comment">// 如果消息偏移量不大于lastOriginalOffsetProcessed最近已处理消息的偏移量，</span></span><br><span class="line">			<span class="comment">// 则说明已经处理过该消息，此时应丢弃返回，防止重复处理其他Orderer提交的相同偏移 量的普通交易消息</span></span><br><span class="line">			<span class="keyword">if</span> regularMessage.OriginalOffset &lt;= chain.lastOriginalOffsetProcessed &#123;</span><br><span class="line">				...</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// // 检查通道的配置序号是否更新</span></span><br><span class="line">		<span class="keyword">if</span> regularMessage.ConfigSeq &lt; seq &#123;</span><br><span class="line">			...</span><br><span class="line">			<span class="comment">//// 消息的配置序号低，需要重新验证过滤消息</span></span><br><span class="line">			configSeq, err := chain.ProcessNormalMsg(env)</span><br><span class="line">			...</span><br><span class="line">			<span class="comment">//重新提交普通交易消息</span></span><br><span class="line">      <span class="keyword">if</span> err := chain.order(env, configSeq, receivedOffset); err != <span class="literal">nil</span> &#123;&#125;</span><br><span class="line">				...</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// advance lastOriginalOffsetProcessed iff message is re-validated and re-ordered</span></span><br><span class="line">		<span class="comment">//当且仅当消息重新验证和重新排序时，才需要修正lastOriginalOffsetProcessed偏移量</span></span><br><span class="line">		offset := regularMessage.OriginalOffset</span><br><span class="line">		<span class="keyword">if</span> offset == <span class="number">0</span> &#123;</span><br><span class="line">			offset = chain.lastOriginalOffsetProcessed</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 提交处理普通交易消息，offset为最近处理的普通交易消息偏移量</span></span><br><span class="line">		commitNormalMsg(env, offset)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>处理普通交易消息的流程与处理配置交易消息的流程基本类似，主要看最后的<code>commitNormalMsg(env, offset)</code>，我们来继续分析：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">commitNormalMsg := <span class="function"><span class="keyword">func</span><span class="params">(message *cb.Envelope, newOffset <span class="type">int64</span>)</span></span> &#123;</span><br><span class="line">		<span class="comment">//// 添加所接收的消息到缓存交易消息列表，并切割成批量交易集合列表batches</span></span><br><span class="line">		batches, pending := chain.BlockCutter().Ordered(message)</span><br><span class="line">		...</span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(batches) == <span class="number">0</span> &#123;</span><br><span class="line">			<span class="comment">// 如果不存在批量交易集合，则启动定时器周期性地发送切割出块消息n</span></span><br><span class="line">			chain.lastOriginalOffsetProcessed = newOffset</span><br><span class="line">			<span class="keyword">if</span> chain.timer == <span class="literal">nil</span> &#123;</span><br><span class="line">				chain.timer = time.After(chain.SharedConfig().BatchTimeout())</span><br><span class="line">			...</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		chain.timer = <span class="literal">nil</span></span><br><span class="line">		offset := receivedOffset <span class="comment">// 设置当前消息偏移量</span></span><br><span class="line">		<span class="keyword">if</span> pending || <span class="built_in">len</span>(batches) == <span class="number">2</span> &#123;</span><br><span class="line">			offset-- <span class="comment">// 计算第1个批量交易消息的偏移量是offset减1</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;  <span class="comment">// 只有1个批量交易集合构成1个区块</span></span><br><span class="line">			<span class="comment">//// 设置第1个批量交易集合的消息偏移量为newOffset</span></span><br><span class="line">			chain.lastOriginalOffsetProcessed = newOffset</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">//// 构造并提交第1个区块</span></span><br><span class="line">		block := chain.CreateNextBlock(batches[<span class="number">0</span>])</span><br><span class="line">		metadata := utils.MarshalOrPanic(&amp;ab.KafkaMetadata&#123;</span><br><span class="line">			LastOffsetPersisted:         offset,</span><br><span class="line">			LastOriginalOffsetProcessed: chain.lastOriginalOffsetProcessed,</span><br><span class="line">			LastResubmittedConfigOffset: chain.lastResubmittedConfigOffset,</span><br><span class="line">		&#125;)</span><br><span class="line">		chain.WriteBlock(block, metadata) <span class="comment">// 更新区块元数据，并提交区块到账本</span></span><br><span class="line">		chain.lastCutBlockNumber++ <span class="comment">// 更新当前通道上最近出块的区块号增1</span></span><br><span class="line">	...</span><br><span class="line">		<span class="comment">// Commit the second block if exists</span></span><br><span class="line">		<span class="comment">//// 检查第2个批量交易集合，构造并提交第2个区块</span></span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(batches) == <span class="number">2</span> &#123;</span><br><span class="line">			chain.lastOriginalOffsetProcessed = newOffset</span><br><span class="line">			offset++ <span class="comment">// 设置第2个批量交易集合的消息偏移量offset加1</span></span><br><span class="line"></span><br><span class="line">			block := chain.CreateNextBlock(batches[<span class="number">1</span>])</span><br><span class="line">			metadata := utils.MarshalOrPanic(&amp;ab.KafkaMetadata&#123;</span><br><span class="line">				LastOffsetPersisted:         offset,</span><br><span class="line">				LastOriginalOffsetProcessed: newOffset,</span><br><span class="line">				LastResubmittedConfigOffset: chain.lastResubmittedConfigOffset,</span><br><span class="line">			&#125;)</span><br><span class="line">			chain.WriteBlock(block, metadata)</span><br><span class="line">			chain.lastCutBlockNumber++</span><br><span class="line">			...</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先将新的普通交易消息添加到当前的缓存交易列表，并切割成批量交易集合列表batches ,但最多只能包含2个批量交易集合，并且第2个批量交易集合最多包含1个交易。最终也是调用的<code>WriteBlock</code>写入到账本。</p>
+<p>到此为止整个<code>processRegular</code>()方法处理消息结束。</p>
+<h2 id="总结及参考"><a href="#总结及参考" class="headerlink" title="总结及参考"></a>总结及参考</h2><p>kafka共识排序的逻辑其实是比较简单的，大概的流程如下 ：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gn0u9hflmfj318e0u0wj5.jpg" alt="image-20210126092717144"></p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a> (文章图片代码资料在里面)</p>
+<p>微信公众号：区块链技术栈</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/fabric/" rel="tag"># fabric</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Endorser%E8%8A%82%E7%82%B9%E8%83%8C%E4%B9%A6%E6%9C%8D%E5%8A%A1-7/" rel="prev" title="死磕hyperledger fabric源码|Endorser节点背书服务">
+      <i class="fa fa-chevron-left"></i> 死磕hyperledger fabric源码|Endorser节点背书服务
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/" rel="next" title="死磕hyperledger fabric源码|Order节点概述">
+      死磕hyperledger fabric源码|Order节点概述 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F%E6%9C%8D%E5%8A%A1"><span class="nav-number">2.</span> <span class="nav-text">kafka共识排序服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#orderer%E6%9C%8D%E5%8A%A1%E9%9B%86%E7%BE%A4"><span class="nav-number">2.1.</span> <span class="nav-text">orderer服务集群</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%85%B1%E8%AF%86%E7%BB%84%E4%BB%B6%E9%93%BE%E5%AF%B9%E8%B1%A1"><span class="nav-number">2.2.</span> <span class="nav-text">启动共识组件链对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%B6%88%E6%81%AF"><span class="nav-number">2.3.</span> <span class="nav-text">处理消息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E9%85%8D%E7%BD%AE%E4%BA%A4%E6%98%93%E6%B6%88%E6%81%AF"><span class="nav-number">3.</span> <span class="nav-text">处理配置交易消息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%99%AE%E9%80%9A%E4%BA%A4%E6%98%93%E6%B6%88%E6%81%AF"><span class="nav-number">4.</span> <span class="nav-text">处理普通交易消息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E5%8F%8A%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">总结及参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕hyperledger fabric源码|Deliver区块分发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕hyperledger fabric源码|Deliver区块分发">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Deliver%E5%8C%BA%E5%9D%97%E5%88%86%E5%8F%91-5/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕hyperledger fabric源码|Deliver区块分发">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn0uq99cf2j31hc0u0k1k.jpg">
+<meta property="article:published_time" content="2024-08-26T06:59:11.321Z">
+<meta property="article:modified_time" content="2024-08-26T07:02:46.870Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="fabric">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn0uq99cf2j31hc0u0k1k.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Deliver%E5%8C%BA%E5%9D%97%E5%88%86%E5%8F%91-5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕hyperledger fabric源码|Deliver区块分发 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Deliver%E5%8C%BA%E5%9D%97%E5%88%86%E5%8F%91-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕hyperledger fabric源码|Deliver区块分发
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 14:59:11 / Modified: 15:02:46" itemprop="dateCreated datePublished" datetime="2024-08-26T14:59:11+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fabric/" itemprop="url" rel="index"><span itemprop="name">fabric</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Deliver%E5%8C%BA%E5%9D%97%E5%88%86%E5%8F%91-5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Deliver%E5%8C%BA%E5%9D%97%E5%88%86%E5%8F%91-5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>8.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+            <div class="post-description">死磕hyperledger fabric源码|Deliver区块分发</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕hyperledger fabric源码|Deliver区块分发</p>
+<p>文章及代码：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>分支：v1.1.0</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gn0uq99cf2j31hc0u0k1k.jpg" alt="00a1ba6f145942b3fdb1a7b63964967e"></p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><code>Orderer</code>排序服务器提供了区块分发服务接口，接收客户端提交的区块请求消息（<code>Envelope</code>类型，通道头部类型是<code>DELIVER_SEEK_INFO</code>、<code>CONFIG_UPDATE</code>等），根据该消息封装的区块搜索信息对象（<code>SeekInfo</code>类型），包括查找最旧区块SeekOldest类型、查找最新区块<code>SeekNewest</code>类型、查找指定位置区块<code>SeekSpecified</code>类型等，构造对应请求范围的范围查询结果迭代器，读取<code>Orderer</code>节点指定通道账本上的区块数据，同时，建立消息处理循环，基于该结果迭代器依次读取请求的区块数据结果，<strong>发送给组织的Leader主节点等请求节点。</strong></p>
+<p><code>Orderer</code>节点启动时在本地<code>gRPC</code>服务器上注册了<code>Orderer</code>排序服务器，并创建了Deliver服务处理句柄。当客户端发起<code>Deliver</code>服务请求时，<code>Orderer</code>排序服务器就调用<code>Deliver()</code>方法处理消息请求。</p>
+<h2 id="Diliver消息服务处理"><a href="#Diliver消息服务处理" class="headerlink" title="Diliver消息服务处理"></a>Diliver消息服务处理</h2><p>入口在<code>orderer/common/server/server.go/Deliver()</code>方法中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *server)</span></span> Deliver(srv ab.AtomicBroadcast_DeliverServer) <span class="type">error</span> &#123;</span><br><span class="line">	...</span><br><span class="line">	policyChecker := <span class="function"><span class="keyword">func</span><span class="params">(env *cb.Envelope, channelID <span class="type">string</span>)</span></span> <span class="type">error</span> &#123; <span class="comment">// 定义策略检查器</span></span><br><span class="line">		chain, ok := s.GetChain(channelID) <span class="comment">// 获取指定通道的链支持对象</span></span><br><span class="line">		<span class="keyword">if</span> !ok &#123;</span><br><span class="line">			<span class="keyword">return</span> errors.Errorf(<span class="string">&quot;channel %s not found&quot;</span>, channelID)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 创建消息过滤器</span></span><br><span class="line">		sf := msgprocessor.NewSigFilter(policies.ChannelReaders, chain)</span><br><span class="line">		<span class="keyword">return</span> sf.Apply(env) <span class="comment">// 过滤消息</span></span><br><span class="line">	&#125;</span><br><span class="line">	server := &amp;deliverMsgTracer&#123;</span><br><span class="line">		DeliverSupport: &amp;deliverHandlerSupport&#123;AtomicBroadcast_DeliverServer: srv&#125;,</span><br><span class="line">		msgTracer: msgTracer&#123;</span><br><span class="line">			debug:    s.debug,</span><br><span class="line">			function: <span class="string">&quot;Deliver&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// Deliver服务消息处理</span></span><br><span class="line">	<span class="keyword">return</span> s.dh.Handle(deliver.NewDeliverServer(server, policyChecker, s.sendProducer(srv)))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大概做了以下几件事：</p>
+<ul>
+<li>定义策略检查器：用于检查接收的区块请求消息必须满足指定通道上的访问控制权限策略的要求</li>
+<li>获取指定通道的链支持对象</li>
+<li>创建消息过滤器，过滤消息</li>
+<li>Deliver服务消息处理区块请求</li>
+</ul>
+<p>我们来看是如何处理的，进入到<code>s.dh.Handle</code>:  </p>
+<blockquote>
+<p>&#x2F;common&#x2F;deliver&#x2F;deliver.go&#x2F;Handle</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ds *deliverHandler)</span></span> Handle(srv *DeliverServer) <span class="type">error</span> &#123;</span><br><span class="line">...</span><br><span class="line">	<span class="comment">// 等待消息请求并进行处理</span></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		...</span><br><span class="line">		envelope, err := srv.Recv() <span class="comment">// 等待接收客户端发送的区块消息请求</span></span><br><span class="line">	...</span><br><span class="line">		<span class="comment">// 从Orderer节点本地指定通道的区块账本中获取指定区块，并向客户端发送请求</span></span><br><span class="line">		<span class="keyword">if</span> err := ds.deliverBlocks(srv, envelope); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>不言而喻，直接进入到<code>deliverBlocks</code>,这部分的内容是最核心的，逐步分析如下：</p>
+<p>①：<em>解析PayLoad,检查header和ChannelHeader的合法性</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">payload, err := utils.UnmarshalPayload(envelope.Payload) <span class="comment">// 解析消息负载</span></span><br><span class="line">...</span><br><span class="line"><span class="keyword">if</span> payload.Header == <span class="literal">nil</span> &#123;&#125;</span><br><span class="line"><span class="comment">// 解析通道头部</span></span><br><span class="line">	chdr, err := utils.UnmarshalChannelHeader(payload.Header.ChannelHeader)</span><br><span class="line">err = ds.validateChannelHeader(srv, chdr) <span class="comment">// 验证通道头部合法性</span></span><br></pre></td></tr></table></figure>
+
+<p>②：<em>从chains字典中获取指定通道（chainID）的链支持对象chain，并检查该对象是否存在错误信息</em> </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chain, ok := ds.sm.GetChain(chdr.ChannelId) <span class="comment">// 获取指定通道的链支持对象</span></span><br></pre></td></tr></table></figure>
+
+<p>③：<em>创建访问控制对象,并</em>检查消息签名是否符合指定的通道读权限策略**</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">accessControl, err := newSessionAC(chain, envelope, srv.PolicyChecker, chdr.ChannelId, crypto.ExpiresAt)</span><br><span class="line">...</span><br><span class="line">err := accessControl.evaluate()</span><br></pre></td></tr></table></figure>
+
+<p>④：<em>解析区块搜索信息SeekInfo结构对象</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">seekInfo := &amp;ab.SeekInfo&#123;&#125;</span><br><span class="line"><span class="keyword">if</span> err = proto.Unmarshal(payload.Data, seekInfo); err != <span class="literal">nil</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑤：<em>检查起始位置与结束位置的合法性</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> seekInfo.Start == <span class="literal">nil</span> || seekInfo.Stop == <span class="literal">nil</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑥：<em>创建区块账本迭代器并获取起始区块号，同时设置起始位置</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cursor, number := chain.Reader().Iterator(seekInfo.Start)</span><br></pre></td></tr></table></figure>
+
+<p><code>Iterator</code>根据<code>startPosition.Type</code>起始位置对象的类型计算起始区块号<code>startingBlockNumbe</code>,类型如下：</p>
+<ul>
+<li><p>SeekPosition_Oldest：搜索最旧的区块，将起始区块号<code>startingBlockNumber</code>设置为 0； </p>
+</li>
+<li><p>SeekPosition_Newest：搜索最新的区块，将起始区块号<code>startingBlockNumber</code>设置为当前通道账本的最新区块号<code>info.Height-1</code>，即账本高度减1； </p>
+</li>
+<li><p>SeekPosition_Specified：搜索指定位置的区块，将起始区块号<code>startingBlockNumber</code>设置为指定起始位置的区块号<code>start.Specified.Number</code>。</p>
+</li>
+</ul>
+<p><code>Iterator</code> 方法的大致功能如下： <code>common/ledger/blockledger/file/impl.go/Iterator</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fl *FileLedger)</span></span> Iterator(startPosition *ab.SeekPosition) (blockledger.Iterator, <span class="type">uint64</span>) &#123;</span><br><span class="line">	<span class="keyword">var</span> startingBlockNumber <span class="type">uint64</span></span><br><span class="line">	<span class="keyword">switch</span> start := startPosition.Type.(<span class="keyword">type</span>) &#123; <span class="comment">// 分析起始位置类型</span></span><br><span class="line">	<span class="keyword">case</span> *ab.SeekPosition_Oldest: <span class="comment">// 搜索最旧区块，区块号为0</span></span><br><span class="line">		startingBlockNumber = <span class="number">0</span></span><br><span class="line">	<span class="keyword">case</span> *ab.SeekPosition_Newest: <span class="comment">// 搜索最新区块</span></span><br><span class="line">		info, err := fl.blockStore.GetBlockchainInfo() <span class="comment">// 获取区块链信息</span></span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			logger.Panic(err)</span><br><span class="line">		&#125;</span><br><span class="line">		newestBlockNumber := info.Height - <span class="number">1</span> <span class="comment">// 最新区块号</span></span><br><span class="line">		startingBlockNumber = newestBlockNumber</span><br><span class="line">	<span class="keyword">case</span> *ab.SeekPosition_Specified: <span class="comment">// 搜索指定位置区块</span></span><br><span class="line">		startingBlockNumber = start.Specified.Number</span><br><span class="line">		height := fl.Height()</span><br><span class="line">		<span class="keyword">if</span> startingBlockNumber &gt; height &#123; <span class="comment">// 若超过高度，则报错</span></span><br><span class="line">			<span class="keyword">return</span> &amp;blockledger.NotFoundErrorIterator&#123;&#125;, <span class="number">0</span></span><br><span class="line">		&#125;</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		<span class="keyword">return</span> &amp;blockledger.NotFoundErrorIterator&#123;&#125;, <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 构造区块迭代器</span></span><br><span class="line">	iterator, err := fl.blockStore.RetrieveBlocks(startingBlockNumber)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> &amp;blockledger.NotFoundErrorIterator&#123;&#125;, <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 构造账本区块迭代器</span></span><br><span class="line">	<span class="keyword">return</span> &amp;fileLedgerIterator&#123;ledger: fl, blockNumber: startingBlockNumber, commonIterator: iterator&#125;, startingBlockNumber</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑦：循环读取区块数据，从本地区块账本中获取指定区块号范围内的区块数据，并依次顺序发送给请求客户端</p>
+<p>7.1 未找到数据返回</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> seekInfo.Behavior == ab.SeekInfo_FAIL_IF_NOT_READY &#123;</span><br><span class="line">			<span class="keyword">if</span> number &gt; chain.Reader().Height()<span class="number">-1</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> sendStatusReply(srv, cb.Status_NOT_FOUND)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>7.2 获取下一个数据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">block, status := nextBlock(cursor, erroredChan) <span class="comment">// 从本地账本获取下一个区块</span></span><br><span class="line"><span class="keyword">if</span> status != cb.Status_SUCCESS &#123;...&#125;</span><br></pre></td></tr></table></figure>
+
+<p>7.3  再次检查是否满足访问控制策略要求</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := accessControl.evaluate(); err != <span class="literal">nil</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>7.4  发送区块数据</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := sendBlockReply(srv, block); err != <span class="literal">nil</span> &#123; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>7.5 <em>循环结束，发送成功状态</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := sendStatusReply(srv, cb.Status_SUCCESS);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Deliver服务客户端"><a href="#Deliver服务客户端" class="headerlink" title="Deliver服务客户端"></a>Deliver服务客户端</h2><p>以<code>Leader</code>主节点为例，分析<code>Deliver</code>服务客户端从<code>Orderer</code>节点请求获取区块的流程。</p>
+<h3 id="初始化Deliver服务实例"><a href="#初始化Deliver服务实例" class="headerlink" title="初始化Deliver服务实例"></a>初始化Deliver服务实例</h3><p>入口：<code>gossip/service/gossip_service.go/InitializeChannel</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(g *gossipServiceImpl)</span></span> InitializeChannel(chainID <span class="type">string</span>, endpoints []<span class="type">string</span>, support Support) &#123;</span><br><span class="line">	...</span><br><span class="line">	g.chains[chainID] = state.NewGossipStateProvider(chainID, servicesAdapter, coordinator)</span><br><span class="line">	<span class="keyword">if</span> g.deliveryService[chainID] == <span class="literal">nil</span> &#123; <span class="comment">// 检查是否已经存在Deliver服务实例</span></span><br><span class="line">		<span class="keyword">var</span> err <span class="type">error</span></span><br><span class="line">		g.deliveryService[chainID], err = g.deliveryFactory.Service(g, endpoints, g.mcs) <span class="comment">// 检查是否已经存在Deliver服务实例</span></span><br><span class="line">		...</span><br><span class="line">		<span class="comment">// peer.gossip.useLeaderElection与peer.gossip.orgLeader是互斥的两个配置参数，</span></span><br><span class="line">		<span class="comment">// 如果将两个都设置为true且没有被定义，则会引起Peer节点错误</span></span><br><span class="line">		<span class="comment">// 启用Leader主节点动态选举机制</span></span><br><span class="line">		leaderElection := viper.GetBool(<span class="string">&quot;peer.gossip.useLeaderElection&quot;</span>)</span><br><span class="line">		<span class="comment">// 静态设置为组织Leader主节点</span></span><br><span class="line">		isStaticOrgLeader := viper.GetBool(<span class="string">&quot;peer.gossip.orgLeader&quot;</span>)</span><br><span class="line">		...</span><br><span class="line">		<span class="keyword">if</span> leaderElection &#123; <span class="comment">// 启用了动态Leader主节点选举机制</span></span><br><span class="line">			logger.Debug(<span class="string">&quot;Delivery uses dynamic leader election mechanism, channel&quot;</span>, chainID)</span><br><span class="line">			g.leaderElection[chainID] = g.newLeaderElectionComponent(chainID, g.onStatusChangeFactory(chainID, support.Committer))</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> isStaticOrgLeader &#123;</span><br><span class="line">			<span class="comment">// 若静态指定了Leader主节点，则连接 Orderer节点请求区块数据</span></span><br><span class="line">			<span class="comment">// 启动指定通道上的Deliver服务实例请求获取区块数据</span></span><br><span class="line">			g.deliveryService[chainID].StartDeliverForChannel(chainID, support.Committer, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;&#125;)</span><br><span class="line">		&#125; ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先检查是否已经存在<code>Deliver</code>实例，然后根据<code>Leader</code>主节点动态选举机制还是静态指定了<code>Leader</code>主节点分别进入不同的分支，如果是静态指定了<code>Leader</code>主节点，则连接 <code>Orderer</code>节点请求区块数据,启动指定通道上的<code>Deliver</code>服务实例请求获取区块数据。接下来关注启动<code>Deliver</code>服务实例。</p>
+<h3 id="启动Deliver服务实例"><a href="#启动Deliver服务实例" class="headerlink" title="启动Deliver服务实例"></a>启动Deliver服务实例</h3><p>主要做了以下事：</p>
+<p>①：<em>获取绑定指定通道的区块提供者</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> _, exist := d.blockProviders[chainID];</span><br></pre></td></tr></table></figure>
+
+<p>②：<em>不存在区块提供者</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">client := d.newClient(chainID, ledgerInfo)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *deliverServiceImpl)</span></span> newClient(chainID <span class="type">string</span>, ledgerInfoProvider blocksprovider.LedgerInfo) *broadcastClient &#123;</span><br><span class="line">	requester := &amp;blocksRequester&#123; <span class="comment">//定义区块请求者blocksRequester结构对象</span></span><br><span class="line">		tls:     comm.TLSEnabled(),</span><br><span class="line">		chainID: chainID,</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//定义broadcastSetup()方法</span></span><br><span class="line">	broadcastSetup := <span class="function"><span class="keyword">func</span><span class="params">(bd blocksprovider.BlocksDeliverer)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> requester.RequestBlocks(ledgerInfoProvider) <span class="comment">// 请求区块数据</span></span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">//创建connProducer对象</span></span><br><span class="line">	connProd := comm.NewConnectionProducer(d.conf.ConnFactory(chainID), d.conf.Endpoints)</span><br><span class="line">	<span class="comment">//// 创建broadcastClient客户端</span></span><br><span class="line">	bClient := NewBroadcastClient(connProd, d.conf.ABCFactory, broadcastSetup, backoffPolicy)</span><br><span class="line">	requester.client = bClient <span class="comment">// 设置到区块请求者对象的客户端</span></span><br><span class="line">	<span class="keyword">return</span> bClient</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.1 创建Deliver服务实例上的 broadcastClient客户端</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">client := d.newClient(chainID, ledgerInfo)</span><br></pre></td></tr></table></figure>
+
+<p>2.2 创建指定通道关联的区块提供者</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">d.blockProviders[chainID] = blocksprovider.NewBlocksProvider(chainID, client, d.conf.Gossip, d.conf.CryptoSvc)</span><br></pre></td></tr></table></figure>
+
+<p>2.3 启动goroutine开始从Orderer节点请求获取区块，并发送到组织内其他Peer节点</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			d.blockProviders[chainID].DeliverBlocks() <span class="comment">// 请求获取区块数据</span></span><br><span class="line">			finalizer()</span><br><span class="line">		&#125;()</span><br></pre></td></tr></table></figure>
+
+<p>接下来就是调用区块提供者对象的<code>DeliverBlocks()</code>方法，向<code>Orderer</code>节点发送消息请求的区块数据。</p>
+<h3 id="请求获取区块数据"><a href="#请求获取区块数据" class="headerlink" title="请求获取区块数据"></a>请求获取区块数据</h3><p>入口在：<code>core/deliverservice/blocksprovider/blocksprovider.go/DeliverBlocks()</code>,具体分析如下：</p>
+<p>①：接收消息</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msg, err := b.client.Recv() </span><br></pre></td></tr></table></figure>
+
+<p>② ：根据消息类型进行处理</p>
+<p>大致有以下几种消息类型：</p>
+<ul>
+<li>DeliverResponse_Status:用于描述<code>Deliver</code>服务请求执行状态。</li>
+<li>DeliverResponse_Block：包含请求获取的区块数据。</li>
+</ul>
+<p>2.1 DeliverResponse_Status分支</p>
+<p>如果DeliverBlocks()方法接收到Status_SUCCESS状态，则说明本次区块请求处理成功，表示已经接收完毕区块请求消息指定范围内的区块数据。除此以外的其他状态消息都是非成功的执行状态消息，包括Status_BAD_REQUEST、Status_FORBIDDEN等</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> t.Status == common.Status_SUCCESS &#123;&#125;</span><br><span class="line"><span class="keyword">if</span> t.Status == common.Status_BAD_REQUEST || t.Status == common.Status_FORBIDDEN &#123;&#125;</span><br><span class="line"><span class="keyword">if</span> t.Status == common.Status_BAD_REQUEST &#123;</span><br><span class="line">				b.client.Disconnect(<span class="literal">false</span>)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				b.client.Disconnect(<span class="literal">true</span>)</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.2 DeliverResponse_Block分支</p>
+<p>2.2.1 <em>获取区块号</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">seqNum := t.Block.Header.Number</span><br></pre></td></tr></table></figure>
+
+<p>2.2.2<em>获取经过序列化的区块字节数组</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">marshaledBlock, err := proto.Marshal(t.Block)</span><br></pre></td></tr></table></figure>
+
+<p>2.2.3<em>验证区块</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">err := b.mcs.VerifyBlock(gossipcommon.ChainID(b.chainID), seqNum, marshaledBlock);</span><br></pre></td></tr></table></figure>
+
+<p>2.2.4<em>获取通道Peer节点数量</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">numberOfPeers := <span class="built_in">len</span>(b.gossip.PeersOfChannel(gossipcommon.ChainID(b.chainID)))</span><br></pre></td></tr></table></figure>
+
+<p>2.2.5<em>创建消息负载和Gossip消息</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">payload := createPayload(seqNum, marshaledBlock) </span><br><span class="line">gossipMsg := createGossipMsg(b.chainID, payload)</span><br></pre></td></tr></table></figure>
+
+<p>2.2.6<em>添加消息负载到本地消息负载缓冲区，等待提交账本</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">err := b.gossip.AddPayload(b.chainID, payload)</span><br></pre></td></tr></table></figure>
+
+<p>2.2.7<em>通过Gossip消息协议发送区块消息到组织内的其他节点</em></p>
+<p>基于<code>Gossip</code>消息协议将<code>DataMsg</code>类型数据消息（只含有区块数据）分发到组织内的其他<code>Peer</code>节点上，并保存到该节点的消息存储器上。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">b.gossip.Gossip(gossipMsg)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a> (文章图片代码资料)</p>
+<p>微信公众号：区块链技术栈</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/fabric/" rel="tag"># fabric</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Committer%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9-8/" rel="prev" title="死磕hyperledger fabric源码|Committer记账节点">
+      <i class="fa fa-chevron-left"></i> 死磕hyperledger fabric源码|Committer记账节点
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Endorser%E8%8A%82%E7%82%B9%E8%83%8C%E4%B9%A6%E6%9C%8D%E5%8A%A1-7/" rel="next" title="死磕hyperledger fabric源码|Endorser节点背书服务">
+      死磕hyperledger fabric源码|Endorser节点背书服务 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Diliver%E6%B6%88%E6%81%AF%E6%9C%8D%E5%8A%A1%E5%A4%84%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">Diliver消息服务处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Deliver%E6%9C%8D%E5%8A%A1%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="nav-number">3.</span> <span class="nav-text">Deliver服务客户端</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96Deliver%E6%9C%8D%E5%8A%A1%E5%AE%9E%E4%BE%8B"><span class="nav-number">3.1.</span> <span class="nav-text">初始化Deliver服务实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8Deliver%E6%9C%8D%E5%8A%A1%E5%AE%9E%E4%BE%8B"><span class="nav-number">3.2.</span> <span class="nav-text">启动Deliver服务实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E8%8E%B7%E5%8F%96%E5%8C%BA%E5%9D%97%E6%95%B0%E6%8D%AE"><span class="nav-number">3.3.</span> <span class="nav-text">请求获取区块数据</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕共识算法|Raft算法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕共识算法|Raft算法">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_Raft%E7%AE%97%E6%B3%95-6/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕共识算法|Raft算法">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv4oqutq9j311x0lcwgh.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv5fibnnwj31bc0jgq4d.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv77wcjjrj31fy0i8akh.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv79etskij31c40f4ad7.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7bruxirj30xi0u0jsy.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7dki1f3j31e60p6tfm.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7e5yoruj31h00skqm1.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7ejhdj4j31fu0p64fl.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7fah4fcj318k0kaar3.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7gvonaej31dq0teae6.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7h61euxj319s0m2n1e.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7hzg71cj31600iuq60.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7iacddmj31780e2afb.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7jwqaoqj31fg0s444e.jpg">
+<meta property="article:published_time" content="2024-08-26T07:10:40.806Z">
+<meta property="article:modified_time" content="2024-08-26T07:12:21.611Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="共识算法">
+<meta property="article:tag" content="Raft">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv4oqutq9j311x0lcwgh.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_Raft%E7%AE%97%E6%B3%95-6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕共识算法|Raft算法 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_Raft%E7%AE%97%E6%B3%95-6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕共识算法|Raft算法
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 15:10:40 / Modified: 15:12:21" itemprop="dateCreated datePublished" datetime="2024-08-26T15:10:40+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">共识算法</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_Raft%E7%AE%97%E6%B3%95-6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_Raft%E7%AE%97%E6%B3%95-6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+            <div class="post-description">死磕共识算法|Raft算法</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕共识算法|Raft算法</p>
+<p>配合以下代码进行阅读：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>写文不易，给个小关注，有什么问题可以指出，便于大家交流学习。</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv4oqutq9j311x0lcwgh.jpg" alt="a01214b9197eecac0e30d703597788f0"></p>
+<hr>
+<h1 id="Raft算法概述"><a href="#Raft算法概述" class="headerlink" title="Raft算法概述"></a>Raft算法概述</h1><p>不同于Paxos算法直接从分布式一致性问题出发推导出来，Raft算法则是从多副本状态机的角度提出，用于管理多副本状态机的日志复制。Raft实现了和Paxos相同的功能，它将一致性分解为多个子问题：Leader选举（Leader election）、日志同步（Log replication）、安全性（Safety）、日志压缩（Log compaction）、成员变更（Membership change）等。同时，Raft算法使用了更强的假设来减少了需要考虑的状态，使之变的易于理解和实现。</p>
+<h1 id="Raft算法角色"><a href="#Raft算法角色" class="headerlink" title="Raft算法角色"></a>Raft算法角色</h1><p>Raft将系统中的角色分为领导者（Leader）、跟从者（Follower）和候选人（Candidate）：</p>
+<ul>
+<li><strong>Leader</strong>：接受客户端请求，并向Follower同步请求日志，当日志同步到大多数节点上后告诉Follower提交日志。</li>
+<li><strong>Follower</strong>：接受并持久化Leader同步的日志，在Leader告之日志可以提交之后，提交日志。</li>
+<li><strong>Candidate</strong>：Leader选举过程中的临时角色。</li>
+</ul>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv5fibnnwj31bc0jgq4d.jpg" alt="image-20210221144024734"></p>
+<p>Raft要求系统在任意时刻最多只有一个Leader，正常工作期间只有Leader和Followers。</p>
+<p>Raft算法角色状态转换如下：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv77wcjjrj31fy0i8akh.jpg" alt="image-20210221154232947"></p>
+<p>Follower只响应其他服务器的请求。如果Follower超时没有收到Leader的消息，它会成为一个Candidate并且开始一次Leader选举。收到大多数服务器投票的Candidate会成为新的Leader。Leader在宕机之前会一直保持Leader的状态。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv79etskij31c40f4ad7.jpg" alt="image-20210221154400705"></p>
+<p>Raft算法将时间分为一个个的任期（term），每一个term的开始都是Leader选举。在成功选举Leader之后，Leader会在整个term内管理整个集群。如果Leader选举失败，该term就会因为没有Leader而结束。</p>
+<h1 id="Leader选举"><a href="#Leader选举" class="headerlink" title="Leader选举"></a>Leader选举</h1><p>Raft 使用心跳（heartbeat）触发Leader选举。当服务器启动时，初始化为Follower。Leader向所有Followers周期性发送heartbeat。如果Follower在选举超时时间内没有收到Leader的heartbeat，就会等待一段随机的时间后发起一次Leader选举。</p>
+<p>Follower将其当前term加一然后转换为Candidate。它首先给自己投票并且给集群中的其他服务器发送 RequestVote RPC 。结果有以下三种情况：</p>
+<ul>
+<li>赢得了多数的选票，成功选举为Leader；</li>
+<li>收到了Leader的消息，表示有其它服务器已经抢先当选了Leader；</li>
+<li>没有服务器赢得多数的选票，Leader选举失败，等待选举时间超时后发起下一次选举。</li>
+</ul>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7bruxirj30xi0u0jsy.jpg" alt="v2-0471619d1b78ba6d57326d97825d9495_r"></p>
+<p>选举出<code>Leader</code>后，<code>Leader</code>通过定期向所有<code>Followers</code>发送心跳信息维持其统治。若<code>Follower</code>一段时间未收到Leader的心跳则认为<code>Leader</code>可能已经挂了，再次发起<code>Leader</code>选举过程。</p>
+<p><code>Raft</code>保证选举出的<code>Leader</code>上一定具有最新的已提交的日志。</p>
+<h1 id="日志同步"><a href="#日志同步" class="headerlink" title="日志同步"></a>日志同步</h1><p>Leader选出后，就开始接收客户端的请求。Leader把请求作为日志条目（Log entries）加入到它的日志中，然后并行的向其他服务器发起 AppendEntries RPC （RPC细节参见八、Raft算法总结）复制日志条目。当这条日志被复制到大多数服务器上，Leader将这条日志应用到它的状态机并向客户端返回执行结果。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7dki1f3j31e60p6tfm.jpg" alt="image-20210221154800173"></p>
+<p>某些Followers可能没有成功的复制日志，Leader会无限的重试 AppendEntries RPC直到所有的Followers最终存储了所有的日志条目。</p>
+<p>日志由有序编号（log index）的日志条目组成。每个日志条目包含它被创建时的任期号（term），和用于状态机执行的命令。如果一个日志条目被复制到大多数服务器上，就被认为可以提交（commit）了。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7e5yoruj31h00skqm1.jpg" alt="image-20210221154824325"></p>
+<p>Raft日志同步保证如下两点：</p>
+<ul>
+<li>如果不同日志中的两个条目有着相同的索引和任期号，则它们所存储的命令是相同的。</li>
+<li>如果不同日志中的两个条目有着相同的索引和任期号，则它们之前的所有条目都是完全一样的。</li>
+</ul>
+<p>第一条特性源于Leader在一个term内在给定的一个log index最多创建一条日志条目，同时该条目在日志中的位置也从来不会改变。</p>
+<p>第二条特性源于 AppendEntries 的一个简单的一致性检查。当发送一个 AppendEntries RPC 时，Leader会把新日志条目紧接着之前的条目的log index和term都包含在里面。如果Follower没有在它的日志中找到log index和term都相同的日志，它就会拒绝新的日志条目。</p>
+<p>一般情况下，Leader和Followers的日志保持一致，因此 AppendEntries 一致性检查通常不会失败。然而，Leader崩溃可能会导致日志不一致：旧的Leader可能没有完全复制完日志中的所有条目。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7ejhdj4j31fu0p64fl.jpg" alt="image-20210221154856229"></p>
+<p>上图阐述了一些Followers可能和新的Leader日志不同的情况。一个Follower可能会丢失掉Leader上的一些条目，也有可能包含一些Leader没有的条目，也有可能两者都会发生。丢失的或者多出来的条目可能会持续多个任期。</p>
+<p>Leader通过强制Followers复制它的日志来处理日志的不一致，Followers上的不一致的日志会被Leader的日志覆盖。</p>
+<p>Leader为了使Followers的日志同自己的一致，Leader需要找到Followers同它的日志一致的地方，然后覆盖Followers在该位置之后的条目。</p>
+<p>Leader会从后往前试，每次AppendEntries失败后尝试前一个日志条目，直到成功找到每个Follower的日志一致位点，然后向后逐条覆盖Followers在该位置之后的条目。</p>
+<h1 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h1><p>Raft增加了如下两条限制以保证安全性：</p>
+<ul>
+<li>拥有最新的已提交的log entry的Follower才有资格成为Leader。</li>
+</ul>
+<p>这个保证是在RequestVote RPC中做的，Candidate在发送RequestVote RPC时，要带上自己的最后一条日志的term和log index，其他节点收到消息时，如果发现自己的日志比请求中携带的更新，则拒绝投票。日志比较的原则是，如果本地的最后一条log entry的term更大，则term大的更新，如果term一样大，则log index更大的更新。</p>
+<ul>
+<li>Leader只能推进commit index来提交当前term的已经复制到大多数服务器上的日志，旧term日志的提交要等到提交当前term的日志来间接提交（log index 小于 commit index的日志被间接提交）。</li>
+</ul>
+<p>之所以要这样，是因为可能会出现已提交的日志又被覆盖的情况：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7fah4fcj318k0kaar3.jpg" alt="image-20210221154938685"></p>
+<p>在阶段a，term为2，S1是Leader，且S1写入日志（term, index）为(2, 2)，并且日志被同步写入了S2；</p>
+<p>在阶段b，S1离线，触发一次新的选主，此时S5被选为新的Leader，此时系统term为3，且写入了日志（term, index）为（3， 2）;</p>
+<p>S5尚未将日志推送到Followers就离线了，进而触发了一次新的选主，而之前离线的S1经过重新上线后被选中变成Leader，此时系统term为4，此时S1会将自己的日志同步到Followers，按照上图就是将日志（2， 2）同步到了S3，而此时由于该日志已经被同步到了多数节点（S1, S2, S3），因此，此时日志（2，2）可以被提交了。；</p>
+<p>在阶段d，S1又下线了，触发一次选主，而S5有可能被选为新的Leader（这是因为S5可以满足作为主的一切条件：1. term &#x3D; 5 &gt; 4，2. 最新的日志为（3，2），比大多数节点（如S2&#x2F;S3&#x2F;S4的日志都新），然后S5会将自己的日志更新到Followers，于是S2、S3中已经被提交的日志（2，2）被截断了。</p>
+<p>增加上述限制后，即使日志（2，2）已经被大多数节点（S1、S2、S3）确认了，但是它不能被提交，因为它是来自之前term（2）的日志，直到S1在当前term（4）产生的日志（4， 4）被大多数Followers确认，S1方可提交日志（4，4）这条日志，当然，根据Raft定义，（4，4）之前的所有日志也会被提交。此时即使S1再下线，重新选主时S5不可能成为Leader，因为它没有包含大多数节点已经拥有的日志（4，4）。</p>
+<h1 id="日志压缩"><a href="#日志压缩" class="headerlink" title="日志压缩"></a>日志压缩</h1><p>在实际的系统中，不能让日志无限增长，否则系统重启时需要花很长的时间进行回放，从而影响可用性。Raft采用对整个系统进行snapshot来解决，snapshot之前的日志都可以丢弃。</p>
+<p>每个副本独立的对自己的系统状态进行snapshot，并且只能对已经提交的日志记录进行snapshot。</p>
+<p>Snapshot中包含以下内容：</p>
+<ul>
+<li>日志元数据。最后一条已提交的 log entry的 log index和term。这两个值在snapshot之后的第一条log entry的AppendEntries RPC的完整性检查的时候会被用上。</li>
+<li>系统当前状态。</li>
+</ul>
+<p>当Leader要发给某个日志落后太多的Follower的log entry被丢弃，Leader会将snapshot发给Follower。或者当新加进一台机器时，也会发送snapshot给它。发送snapshot使用InstalledSnapshot RPC（RPC细节参见八、Raft算法总结）。</p>
+<p>做snapshot既不要做的太频繁，否则消耗磁盘带宽， 也不要做的太不频繁，否则一旦节点重启需要回放大量日志，影响可用性。推荐当日志达到某个固定的大小做一次snapshot。</p>
+<p>做一次snapshot可能耗时过长，会影响正常日志同步。可以通过使用copy-on-write技术避免snapshot过程影响正常日志同步。</p>
+<h1 id="成员变更"><a href="#成员变更" class="headerlink" title="成员变更"></a>成员变更</h1><p>成员变更是在集群运行过程中副本发生变化，如增加&#x2F;减少副本数、节点替换等。</p>
+<p>成员变更也是一个分布式一致性问题，既所有服务器对新成员达成一致。但是成员变更又有其特殊性，因为在成员变更的一致性达成的过程中，参与投票的进程会发生变化。</p>
+<p>如果将成员变更当成一般的一致性问题，直接向Leader发送成员变更请求，Leader复制成员变更日志，达成多数派之后提交，各服务器提交成员变更日志后从旧成员配置（Cold）切换到新成员配置（Cnew）。</p>
+<p>因为各个服务器提交成员变更日志的时刻可能不同，造成各个服务器从旧成员配置（Cold）切换到新成员配置（Cnew）的时刻不同。</p>
+<p>成员变更不能影响服务的可用性，但是成员变更过程的某一时刻，可能出现在Cold和Cnew中同时存在两个不相交的多数派，进而可能选出两个Leader，形成不同的决议，破坏安全性。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7gvonaej31dq0teae6.jpg" alt="image-20210221155100462"></p>
+<p>由于成员变更的这一特殊性，成员变更不能当成一般的一致性问题去解决。</p>
+<p>为了解决这一问题，Raft提出了两阶段的成员变更方法。集群先从旧成员配置Cold切换到一个过渡成员配置，称为共同一致（joint consensus），共同一致是旧成员配置Cold和新成员配置Cnew的组合Cold U Cnew，一旦共同一致Cold U Cnew被提交，系统再切换到新成员配置Cnew。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7h61euxj319s0m2n1e.jpg" alt="image-20210221155126751"></p>
+<p>Raft两阶段成员变更过程如下：</p>
+<ol>
+<li>Leader收到成员变更请求从Cold切成Cnew；</li>
+<li>Leader在本地生成一个新的log entry，其内容是Cold∪Cnew，代表当前时刻新旧成员配置共存，写入本地日志，同时将该log entry复制至Cold∪Cnew中的所有副本。在此之后新的日志同步需要保证得到Cold和Cnew两个多数派的确认；</li>
+<li>Follower收到Cold∪Cnew的log entry后更新本地日志，并且此时就以该配置作为自己的成员配置；</li>
+<li>如果Cold和Cnew中的两个多数派确认了Cold U Cnew这条日志，Leader就提交这条log entry；</li>
+<li>接下来Leader生成一条新的log entry，其内容是新成员配置Cnew，同样将该log entry写入本地日志，同时复制到Follower上；</li>
+<li>Follower收到新成员配置Cnew后，将其写入日志，并且从此刻起，就以该配置作为自己的成员配置，并且如果发现自己不在Cnew这个成员配置中会自动退出；</li>
+<li>Leader收到Cnew的多数派确认后，表示成员变更成功，后续的日志只要得到Cnew多数派确认即可。Leader给客户端回复成员变更执行成功。</li>
+</ol>
+<p>异常分析：</p>
+<ul>
+<li>如果Leader的Cold U Cnew尚未推送到Follower，Leader就挂了，此后选出的新Leader并不包含这条日志，此时新Leader依然使用Cold作为自己的成员配置。</li>
+<li>如果Leader的Cold U Cnew推送到大部分的Follower后就挂了，此后选出的新Leader可能是Cold也可能是Cnew中的某个Follower。</li>
+<li>如果Leader在推送Cnew配置的过程中挂了，那么同样，新选出来的Leader可能是Cold也可能是Cnew中的某一个，此后客户端继续执行一次改变配置的命令即可。</li>
+<li>如果大多数的Follower确认了Cnew这个消息后，那么接下来即使Leader挂了，新选出来的Leader肯定位于Cnew中。</li>
+</ul>
+<p>两阶段成员变更比较通用且容易理解，但是实现比较复杂，同时两阶段的变更协议也会在一定程度上影响变更过程中的服务可用性，因此我们期望增强成员变更的限制，以简化操作流程。</p>
+<p>两阶段成员变更，之所以分为两个阶段，是因为对Cold与Cnew的关系没有做任何假设，为了避免Cold和Cnew各自形成不相交的多数派选出两个Leader，才引入了两阶段方案。</p>
+<p>如果增强成员变更的限制，假设Cold与Cnew任意的多数派交集不为空，这两个成员配置就无法各自形成多数派，那么成员变更方案就可能简化为一阶段。</p>
+<p>那么如何限制Cold与Cnew，使之任意的多数派交集不为空呢？方法就是每次成员变更只允许增加或删除一个成员。</p>
+<p>可从数学上严格证明，只要每次只允许增加或删除一个成员，Cold与Cnew不可能形成两个不相交的多数派。</p>
+<p>一阶段成员变更：</p>
+<ul>
+<li>成员变更限制每次只能增加或删除一个成员（如果要变更多个成员，连续变更多次）。</li>
+<li>成员变更由Leader发起，Cnew得到多数派确认后，返回客户端成员变更成功。</li>
+<li>一次成员变更成功前不允许开始下一次成员变更，因此新任Leader在开始提供服务前要将自己本地保存的最新成员配置重新投票形成多数派确认。</li>
+<li>Leader只要开始同步新成员配置，即可开始使用新的成员配置进行日志同步。</li>
+</ul>
+<h1 id="Raft与Multi-Paxos的异同"><a href="#Raft与Multi-Paxos的异同" class="headerlink" title="Raft与Multi-Paxos的异同"></a>Raft与Multi-Paxos的异同</h1><p>Raft与Multi-Paxos都是基于领导者的一致性算法，乍一看有很多地方相同，下面总结一下Raft与Multi-Paxos的异同。</p>
+<p>Raft与Multi-Paxos中相似的概念：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7hzg71cj31600iuq60.jpg" alt="image-20210221155202104"></p>
+<p>Raft与Multi-Paxos的不同：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7iacddmj31780e2afb.jpg" alt="image-20210221155231875"></p>
+<h1 id="关于Raft的一些面试题"><a href="#关于Raft的一些面试题" class="headerlink" title="关于Raft的一些面试题"></a>关于Raft的一些面试题</h1><h2 id="Raft分为哪几个部分？"><a href="#Raft分为哪几个部分？" class="headerlink" title="Raft分为哪几个部分？"></a>Raft分为哪几个部分？</h2><p>  <strong>主要是分为leader选举、日志复制、日志压缩、成员变更等</strong>。</p>
+<h2 id="Raft中任何节点都可以发起选举吗？"><a href="#Raft中任何节点都可以发起选举吗？" class="headerlink" title="Raft中任何节点都可以发起选举吗？"></a>Raft中任何节点都可以发起选举吗？</h2><p>  Raft发起选举的情况有如下几种：</p>
+<ul>
+<li>刚启动时，所有节点都是follower，这个时候发起选举，选出一个leader；</li>
+<li>当leader挂掉后，<strong>时钟最先跑完的follower发起重新选举操作</strong>，选出一个新的leader。</li>
+<li>成员变更的时候会发起选举操作。</li>
+</ul>
+<h2 id="Raft中选举中给候选人投票的前提？"><a href="#Raft中选举中给候选人投票的前提？" class="headerlink" title="Raft中选举中给候选人投票的前提？"></a>Raft中选举中给候选人投票的前提？</h2><p>  <strong>Raft确保新当选的Leader包含所有已提交（集群中大多数成员中已提交）的日志条目</strong>。这个保证是在RequestVoteRPC阶段做的，candidate在发送RequestVoteRPC时，会带上自己的<strong>last log entry的term_id和index</strong>，follower在接收到RequestVoteRPC消息时，<strong>如果发现自己的日志比RPC中的更新，就拒绝投票</strong>。日志比较的原则是，如果本地的最后一条log entry的term id更大，则更新，如果term id一样大，则日志更多的更大(index更大)。</p>
+<h2 id="Raft网络分区下的数据一致性怎么解决？"><a href="#Raft网络分区下的数据一致性怎么解决？" class="headerlink" title="Raft网络分区下的数据一致性怎么解决？"></a>Raft网络分区下的数据一致性怎么解决？</h2><p>  发生了网络分区或者网络通信故障，<strong>使得Leader不能访问大多数Follwer了，那么Leader只能正常更新它能访问的那些Follower，而大多数的Follower因为没有了Leader，他们重新选出一个Leader</strong>，然后这个 Leader来接受客户端的请求，如果客户端要求其添加新的日志，这个新的Leader会通知大多数Follower。<strong>如果这时网络故障修复 了，那么原先的Leader就变成Follower，在失联阶段这个老Leader的任何更新都不能算commit，都回滚，接受新的Leader的新的更新（递减查询匹配日志）</strong>。</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7jwqaoqj31fg0s444e.jpg" alt="image-20210221155356395"></p>
+<h2 id="Raft数据一致性如何实现？"><a href="#Raft数据一致性如何实现？" class="headerlink" title="Raft数据一致性如何实现？"></a>Raft数据一致性如何实现？</h2><p>  <strong>主要是通过日志复制实现数据一致性，leader将请求指令作为一条新的日志条目添加到日志中，然后发起RPC 给所有的follower，进行日志复制，进而同步数据</strong>。</p>
+<h2 id="Raft的日志有什么特点？"><a href="#Raft的日志有什么特点？" class="headerlink" title="Raft的日志有什么特点？"></a>Raft的日志有什么特点？</h2><p>  <strong>日志由有序编号（log index）的日志条目组成，每个日志条目包含它被创建时的任期号（term）和用于状态机执行的命令</strong>。</p>
+<h2 id="Raft里面怎么保证数据被commit，leader宕机了会怎样，之前的没提交的数据会怎样？"><a href="#Raft里面怎么保证数据被commit，leader宕机了会怎样，之前的没提交的数据会怎样？" class="headerlink" title="Raft里面怎么保证数据被commit，leader宕机了会怎样，之前的没提交的数据会怎样？"></a>Raft里面怎么保证数据被commit，leader宕机了会怎样，之前的没提交的数据会怎样？</h2><p>  <strong>leader会通过RPC向follower发出日志复制，等待所有的follower复制完成，这个过程是阻塞的</strong>。</p>
+<p>  <strong>老的leader里面没提交的数据会回滚，然后同步新leader的数据</strong>。</p>
+<h2 id="Raft日志压缩是怎么实现的？增加或删除节点呢？？"><a href="#Raft日志压缩是怎么实现的？增加或删除节点呢？？" class="headerlink" title="Raft日志压缩是怎么实现的？增加或删除节点呢？？"></a>Raft日志压缩是怎么实现的？增加或删除节点呢？？</h2><p>  在实际的系统中，<strong>不能让日志无限增长</strong>，否则<strong>系统重启时需要花很长的时间进行回放</strong>，从而影响可用性。<strong>Raft采用对整个系统进行snapshot来解决，snapshot之前的日志都可以丢弃（以前的数据已经落盘了）</strong>。</p>
+<p>  <strong>snapshot里面主要记录的是日志元数据，即最后一条已提交的 log entry的 log index和term</strong>。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><blockquote>
+<p> <a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+<p> 公号：区块链技术栈 （推荐）</p>
+<p> <a target="_blank" rel="noopener" href="https://raft.github.io/raft.pdf">https://raft.github.io/raft.pdf</a></p>
+<p> <a target="_blank" rel="noopener" href="http://thesecretlivesofdata.com/raft/">http://thesecretlivesofdata.com/raft/</a> （动画演示 推荐）</p>
+<p> <a target="_blank" rel="noopener" href="https://raft.github.io/">https://raft.github.io/</a> （raft资源）</p>
+<p> <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/32052223">https://zhuanlan.zhihu.com/p/32052223</a></p>
+<p> <a target="_blank" rel="noopener" href="https://github.com/goraft/raft">https://github.com/goraft/raft</a> （go语言实现）</p>
+<p> <a target="_blank" rel="noopener" href="https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md%EF%BC%88%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91%E5%9C%B0%E5%9D%80%EF%BC%89">https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md（中文翻译地址）</a></p>
+<p> <a target="_blank" rel="noopener" href="https://github.com/eliben/raft.git">https://github.com/eliben/raft.git</a> </p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" rel="tag"># 共识算法</a>
+              <a href="/tags/Raft/" rel="tag"># Raft</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_pow%E7%AE%97%E6%B3%95-1/" rel="prev" title="死磕共识算法|pow算法">
+      <i class="fa fa-chevron-left"></i> 死磕共识算法|pow算法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft%E7%AE%97%E6%B3%95%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">Raft算法概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft%E7%AE%97%E6%B3%95%E8%A7%92%E8%89%B2"><span class="nav-number">2.</span> <span class="nav-text">Raft算法角色</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Leader%E9%80%89%E4%B8%BE"><span class="nav-number">3.</span> <span class="nav-text">Leader选举</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E5%90%8C%E6%AD%A5"><span class="nav-number">4.</span> <span class="nav-text">日志同步</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E6%80%A7"><span class="nav-number">5.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E5%8E%8B%E7%BC%A9"><span class="nav-number">6.</span> <span class="nav-text">日志压缩</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%88%90%E5%91%98%E5%8F%98%E6%9B%B4"><span class="nav-number">7.</span> <span class="nav-text">成员变更</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft%E4%B8%8EMulti-Paxos%E7%9A%84%E5%BC%82%E5%90%8C"><span class="nav-number">8.</span> <span class="nav-text">Raft与Multi-Paxos的异同</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E4%BA%8ERaft%E7%9A%84%E4%B8%80%E4%BA%9B%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="nav-number">9.</span> <span class="nav-text">关于Raft的一些面试题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E5%88%86%E4%B8%BA%E5%93%AA%E5%87%A0%E4%B8%AA%E9%83%A8%E5%88%86%EF%BC%9F"><span class="nav-number">9.1.</span> <span class="nav-text">Raft分为哪几个部分？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E4%B8%AD%E4%BB%BB%E4%BD%95%E8%8A%82%E7%82%B9%E9%83%BD%E5%8F%AF%E4%BB%A5%E5%8F%91%E8%B5%B7%E9%80%89%E4%B8%BE%E5%90%97%EF%BC%9F"><span class="nav-number">9.2.</span> <span class="nav-text">Raft中任何节点都可以发起选举吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E4%B8%AD%E9%80%89%E4%B8%BE%E4%B8%AD%E7%BB%99%E5%80%99%E9%80%89%E4%BA%BA%E6%8A%95%E7%A5%A8%E7%9A%84%E5%89%8D%E6%8F%90%EF%BC%9F"><span class="nav-number">9.3.</span> <span class="nav-text">Raft中选举中给候选人投票的前提？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA%E4%B8%8B%E7%9A%84%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7%E6%80%8E%E4%B9%88%E8%A7%A3%E5%86%B3%EF%BC%9F"><span class="nav-number">9.4.</span> <span class="nav-text">Raft网络分区下的数据一致性怎么解决？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%EF%BC%9F"><span class="nav-number">9.5.</span> <span class="nav-text">Raft数据一致性如何实现？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E7%9A%84%E6%97%A5%E5%BF%97%E6%9C%89%E4%BB%80%E4%B9%88%E7%89%B9%E7%82%B9%EF%BC%9F"><span class="nav-number">9.6.</span> <span class="nav-text">Raft的日志有什么特点？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E9%87%8C%E9%9D%A2%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E6%95%B0%E6%8D%AE%E8%A2%ABcommit%EF%BC%8Cleader%E5%AE%95%E6%9C%BA%E4%BA%86%E4%BC%9A%E6%80%8E%E6%A0%B7%EF%BC%8C%E4%B9%8B%E5%89%8D%E7%9A%84%E6%B2%A1%E6%8F%90%E4%BA%A4%E7%9A%84%E6%95%B0%E6%8D%AE%E4%BC%9A%E6%80%8E%E6%A0%B7%EF%BC%9F"><span class="nav-number">9.7.</span> <span class="nav-text">Raft里面怎么保证数据被commit，leader宕机了会怎样，之前的没提交的数据会怎样？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E6%97%A5%E5%BF%97%E5%8E%8B%E7%BC%A9%E6%98%AF%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%E7%9A%84%EF%BC%9F%E5%A2%9E%E5%8A%A0%E6%88%96%E5%88%A0%E9%99%A4%E8%8A%82%E7%82%B9%E5%91%A2%EF%BC%9F%EF%BC%9F"><span class="nav-number">9.8.</span> <span class="nav-text">Raft日志压缩是怎么实现的？增加或删除节点呢？？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">10.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

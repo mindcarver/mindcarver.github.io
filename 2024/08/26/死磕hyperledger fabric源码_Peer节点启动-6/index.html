@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕hyperledger fabric源码|Peer节点启动">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕hyperledger fabric源码|Peer节点启动">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Peer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-6/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕hyperledger fabric源码|Peer节点启动">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn1cycj35uj31c00u0gww.jpg">
+<meta property="article:published_time" content="2024-08-26T06:59:11.398Z">
+<meta property="article:modified_time" content="2024-08-26T07:02:28.768Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="fabric">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn1cycj35uj31c00u0gww.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Peer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕hyperledger fabric源码|Peer节点启动 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Peer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕hyperledger fabric源码|Peer节点启动
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 14:59:11 / Modified: 15:02:28" itemprop="dateCreated datePublished" datetime="2024-08-26T14:59:11+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fabric/" itemprop="url" rel="index"><span itemprop="name">fabric</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Peer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Peer%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>13 mins.</span>
+            </span>
+            <div class="post-description">死磕hyperledger fabric源码|Peer节点启动</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕hyperledger fabric源码|Peer节点启动</p>
+<p>文章及代码：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>分支：v1.1.0</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gn1cycj35uj31c00u0gww.jpg" alt="b43356d6533644cca27da75d63f275fa"></p>
+<h2 id="启动流程概述"><a href="#启动流程概述" class="headerlink" title="启动流程概述"></a>启动流程概述</h2><p>入口：peer&#x2F;main.go:</p>
+<p><code>main</code>()函数负责初始化<code>peer</code>主命令对象，注册子命令与初始化环境配置，解析用户输入子命令<code>start</code>并启动Peer节点，包括如下流程步骤：</p>
+<ul>
+<li>定义、注册命令与初始化基本配置。基于<code>Cobra</code>组件定义peer主命令对象<code>mainCmd</code>，并通过<code>Viper</code>组件调用<code>InitConfig</code>()函数，从本地<code>core.yaml</code>配置文件、环境变量、命令行选项等读取与解析<code>peer</code>命令的相关配置。同时，初始化主命令<code>mainCmd</code>的标志位选项 <code>version</code>、<code>logging-level</code>等，然后在主命令<code>mainCmd</code>上注册<code>version、node、chaincode、channel</code>等子命令，设置最大可用<code>CPU</code>核数与日志后端； </li>
+<li>初始化本地<code>MSP</code>组件。通过<code>Viper</code>组件获取<code>MSP</code>组件的配置文件路径<code>mspMgrConfigDir</code>、<code>BCCSP</code>配置项<code>bccspConfig</code>、MSP名称ID即localMSPID、<code>MSP</code>组件类型<code>localMSPType</code>等，基于这4个参数构造本地<code>MSP</code>配置对象，接着创建默认的<code>bccspmsp</code>结构对象作为本地<code>MSP</code>组件，并解析<code>MSP</code>配置对象与初始化本地<code>MSP</code>组件； </li>
+<li>执行mainCmd.Execute()方法启动<code>Peer</code>节点</li>
+</ul>
+<p>接下来将会分别对这几个关键部分进行细说。</p>
+<h2 id="定义、注册命令与初始化基本配置"><a href="#定义、注册命令与初始化基本配置" class="headerlink" title="定义、注册命令与初始化基本配置"></a>定义、注册命令与初始化基本配置</h2><h3 id="定义主命令"><a href="#定义主命令" class="headerlink" title="定义主命令"></a>定义主命令</h3><p>代码分析 如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> mainCmd = &amp;cobra.Command&#123; <span class="comment">// 基于Cobra组件构造主命令</span></span><br><span class="line">	Use: <span class="string">&quot;peer&quot;</span>, <span class="comment">// 定义命令使用方法</span></span><br><span class="line">	<span class="comment">//// 定义执行函数</span></span><br><span class="line">	PersistentPreRunE: <span class="function"><span class="keyword">func</span><span class="params">(cmd *cobra.Command, args []<span class="type">string</span>)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">		<span class="comment">//检查CORE_LOGGING_LEVEL环境变量，覆盖所有其他日志设置值。否则，使用core.yaml文件中的配置值</span></span><br><span class="line">		<span class="keyword">var</span> loggingSpec <span class="type">string</span></span><br><span class="line">		<span class="keyword">if</span> viper.GetString(<span class="string">&quot;logging_level&quot;</span>) != <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line">			loggingSpec = viper.GetString(<span class="string">&quot;logging_level&quot;</span>) <span class="comment">// 获取配置文件中的日志级别</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			loggingSpec = viper.GetString(<span class="string">&quot;logging.level&quot;</span>) <span class="comment">// 获取配置文件中的日志级别</span></span><br><span class="line">		&#125;</span><br><span class="line">		flogging.InitFromSpec(loggingSpec) <span class="comment">// 根据配置的日志级别初始化日志记录器</span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;,</span><br><span class="line">	Run: <span class="function"><span class="keyword">func</span><span class="params">(cmd *cobra.Command, args []<span class="type">string</span>)</span></span> &#123; <span class="comment">// 定义执行函数</span></span><br><span class="line">		<span class="keyword">if</span> versionFlag &#123;</span><br><span class="line">			fmt.Print(version.GetInfo()) <span class="comment">// 打印peer程序版本信息</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			cmd.HelpFunc()(cmd, args) <span class="comment">// 直接打印命令帮助信息</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;,</span><br></pre></td></tr></table></figure>
+
+<h3 id="注册子命令"><a href="#注册子命令" class="headerlink" title="注册子命令"></a>注册子命令</h3><p>将几类子命令注册到主命令上，种类如下：</p>
+<ul>
+<li>channel通道子命令：用于创建应用通道、获取区块、Peer节点加入应用通道、获取节点所加入的应用通道列表、更新应用通道配置、签名配置交易文件、获取指定的应用通道信息等，包括<code>create、fetch、join、list、update、signconfigtx、getinfo</code>等子命令；</li>
+<li>chaincode链码子命令：用于安装链码、实例化（部署）链码、调用链码、打包链码、查询链码、签名链码包、升级链码、获取通道链码列表等，包括<code>install、instantiate、invoke、package、query、signpackage、upgrade、list</code>等子命令； </li>
+<li>node节点子命令：用于管理节点服务进程与查询服务状态，包括<code>start、status</code>等子命令；</li>
+<li>logging日志子命令：用于获取、设置与恢复日志级别功能，包括<code>getlevel、setlevel、 revertlevels</code>等子命令；</li>
+<li>version版本子命令：用于打印<code>Fabric</code>中的<code>Peer</code>节点服务器版本信息。</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">viper.SetEnvPrefix(cmdRoot)               <span class="comment">// 设置环境变量前缀core</span></span><br><span class="line">	viper.AutomaticEnv()                      <span class="comment">// 查找匹配环境变量</span></span><br><span class="line">	replacer := strings.NewReplacer(<span class="string">&quot;.&quot;</span>, <span class="string">&quot;_&quot;</span>) <span class="comment">// 创建替换符</span></span><br><span class="line">	viper.SetEnvKeyReplacer(replacer)         <span class="comment">// 设置环境变量替换符</span></span><br><span class="line">	<span class="comment">// 定义命令行选项集合，对所有peer及其子命令都有效</span></span><br><span class="line">	mainFlags := mainCmd.PersistentFlags()</span><br><span class="line">	<span class="comment">// 设置绑定version与logging-level选项</span></span><br><span class="line">	mainFlags.BoolVarP(&amp;versionFlag, <span class="string">&quot;version&quot;</span>, <span class="string">&quot;v&quot;</span>, <span class="literal">false</span>, <span class="string">&quot;Display current version of fabric peer server&quot;</span>)</span><br><span class="line">	mainFlags.String(<span class="string">&quot;logging-level&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="string">&quot;Default logging level and overrides, see core.yaml for full syntax&quot;</span>)</span><br><span class="line">	<span class="comment">// Viper配置绑定命令行选项</span></span><br><span class="line">	viper.BindPFlag(<span class="string">&quot;logging_level&quot;</span>, mainFlags.Lookup(<span class="string">&quot;logging-level&quot;</span>))</span><br><span class="line">	<span class="comment">// 注册子命令</span></span><br><span class="line">	mainCmd.AddCommand(version.Cmd())       <span class="comment">// version子命令</span></span><br><span class="line">	mainCmd.AddCommand(node.Cmd())          <span class="comment">// node子命令start、status</span></span><br><span class="line">	mainCmd.AddCommand(chaincode.Cmd(<span class="literal">nil</span>))  <span class="comment">// chaincode子命令install等</span></span><br><span class="line">	mainCmd.AddCommand(clilogging.Cmd(<span class="literal">nil</span>)) <span class="comment">// cli日志子命令 getlevel</span></span><br><span class="line">	mainCmd.AddCommand(channel.Cmd(<span class="literal">nil</span>))    <span class="comment">// channel子命令 create等</span></span><br><span class="line">	<span class="comment">// 加载配置文件core.yaml</span></span><br><span class="line">	err := common.InitConfig(cmdRoot)</span><br><span class="line">	...</span><br><span class="line">	runtime.GOMAXPROCS(viper.GetInt(<span class="string">&quot;peer.gomaxprocs&quot;</span>)) <span class="comment">// 设置最大可用的CPU核数</span></span><br><span class="line">	<span class="comment">// setup system-wide logging backend based on settings from core.yaml</span></span><br><span class="line">	<span class="comment">// 初始化系统日志后端</span></span><br><span class="line">	flogging.InitBackend(flogging.SetFormat(viper.GetString(<span class="string">&quot;logging.format&quot;</span>)), logOutput)</span><br></pre></td></tr></table></figure>
+
+<h2 id="初始化本地MSP组件"><a href="#初始化本地MSP组件" class="headerlink" title="初始化本地MSP组件"></a>初始化本地MSP组件</h2><p><code>MSP</code>组件是管理本地成员身份的重要安全模块，封装了根<code>CA</code>证书、本地签名者实体等.</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 初始化本地MSP组件对象</span></span><br><span class="line">	<span class="keyword">var</span> mspMgrConfigDir = config.GetPath(<span class="string">&quot;peer.mspConfigPath&quot;</span>) <span class="comment">// 获取MSP配置文件路径</span></span><br><span class="line">	<span class="keyword">var</span> mspID = viper.GetString(<span class="string">&quot;peer.localMspId&quot;</span>)             <span class="comment">// 获取本地MSP名称</span></span><br><span class="line">	<span class="keyword">var</span> mspType = viper.GetString(<span class="string">&quot;peer.localMspType&quot;</span>)         <span class="comment">// 获取本地MSP组件类型</span></span><br><span class="line">	<span class="keyword">if</span> mspType == <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line">		<span class="comment">// 默认设置MSP组件类型为FABRIC类型</span></span><br><span class="line">		mspType = msp.ProviderTypeToString(msp.FABRIC)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 获取BCCSP组件配置信息，初始化MSP组件对象</span></span><br><span class="line">	err = common.InitCrypto(mspMgrConfigDir, mspID, mspType)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="执行主命令"><a href="#执行主命令" class="headerlink" title="执行主命令"></a>执行主命令</h2><p>函数如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> mainCmd.Execute() != <span class="literal">nil</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来进入到<code>Execute()</code>函数中继续分析： &#x2F;vendor&#x2F;github.com&#x2F;spf13&#x2F;cobra&#x2F;command.go&#x2F;ExecuteC()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Command)</span></span> ExecuteC() (cmd *Command, err <span class="type">error</span>) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>Cobra</code>组件调用主命令<code>Execute</code>()方法，执行<code>peer node start</code>命令启动<code>Peer</code>节点。其中，<code>Cobra</code>组件解析完用户输入的命令行选项之后，依次执行节点启动命令nodeStartCmd对象中定义的所有相关的执行方法，并按照<code>cobra.Command</code>命令中定义的如下顺序来执行</p>
+<ul>
+<li>PersistentPreRunE()&#x2F;PersistentPreRun()； </li>
+<li>PreRunE()&#x2F;PreRun()； </li>
+<li>RunE()&#x2F;Run()； </li>
+<li>PostRunE()&#x2F;PostRun()； </li>
+<li>PersistentPostRunE()&#x2F;PersistentPostRun();</li>
+</ul>
+<p>到这里为止节点命令开启执行，因为这部分主要是讲的节点启动，所以下面集中将节点启动命令执行的运行流程。</p>
+<h2 id="节点启动命令执行"><a href="#节点启动命令执行" class="headerlink" title="节点启动命令执行"></a>节点启动命令执行</h2><p>节点启动的命令可以根据以下代码路径查找：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mainCmd.AddCommand(node.Cmd()) </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Cmd</span><span class="params">()</span></span> *cobra.Command &#123;</span><br><span class="line">	nodeCmd.AddCommand(startCmd())</span><br><span class="line">	nodeCmd.AddCommand(statusCmd())</span><br><span class="line">	<span class="keyword">return</span> nodeCmd</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里只讨论节点启动命令</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startCmd</span><span class="params">()</span></span> *cobra.Command &#123;</span><br><span class="line">...</span><br><span class="line">	<span class="keyword">return</span> nodeStartCmd</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> nodeStartCmd = &amp;cobra.Command&#123;</span><br><span class="line">...</span><br><span class="line">		<span class="keyword">return</span> serve(args)</span><br><span class="line">	&#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正式进入到serve函数讨论：</p>
+<h3 id="初始化资源"><a href="#初始化资源" class="headerlink" title="初始化资源"></a>初始化资源</h3><p>①：<em>获取本地MSP组件类型并检查MSP组件类型</em></p>
+<p>目前，<code>Hyperledger Fabric</code>支持<code>FABRIC</code>类型和<code>IDEMIX</code>类型两种<code>MSP</code>组件，默认采用基于<code>BCCSP</code>组件构建的<code>FABRIC</code>类型<code>MSP</code>组件.</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mspType := mgmt.GetLocalMSP().GetType() <span class="comment">// 获取本地MSP组件类型</span></span><br><span class="line">	<span class="keyword">if</span> mspType != msp.FABRIC &#123;              <span class="comment">// 检查MSP组件类型</span></span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;Unsupported msp type &quot;</span> + msp.ProviderTypeToString(mspType))</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：<em>初始化资源访问策略提供者</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aclmgmt.RegisterACLProvider(<span class="literal">nil</span>)</span><br></pre></td></tr></table></figure>
+
+<p>③：<em>初始化本地账本管理器</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ledgermgmt.Initialize(peer.ConfigTxProcessors) 	</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>core&#x2F;ledger&#x2F;ledgermgmt&#x2F;ledger_mgmt.go&#x2F;initialize</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">initialize</span><span class="params">(customTxProcessors customtx.Processors)</span></span> &#123;</span><br><span class="line">	logger.Info(<span class="string">&quot;Initializing ledger mgmt&quot;</span>)</span><br><span class="line">	lock.Lock()</span><br><span class="line">	<span class="keyword">defer</span> lock.Unlock() <span class="comment">// 设置Peer节点初始化标志位为true</span></span><br><span class="line">	initialized = <span class="literal">true</span></span><br><span class="line">	<span class="comment">// 创建已打开的账本字典openedLedgers</span></span><br><span class="line">	openedLedgers = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]ledger.PeerLedger)</span><br><span class="line">	<span class="comment">// 初始化配置交易消息处理器字典，设置给全局变量processors字典</span></span><br><span class="line">	customtx.Initialize(customTxProcessors)</span><br><span class="line">	cceventmgmt.Initialize()                <span class="comment">// 初始化链码事件管理器</span></span><br><span class="line">	provider, err := kvledger.NewProvider() <span class="comment">// 创建本地Peer节点账本提供者</span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(fmt.Errorf(<span class="string">&quot;Error in instantiating ledger provider: %s&quot;</span>, err))</span><br><span class="line">	&#125;</span><br><span class="line">	provider.Initialize(kvLedgerStateListeners) <span class="comment">// 初始化状态监听器</span></span><br><span class="line">	ledgerProvider = provider                   <span class="comment">// 设置为全局默认的Peer节点账本提供者</span></span><br><span class="line">	logger.Info(<span class="string">&quot;ledger mgmt initialized&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正本提供者有以下几种：</p>
+<ul>
+<li><p>账本ID数据库（idStore类型）：提供存储账本ID（即链ID）与创世区块键值对的<code>LevelDB</code>数据库； </p>
+</li>
+<li><p>账本数据存储对象提供者（ledgerstorage.Provider类型）：创建账本数据存储对象，负责管理区块数据文件、隐私数据库、区块索引数据库等； </p>
+</li>
+<li><p>历史数据库提供者（HistoryDBProvider类型）：创建历史数据库，存储每个状态数据的历史信息； </p>
+</li>
+<li><p>状态数据库提供者（CommonStorageDBProvider类型）：创建状态数据库（<code>LevelDB</code>或<code>CouchDB</code>类型），存储世界状态（<code>world state</code>），包括有效交易的公有数据与隐私数据。</p>
+</li>
+</ul>
+<p>④：<em>初始化服务器参数</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> chaincodeDevMode &#123;</span><br><span class="line">		<span class="comment">//设置链码模式</span></span><br><span class="line">		viper.Set(<span class="string">&quot;chaincode.mode&quot;</span>, chaincode.DevModeUserRunsChaincode)</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 读取配置并缓存Peer节点地址与端点</span></span><br><span class="line">	<span class="keyword">if</span> err := peer.CacheConfiguration(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 获取缓存的Peer端点</span></span><br><span class="line">	peerEndpoint, err := peer.GetPeerEndpoint()</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">var</span> peerHost <span class="type">string</span></span><br><span class="line">	<span class="comment">// 获取Peer节点IP地址，注意IP地址与端口已经被分离</span></span><br><span class="line">	peerHost, _, err = net.SplitHostPort(peerEndpoint.Address)</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建GRPC服务器"><a href="#创建GRPC服务器" class="headerlink" title="创建GRPC服务器"></a>创建GRPC服务器</h3><p>①：<em>创建gRPC服务器</em></p>
+<p><code>serve()</code>函数创建了至少 3 个<code>gRPC</code>服务器（独立端口），用于注册<code>Peer</code>节点功能服务器，如下所示：</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>端口</th>
+<th>功能服务器</th>
+<th>说明</th>
+<th>服务接口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>7051</td>
+<td>DeliverEvents事件服务器</td>
+<td>处理区块请求消息</td>
+<td>Deliver()</td>
+</tr>
+<tr>
+<td></td>
+<td>7051</td>
+<td>Admin服务器</td>
+<td>获取节点状态、维护日志等</td>
+<td>GetStatus()</td>
+</tr>
+<tr>
+<td></td>
+<td>7051</td>
+<td>Endorser背书服务器</td>
+<td>提供背书服务</td>
+<td>ProcessProposal()</td>
+</tr>
+<tr>
+<td></td>
+<td>7051</td>
+<td>Gossip消息服务器</td>
+<td>组织内节点分发数据与同步状态等</td>
+<td>GossipStream()</td>
+</tr>
+<tr>
+<td>2</td>
+<td>7052</td>
+<td>chaincodeSupport链码支持服务器</td>
+<td>提供Peer节点链码支持服务</td>
+<td>Register()</td>
+</tr>
+<tr>
+<td>3</td>
+<td>7053</td>
+<td>EventHub事件服务器</td>
+<td>提供订阅事件服务(1.3.0废弃)</td>
+<td>Chat()</td>
+</tr>
+</tbody></table>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">serverConfig, err := peer.GetServerConfig()</span><br><span class="line">	...</span><br><span class="line">peerServer, err := peer.CreatePeerServer(listenAddr, serverConfig)</span><br></pre></td></tr></table></figure>
+
+<p>②：<em>创建EventHub事件服务器</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> serverConfig.SecOpts.UseTLS &#123;</span><br><span class="line">	...</span><br><span class="line">	cs := comm.GetCredentialSupport() <span class="comment">// 创建证书支持对象CredentialSupport结构对象</span></span><br><span class="line">	cs.ServerRootCAs = serverConfig.SecOpts.ServerRootCAs</span><br><span class="line">	<span class="comment">//// 获取gRPC客户端证书用于TLS连接认证</span></span><br><span class="line">	clientCert, err := peer.GetClientCertificate()</span><br><span class="line">	<span class="comment">// 设置客户端证书</span></span><br><span class="line">	comm.GetCredentialSupport().SetClientCertificate(clientCert)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//// 创建事件EventHub服务器（7053端口）</span></span><br><span class="line">ehubGrpcServer, err := createEventHubServer(serverConfig)</span><br></pre></td></tr></table></figure>
+
+<p>③：<em>创建DeliverEvents事件服务器</em></p>
+<p><code>serve()</code>函数检查如果开启了双向的<code>TLS</code>安全认证，则设置<code>mutualTLS</code>标志位为<code>true</code>，并定义获取资源策略检查器即<code>policyCheckerProvider</code>()函数。该函数将直接调用全局变量<code>aclProvider</code>对象的<code>CheckACL</code>()方法，检查签名消息在通道（channelID）上是否满足指定资源的访问控制权限策略。 </p>
+<p>接着，<code>serve</code>()函数调用<code>peer.NewDeliverEventsServer()</code>函数，基于<code>mutualTLS</code>、<code>policy-CheckerProvider</code>等参数创建<code>DeliverEvents</code>事件服务器<code>abServer</code>，提供<code>Deliver()</code>与<code>DeliverFiltered</code>()服务接口，分别用于处理请求正常区块与过滤区块的消息。</p>
+<p>然后调用<code>pb.RegisterDeliverServer()</code>方法，将<code>DeliverEvents</code>事件服务器<code>abServer</code>注册到默认的<code>gRPC</code>服务器上（7051端口），以提供本地事件服务。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//// 检查是否开启了双向的TLS安全认证</span></span><br><span class="line">	mutualTLS := serverConfig.SecOpts.UseTLS &amp;&amp; serverConfig.SecOpts.RequireClientCert</span><br><span class="line">	<span class="comment">//// 定义资源访问权限策略检查函数</span></span><br><span class="line">	policyCheckerProvider := <span class="function"><span class="keyword">func</span><span class="params">(resourceName <span class="type">string</span>)</span></span> deliver.PolicyChecker &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(env *cb.Envelope, channelID <span class="type">string</span>)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> aclmgmt.GetACLProvider().CheckACL(resourceName, channelID, env)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//创建DeliverEvents事件服务器，并注册到Peer节点gRPC服务器上（7051端口）</span></span><br><span class="line">	abServer := peer.NewDeliverEventsServer(mutualTLS, policyCheckerProvider, &amp;peer.DeliverSupportManager&#123;&#125;)</span><br><span class="line">	pb.RegisterDeliverServer(peerServer.Server(), abServer)</span><br></pre></td></tr></table></figure>
+
+<p>④：<em>创建ChaincodeSupport链码支持服务器</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建链码支持服务专用gRPC服务器与链码支持服务实例ChaincodeSupport（专用端口或7052端口）</span></span><br><span class="line">	ccSrv, ccEndpoint, err := createChaincodeServer(ca, peerHost)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		logger.Panicf(<span class="string">&quot;Failed to create chaincode server: %s&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//将链码支持服务器实例ChaincodeSupoort对象注册到Peer节点gRPC服务器上</span></span><br><span class="line">	<span class="comment">// 同时注册系统链码以支持部署调用系统链码</span></span><br><span class="line">	registerChaincodeSupport(ccSrv, ccEndpoint, ca)</span><br><span class="line">	<span class="keyword">go</span> ccSrv.Start() <span class="comment">//启动gRPC服务器提供链码支持服务</span></span><br></pre></td></tr></table></figure>
+
+<p>⑤：<em>创建Admin管理服务器与Endorser背书服务器</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建Admin管理服务器与</span></span><br><span class="line">pb.RegisterAdminServer(peerServer.Server(), core.NewAdminServer())</span><br><span class="line"><span class="comment">// 定义Gossip协议分发隐私数据函数</span></span><br><span class="line">privDataDist := <span class="function"><span class="keyword">func</span><span class="params">(channel <span class="type">string</span>, txID <span class="type">string</span>, privateData *rwset.TxPvtReadWriteSet)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> service.GetGossipService().DistributePrivateData(channel, txID, privateData)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//创建新的EndorserServer背书节点服务器</span></span><br><span class="line">serverEndorser := endorser.NewEndorserServer(privDataDist, &amp;endorser.SupportImpl&#123;&#125;)</span><br><span class="line">libConf := library.Config&#123;&#125;</span><br><span class="line"><span class="keyword">if</span> err = viperutil.EnhancedExactUnmarshalKey(<span class="string">&quot;peer.handlers&quot;</span>, &amp;libConf); err != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> errors.WithMessage(err, <span class="string">&quot;could not load YAML config&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//// 创建消息过滤器列表</span></span><br><span class="line">authFilters := library.InitRegistry(libConf).Lookup(library.Auth).([]authHandler.Filter)</span><br><span class="line"><span class="comment">// 将所有消息过滤器均构造成消息过滤器链，并返回第1个过滤器（Filter类型，实现了EndorserServer // 接口）</span></span><br><span class="line">auth := authHandler.ChainFilters(serverEndorser, authFilters...)</span><br><span class="line"><span class="comment">// Register the Endorser server</span></span><br><span class="line"><span class="comment">//// 注册EndorserServer背书服务器到gRPC服务器</span></span><br><span class="line">pb.RegisterEndorserServer(peerServer.Server(), auth)</span><br></pre></td></tr></table></figure>
+
+<p>⑥：<em>创建Gossip消息服务器</em>  </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//获取Bootstrap连接的初始节点地址列表，默认为127.0.0.1:7051</span></span><br><span class="line">bootstrap := viper.GetStringSlice(<span class="string">&quot;peer.gossip.bootstrap&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">////获取本地MSP签名者身份实体 并序列化</span></span><br><span class="line">serializedIdentity, err := mgmt.GetLocalSigningIdentityOrPanic().Serialize()</span><br><span class="line">...</span><br><span class="line">messageCryptoService := peergossip.NewMCS( <span class="comment">// 构造Gossip消息加密服务组件</span></span><br><span class="line">	peer.NewChannelPolicyManagerGetter(), <span class="comment">// 通道策略管理器获取组件</span></span><br><span class="line">	localmsp.NewSigner(),                 <span class="comment">// 本地签名者</span></span><br><span class="line">	mgmt.NewDeserializersManager())       <span class="comment">// 身份反序列化组件管理器</span></span><br><span class="line">secAdv := peergossip.NewSecurityAdvisor(mgmt.NewDeserializersManager())</span><br><span class="line"></span><br><span class="line"><span class="comment">// callback function for secure dial options for gossip service</span></span><br><span class="line"><span class="comment">//定义Gossip服务器回调函数，用于创建Gossip服务器安全配置的gRPC拨号连接选项</span></span><br><span class="line">secureDialOpts := <span class="function"><span class="keyword">func</span><span class="params">()</span></span> []grpc.DialOption &#123;</span><br><span class="line">	<span class="keyword">var</span> dialOpts []grpc.DialOption</span><br><span class="line">	<span class="comment">// set max send/recv msg sizes</span></span><br><span class="line">	dialOpts = <span class="built_in">append</span>(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(comm.MaxRecvMsgSize()),</span><br><span class="line">		grpc.MaxCallSendMsgSize(comm.MaxSendMsgSize()))) <span class="comment">// 设置最大发送和接收消息字节数</span></span><br><span class="line">	<span class="comment">// set the keepalive options</span></span><br><span class="line">	kaOpts := comm.DefaultKeepaliveOptions() <span class="comment">// 获取默认的心跳消息keepalive选项</span></span><br><span class="line">	...</span><br><span class="line">	<span class="comment">//在gRPC通信拨号连接选项中设置心跳通信keepalive选项</span></span><br><span class="line">	dialOpts = <span class="built_in">append</span>(dialOpts, comm.ClientKeepaliveOptions(kaOpts)...)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> comm.TLSEnabled() &#123; <span class="comment">// 启用TLS安全认证，设置客户端TLS通信证书</span></span><br><span class="line">		dialOpts = <span class="built_in">append</span>(dialOpts, grpc.WithTransportCredentials(comm.GetCredentialSupport().GetPeerCredentials()))</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		dialOpts = <span class="built_in">append</span>(dialOpts, grpc.WithInsecure()) <span class="comment">// 否则，关闭TLS安全认证</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> dialOpts</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 检查gRPC服务器端是否启用TLS安全认证，获取并设置服务器端与客户端身份证书</span></span><br><span class="line"><span class="keyword">var</span> certs *common2.TLSCertificates</span><br><span class="line"><span class="keyword">if</span> peerServer.TLSEnabled() &#123;</span><br><span class="line">	serverCert := peerServer.ServerCertificate()</span><br><span class="line">	clientCert, err := peer.GetClientCertificate()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.Wrap(err, <span class="string">&quot;failed obtaining client certificates&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	certs = &amp;common2.TLSCertificates&#123;&#125;</span><br><span class="line">	certs.TLSServerCert.Store(&amp;serverCert)</span><br><span class="line">	certs.TLSClientCert.Store(&amp;clientCert)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建Gossip消息服务器实例gossipServiceInstance</span></span><br><span class="line">err = service.InitGossipService(serializedIdentity, peerEndpoint.Address, peerServer.Server(), certs,</span><br><span class="line">	messageCryptoService, secAdv, secureDialOpts, bootstrap...)</span><br></pre></td></tr></table></figure>
+
+<h3 id="部署系统链码与初始化现存通道的链结构"><a href="#部署系统链码与初始化现存通道的链结构" class="headerlink" title="部署系统链码与初始化现存通道的链结构"></a>部署系统链码与初始化现存通道的链结构</h3><p>①：<em>部署系统链码</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//部署系统链码</span></span><br><span class="line">initSysCCs()</span><br></pre></td></tr></table></figure>
+
+<p>②：<em>初始化现存通道上的链结构</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//初始化现存通道上的链结构</span></span><br><span class="line">	peer.Initialize(<span class="function"><span class="keyword">func</span><span class="params">(cid <span class="type">string</span>)</span></span> &#123;</span><br><span class="line">	&#125;)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>core&#x2F;peer&#x2F;peer.go&#x2F;Initialize</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Initialize</span><span class="params">(init <span class="keyword">func</span>(<span class="type">string</span>)</span></span>) &#123;</span><br><span class="line">	nWorkers := viper.GetInt(<span class="string">&quot;peer.validatorPoolSize&quot;</span>) <span class="comment">// 获取交易验证线程数量</span></span><br><span class="line">	<span class="keyword">if</span> nWorkers &lt;= <span class="number">0</span> &#123;</span><br><span class="line">		nWorkers = runtime.NumCPU()</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//// 设置信号量并发访问数量</span></span><br><span class="line">	validationWorkersSemaphore = semaphore.NewWeighted(<span class="type">int64</span>(nWorkers))</span><br><span class="line"></span><br><span class="line">	chainInitializer = init <span class="comment">// 设置初始化函数</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> cb *common.Block</span><br><span class="line">	<span class="keyword">var</span> ledger ledger.PeerLedger</span><br><span class="line">	<span class="comment">//// 初始化账本管理器</span></span><br><span class="line">	ledgermgmt.Initialize(ConfigTxProcessors)</span><br><span class="line">	<span class="comment">//// 获取当前账本管理器下的账本ID列表</span></span><br><span class="line">	ledgerIds, err := ledgermgmt.GetLedgerIDs()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(fmt.Errorf(<span class="string">&quot;Error in initializing ledgermgmt: %s&quot;</span>, err))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, cid := <span class="keyword">range</span> ledgerIds &#123;</span><br><span class="line">		peerLogger.Infof(<span class="string">&quot;Loading chain %s&quot;</span>, cid)</span><br><span class="line">		<span class="comment">//创建本地Peer节点账本</span></span><br><span class="line">		<span class="keyword">if</span> ledger, err = ledgermgmt.OpenLedger(cid); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			peerLogger.Warningf(<span class="string">&quot;Failed to load ledger %s(%s)&quot;</span>, cid, err)</span><br><span class="line">			peerLogger.Debugf(<span class="string">&quot;Error while loading ledger %s with message %s. We continue to the next ledger rather than abort.&quot;</span>, cid, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">//// 从指定通道账本中获取最新配置区块</span></span><br><span class="line">		<span class="keyword">if</span> cb, err = getCurrConfigBlockFromLedger(ledger); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			peerLogger.Warningf(<span class="string">&quot;Failed to find config block on ledger %s(%s)&quot;</span>, cid, err)</span><br><span class="line">			peerLogger.Debugf(<span class="string">&quot;Error while looking for config block on ledger %s with message %s. We continue to the next ledger rather than abort.&quot;</span>, cid, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// Create a chain if we get a valid ledger with config block</span></span><br><span class="line">		<span class="comment">//// 在Peer节点上创建指定通道的链结构</span></span><br><span class="line">		<span class="keyword">if</span> err = createChain(cid, ledger, cb); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			peerLogger.Warningf(<span class="string">&quot;Failed to load chain %s(%s)&quot;</span>, cid, err)</span><br><span class="line">			peerLogger.Debugf(<span class="string">&quot;Error reloading chain %s with message %s. We continue to the next chain rather than abort.&quot;</span>, cid, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 用自定义函数初始化通道链结构，如部署系统链码</span></span><br><span class="line">		InitChain(cid)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="启动gRPC服务器与profile服务器"><a href="#启动gRPC服务器与profile服务器" class="headerlink" title="启动gRPC服务器与profile服务器"></a>启动gRPC服务器与profile服务器</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 建立传递错误消息的通道</span></span><br><span class="line">	serve := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">error</span>)</span><br><span class="line">	<span class="comment">// 传递信号的通道</span></span><br><span class="line">	sigs := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal, <span class="number">1</span>)</span><br><span class="line">	<span class="comment">// 设置本进程信号通道的通知信号，包括中断/终止信号</span></span><br><span class="line">	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)</span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;<span class="comment">// 设置本进程阻塞等待的特定通知信号</span></span><br><span class="line">		sig := &lt;-sigs <span class="comment">// 从sigs通道读取信号值，阻塞等待方式</span></span><br><span class="line">		logger.Debugf(<span class="string">&quot;sig: %s&quot;</span>, sig)</span><br><span class="line">		serve &lt;- <span class="literal">nil</span></span><br><span class="line">	&#125;()</span><br><span class="line">		<span class="comment">// 利用goroutine 启动gRPC服务器（7051端口，注册了Admin管理服务器、Endorser背书服务器等）</span></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">var</span> grpcErr <span class="type">error</span></span><br><span class="line">		<span class="keyword">if</span> grpcErr = peerServer.Start(); grpcErr != <span class="literal">nil</span> &#123; <span class="comment">// 监听端口（7051）提供服务</span></span><br><span class="line">			grpcErr = fmt.Errorf(<span class="string">&quot;grpc server exited with error: %s&quot;</span>, grpcErr)</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			logger.Info(<span class="string">&quot;peer server exited&quot;</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		serve &lt;- grpcErr <span class="comment">// 若因发生错误而退出，则发送错误到serve通道</span></span><br><span class="line">	&#125;()</span><br><span class="line">		<span class="comment">// 向进程文件中写入运行进程ID</span></span><br><span class="line">	<span class="keyword">if</span> err := writePid(config.GetPath(<span class="string">&quot;peer.fileSystemPath&quot;</span>)+<span class="string">&quot;/peer.pid&quot;</span>, os.Getpid()); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Start the event hub server</span></span><br><span class="line">	<span class="comment">// 启动基于专用事件监听端口的gRPC服务器（7053端口，已注册EventHub事件服务器）</span></span><br><span class="line">	<span class="keyword">if</span> ehubGrpcServer != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">go</span> ehubGrpcServer.Start()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Start profiling http endpoint if enabled</span></span><br><span class="line">	<span class="comment">// 如果打开profile使能标志位，则启动提供服务</span></span><br><span class="line">	<span class="keyword">if</span> viper.GetBool(<span class="string">&quot;peer.profile.enabled&quot;</span>) &#123;</span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; <span class="comment">// 启动go profile服务器，如果出错，则不会发送错误信息，只是记录到日志里</span></span><br><span class="line">			<span class="comment">// 获取profile监听地址</span></span><br><span class="line">			profileListenAddress := viper.GetString(<span class="string">&quot;peer.profile.listenAddress&quot;</span>)</span><br><span class="line">			logger.Infof(<span class="string">&quot;Starting profiling server with listenAddress = %s&quot;</span>, profileListenAddress)</span><br><span class="line">			<span class="keyword">if</span> profileErr := http.ListenAndServe(profileListenAddress, <span class="literal">nil</span>); profileErr != <span class="literal">nil</span> &#123;</span><br><span class="line">				logger.Errorf(<span class="string">&quot;Error starting profiler: %s&quot;</span>, profileErr)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>至此，Peer节点及其功能服务器启动完毕.</p>
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/fabric/" rel="tag"># fabric</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/" rel="prev" title="死磕hyperledger fabric源码|Order节点启动">
+      <i class="fa fa-chevron-left"></i> 死磕hyperledger fabric源码|Order节点启动
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_%E6%8B%9C%E5%8D%A0%E5%BA%AD%E5%B0%86%E5%86%9B%E9%97%AE%E9%A2%98-7/" rel="next" title="死磕共识算法|拜占庭将军问题">
+      死磕共识算法|拜占庭将军问题 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">启动流程概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E3%80%81%E6%B3%A8%E5%86%8C%E5%91%BD%E4%BB%A4%E4%B8%8E%E5%88%9D%E5%A7%8B%E5%8C%96%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">定义、注册命令与初始化基本配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E4%B8%BB%E5%91%BD%E4%BB%A4"><span class="nav-number">2.1.</span> <span class="nav-text">定义主命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%A8%E5%86%8C%E5%AD%90%E5%91%BD%E4%BB%A4"><span class="nav-number">2.2.</span> <span class="nav-text">注册子命令</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%9C%AC%E5%9C%B0MSP%E7%BB%84%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">初始化本地MSP组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E4%B8%BB%E5%91%BD%E4%BB%A4"><span class="nav-number">4.</span> <span class="nav-text">执行主命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C"><span class="nav-number">5.</span> <span class="nav-text">节点启动命令执行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E8%B5%84%E6%BA%90"><span class="nav-number">5.1.</span> <span class="nav-text">初始化资源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAGRPC%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">5.2.</span> <span class="nav-text">创建GRPC服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E7%B3%BB%E7%BB%9F%E9%93%BE%E7%A0%81%E4%B8%8E%E5%88%9D%E5%A7%8B%E5%8C%96%E7%8E%B0%E5%AD%98%E9%80%9A%E9%81%93%E7%9A%84%E9%93%BE%E7%BB%93%E6%9E%84"><span class="nav-number">5.3.</span> <span class="nav-text">部署系统链码与初始化现存通道的链结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8gRPC%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8Eprofile%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">5.4.</span> <span class="nav-text">启动gRPC服务器与profile服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

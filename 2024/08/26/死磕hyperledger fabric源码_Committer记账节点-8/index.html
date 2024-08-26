@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕hyperledger fabric源码|Committer记账节点">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕hyperledger fabric源码|Committer记账节点">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Committer%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9-8/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕hyperledger fabric源码|Committer记账节点">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn3h9nzkclj31c00u0wt0.jpg">
+<meta property="article:published_time" content="2024-08-26T06:59:11.304Z">
+<meta property="article:modified_time" content="2024-08-26T07:02:55.530Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="fabric">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn3h9nzkclj31c00u0wt0.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Committer%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9-8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕hyperledger fabric源码|Committer记账节点 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Committer%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9-8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕hyperledger fabric源码|Committer记账节点
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 14:59:11 / Modified: 15:02:55" itemprop="dateCreated datePublished" datetime="2024-08-26T14:59:11+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fabric/" itemprop="url" rel="index"><span itemprop="name">fabric</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Committer%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9-8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Committer%E8%AE%B0%E8%B4%A6%E8%8A%82%E7%82%B9-8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>14k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>13 mins.</span>
+            </span>
+            <div class="post-description">死磕hyperledger fabric源码|Committer记账节点</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕hyperledger fabric源码|Committer记账节点</p>
+<p>文章及代码：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>分支：v1.1.0</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gn3h9nzkclj31c00u0wt0.jpg" alt="facdd49577decf1dc62abc9fc97caf97"></p>
+<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><code>Committer</code>记账节点功能模块的设计与实现的源代码主要分布在下表：</p>
+<table>
+<thead>
+<tr>
+<th align="center">源码目录</th>
+<th align="center"></th>
+<th align="center">文件</th>
+<th align="center">功能阐述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">core</td>
+<td align="center">committer</td>
+<td align="center">Txvalidator</td>
+<td align="center">交易验证器功能模块</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">committer.go</td>
+<td align="center">账本提交器接口定义</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">committer_impl.go</td>
+<td align="center">账本提交器实现</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center">ledger</td>
+<td align="center">kvledge</td>
+<td align="center">kvLedger账本功能模块</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">ledgerstorage</td>
+<td align="center">账本数据存储对象模块</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">pvtdatastorage</td>
+<td align="center">隐私数据存储对象模块</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">ledgermgmt</td>
+<td align="center">账本管理模块</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">customtx</td>
+<td align="center">配置交易处理器模块</td>
+</tr>
+<tr>
+<td align="center">common</td>
+<td align="center">ledger</td>
+<td align="center">blockstorage</td>
+<td align="center">区块存储模块</td>
+</tr>
+<tr>
+<td align="center">protos</td>
+<td align="center">Common</td>
+<td align="center">ledger</td>
+<td align="center">protobuf消息定义模块</td>
+</tr>
+</tbody></table>
+<p>接下来将会围绕着这部分的内容进行分析。</p>
+<h2 id="创建Committer功能模块"><a href="#创建Committer功能模块" class="headerlink" title="创建Committer功能模块"></a>创建Committer功能模块</h2><p>Peer节点通过请求调用<code>CSCC</code>系统链码加入应用通道，执行<code>joinChain()→peer.Create- ChainFromBlock()→createChain()</code>函数，基于应用通道创世区块创建通道的链结构对象，用于管理账本、通道配置等资源，以正常接收通道的账本区块。</p>
+<p>接着，创建了交易验证器，并封装了<code>vsccValidatorImpl</code>结构对象用于支持调用VSCC链码。</p>
+<p>然后，创建账本提交器，并定义回调函数<code>eventer</code>，用于提交账本后自动更新链结构上的最新配置区块对象。</p>
+<p>现在进入到<code>createChain</code>里面分析：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">createChain</span><span class="params">(cid <span class="type">string</span>, ledger ledger.PeerLedger, cb *common.Block)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">...</span><br><span class="line">  vcs := <span class="keyword">struct</span> &#123; <span class="comment">// 构造新的验证链码支持对象</span></span><br><span class="line">		*chainSupport</span><br><span class="line">		*semaphore.Weighted</span><br><span class="line">		Support</span><br><span class="line">	&#125;&#123;cs, validationWorkersSemaphore, GetSupport()&#125;</span><br><span class="line">	validator := txvalidator.NewTxValidator(vcs) <span class="comment">// 创建交易验证器</span></span><br><span class="line">	<span class="comment">// 创建账本提交器</span></span><br><span class="line">	c := committer.NewLedgerCommitterReactive(ledger, <span class="function"><span class="keyword">func</span><span class="params">(block *common.Block)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">		chainID, err := utils.GetChainIDFromBlock(block)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> SetCurrConfigBlock(block, chainID)</span><br><span class="line">	&#125;)</span><br><span class="line">...</span><br><span class="line">	<span class="comment">// 创建transient隐私数据存储对象</span></span><br><span class="line">	store, err := transientStoreFactory.OpenStore(bundle.ConfigtxValidator().ChainID())</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">// 初始化指定通道上的Gossip消息模块。</span></span><br><span class="line">	<span class="comment">// 若是主节点，则从Orderer服务节点获取区块数据。否则，从组织内其他节点同步数据</span></span><br><span class="line">	service.GetGossipService().InitializeChannel(bundle.ConfigtxValidator().ChainID(), ordererAddresses, service.Support&#123;</span><br><span class="line">		Validator: validator,</span><br><span class="line">		Committer: c,</span><br><span class="line">		Store:     store,</span><br><span class="line">		Cs:        simpleCollectionStore,</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	chains.Lock()</span><br><span class="line">	<span class="keyword">defer</span> chains.Unlock()</span><br><span class="line">	<span class="comment">// 构造新的链结构并插入Peer节点链结构</span></span><br><span class="line">	chains.list[cid] = &amp;chain&#123;</span><br><span class="line">		cs:        cs, <span class="comment">// 链支持对象</span></span><br><span class="line">		cb:        cb, <span class="comment">// 配置区块</span></span><br><span class="line">		committer: c,  <span class="comment">// 账本提交器</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="验证交易数据的合法性"><a href="#验证交易数据的合法性" class="headerlink" title="验证交易数据的合法性"></a>验证交易数据的合法性</h2><p>验证交易入口：<code>core/committer/txvalidator/validator.go/validateTx()</code>,主要做了以下几件事</p>
+<p>①：<em>解析获取交易数据的Envelope结构对象</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> env, err := utils.GetEnvelopeFromBlock(d); err != <span class="literal">nil</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：<em>检查交易格式是否正确、签名是否合法、交易内容是否被篡改</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> payload, txResult = validation.ValidateTransaction(env, v.support.Capabilities()); txResult != peer.TxValidationCode_VALID &#123;</span><br><span class="line">			logger.Errorf(<span class="string">&quot;Invalid transaction with index %d&quot;</span>, tIdx)</span><br><span class="line">			results &lt;- &amp;blockValidationResult&#123;</span><br><span class="line">				tIdx:           tIdx,</span><br><span class="line">				validationCode: txResult,</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>③：<em>解析获取通道头部</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chdr, err := utils.UnmarshalChannelHeader(payload.Header.ChannelHeader)</span><br></pre></td></tr></table></figure>
+
+<p>④：<em>检查通道链结构是否存在</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">channel := chdr.ChannelId</span><br><span class="line"><span class="keyword">if</span> !v.chainExists(channel) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>⑤：<em>根据<code>Header</code>的类型来分别处理消息</em></p>
+<p>5.1 <em>普通交易消息</em></p>
+<p>先从账本获取指定交易的ID数据，检查是否存在，然后获取交易读写集，并检查写集的合法性，调用<code>VSCC</code>验证交易背书策略，接着获取交易链码实例，并设置调用链码实例</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">txID = chdr.TxId</span><br><span class="line"><span class="comment">// 从账本获取指定交易的ID数据，检查是否存在</span></span><br><span class="line"><span class="keyword">if</span> _, err := v.support.Ledger().GetTransactionByID(txID); err == <span class="literal">nil</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 获取交易读写集，并检查写集的合法性，调用VSCC验证交易背书策略</span></span><br><span class="line">err, cde := v.vscc.VSCCValidateTx(payload, d, env)</span><br><span class="line">i..</span><br><span class="line"><span class="comment">// 获取交易链码实例</span></span><br><span class="line">invokeCC, upgradeCC, err := v.getTxCCInstance(payload)</span><br><span class="line">...</span><br><span class="line"><span class="comment">// 设置调用链码实例</span></span><br><span class="line">txsChaincodeName = invokeCC</span><br></pre></td></tr></table></figure>
+
+<p>5.2 <em>通道配置交易消息</em></p>
+<p>先解析获取配置交易对象，然后更新通道配置。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 通道配置交易消息，解析获取配置交易对象</span></span><br><span class="line">configEnvelope, err := configtx.UnmarshalConfigEnvelope(payload.Data)</span><br><span class="line">...</span><br><span class="line"><span class="comment">// 更新通道配置</span></span><br><span class="line"><span class="keyword">if</span> err := v.support.Apply(configEnvelope); err != <span class="literal">nil</span> &#123;</span><br><span class="line"> ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>5.3 如果是<em>Peer资源更新消息</em>，直接构造<code>blockValidationResult</code>返回</p>
+<p>⑥：<em>序列化封装交易Envelope结构对象</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> _, err := proto.Marshal(env); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			logger.Warningf(<span class="string">&quot;Cannot marshal transaction: %s&quot;</span>, err)</span><br><span class="line">			results &lt;- &amp;blockValidationResult&#123;</span><br><span class="line">				tIdx:           tIdx,</span><br><span class="line">				validationCode: peer.TxValidationCode_MARSHAL_TX_ERROR,</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⑦：<em>最后通过了交易，基于上述参数构造区块验证结果对象</em></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">results &lt;- &amp;blockValidationResult&#123;</span><br><span class="line">			tIdx:                 tIdx,</span><br><span class="line">			txsChaincodeName:     txsChaincodeName,</span><br><span class="line">			txsUpgradedChaincode: txsUpgradedChaincode,</span><br><span class="line">			validationCode:       peer.TxValidationCode_VALID,</span><br><span class="line">			txid:                 txID,</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="账本提交器"><a href="#账本提交器" class="headerlink" title="账本提交器"></a>账本提交器</h2><p>账本提交器的<code>LedgerCommitter.CommitWithPvtData()</code>方法负责执行具体的账本提交工作。该方法首先调用<code>LedgerCommitter</code>对象的<code>lc.preCommit(blockAndPvtData.Block)</code>方法，预处理待提交的区块数据，对于配置区块执行自定义<code>lc.eventer(block)</code>回调函数，即从当前区块中解析出链ID，再调用<code>SetCurrConfigBlock</code>()函数，从本地链结构字典中获取关联的链结构<code>chains.list[cid]</code>并更新其最新的配置区块。接着，调用<code>lc.PeerLedger.CommitWithPvtData(blockAndPvtData)→kvLedger.CommitWithPvtData()</code>方法提交数据到账本中，这是账本提交器的核心工作方法。当成功提交账本后，调用<code>lc.postCommit(blockAndPvtData.Block)</code>方法，基于该区块创建区块事件与过滤区块事件，并执行<code>producer.Send()</code>方法将两个事件发送到事件服务器，通知订阅客户端有新区块到达。</p>
+<p>进入到<code>CommitWithPvtData</code>()方法中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(l *kvLedger)</span></span> CommitWithPvtData(pvtdataAndBlock *ledger.BlockAndPvtData) <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> err <span class="type">error</span></span><br><span class="line">	block := pvtdataAndBlock.Block                 <span class="comment">// 获取区块对象</span></span><br><span class="line">	blockNo := pvtdataAndBlock.Block.Header.Number <span class="comment">// 获取区块号</span></span><br><span class="line">	<span class="comment">// 验证并准备区块和隐私数据对象</span></span><br><span class="line">	err = l.txtmgmt.ValidateAndPrepare(pvtdataAndBlock, <span class="literal">true</span>)</span><br><span class="line">	...</span><br><span class="line">	<span class="comment">//提交区块和隐私数据到账本中</span></span><br><span class="line">	<span class="keyword">if</span> err = l.blockStore.CommitWithPvtData(pvtdataAndBlock); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	...	</span><br><span class="line">	<span class="keyword">if</span> err = l.txtmgmt.Commit(); err != <span class="literal">nil</span> &#123; <span class="comment">// 更新有效交易数据到状态数据库</span></span><br><span class="line">		<span class="built_in">panic</span>(fmt.Errorf(<span class="string">`Error during commit to txmgr:%s`</span>, err))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> ledgerconfig.IsHistoryDBEnabled() &#123;</span><br><span class="line">		logger.Debugf(<span class="string">&quot;Channel [%s]: Committing block [%d] transactions to history database&quot;</span>, l.ledgerID, blockNo)</span><br><span class="line">		<span class="keyword">if</span> err := l.historyDB.Commit(block); err != <span class="literal">nil</span> &#123; <span class="comment">// 更新区块数据到历史数据库</span></span><br><span class="line">			<span class="built_in">panic</span>(fmt.Errorf(<span class="string">`Error during commit to history db:%s`</span>, err))</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此函数主要也就做了以下比较关键的事情：</p>
+<ul>
+<li><code>ValidateAndPrepare</code>:验证并准备区块和隐私数据对象</li>
+<li><code>CommitWithPvtData</code>:提交区块和隐私数据到账本中</li>
+<li><code>txtmgmt.Commit()</code>:更新有效交易数据到状态数据库</li>
+<li><code>l.historyDB.Commit(block)</code>:更新区块数据到历史数据库</li>
+</ul>
+<p>接下来将分别介绍这些功能的细节。</p>
+<h3 id="验证并准备区块和隐私数据对象"><a href="#验证并准备区块和隐私数据对象" class="headerlink" title="验证并准备区块和隐私数据对象"></a>验证并准备区块和隐私数据对象</h3><p>函数调用：</p>
+<blockquote>
+<p>err &#x3D; l.txtmgmt.ValidateAndPrepare(pvtdataAndBlock, true)</p>
+<p>-&gt; batch, err :&#x3D; txmgr.validator.ValidateAndPrepareBatch(blockAndPvtdata, doMVCCValidation)</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">validateAndPreparePvtBatch</span><span class="params">(block *valinternal.Block, pvtdata <span class="keyword">map</span>[<span class="type">uint64</span>]*ledger.TxPvtData)</span></span> (*privacyenabledstate.PvtUpdateBatch, <span class="type">error</span>) &#123;</span><br><span class="line">	pvtUpdates := privacyenabledstate.NewPvtUpdateBatch()</span><br><span class="line">	<span class="keyword">for</span> _, tx := <span class="keyword">range</span> block.Txs &#123;</span><br><span class="line">		<span class="keyword">if</span> tx.ValidationCode != peer.TxValidationCode_VALID &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> !tx.ContainsPvtWrites() &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		txPvtdata := pvtdata[<span class="type">uint64</span>(tx.IndexInBlock)] <span class="comment">// 获取指定交易的隐私数据</span></span><br><span class="line">		<span class="keyword">if</span> txPvtdata == <span class="literal">nil</span> &#123;                         <span class="comment">// 跳过没有隐私数据的交易</span></span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 检查是否需要验证隐私数据，默认都返回true</span></span><br><span class="line">		<span class="keyword">if</span> requiresPvtdataValidation(txPvtdata) &#123;</span><br><span class="line">			<span class="comment">// 验证隐私数据哈希值是否匹配</span></span><br><span class="line">			<span class="keyword">if</span> err := validatePvtdata(tx, txPvtdata); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">var</span> pvtRWSet *rwsetutil.TxPvtRwSet</span><br><span class="line">		<span class="keyword">var</span> err <span class="type">error</span></span><br><span class="line">		<span class="comment">// 解析隐私数据写集合</span></span><br><span class="line">		<span class="keyword">if</span> pvtRWSet, err = rwsetutil.TxPvtRwSetFromProtoMsg(txPvtdata.WriteSet); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 添加到隐私数据更新批量操作</span></span><br><span class="line">		addPvtRWSetToPvtUpdateBatch(pvtRWSet, pvtUpdates, version.NewHeight(block.Num, <span class="type">uint64</span>(tx.IndexInBlock)))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> pvtUpdates, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先遍历当前内部区块的交易列表<code>block.Txs</code>，对于其中的每个交易对象tx，需要过滤掉如下三类交易。</p>
+<ul>
+<li>交易验证码不为<code>TxValidationCode_VALID</code>的无效交易</li>
+<li>不存在隐私数据写数据哈希值的交易</li>
+<li>无隐私数据的交易</li>
+</ul>
+<p>如果交易通过了上述检查，则对于合法有效的交易tx及其隐私数据txPvtdata（TxPvt-Data类型），调用<code>validatePvtdata(tx，txPvtdata)</code>方法，以验证隐私数据哈希值的正确性，因为隐私数据都是由<code>Endorser</code>背书节点生成的，需要检查传播后的数据是否被篡改过。大致的过程如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">validatePvtdata</span><span class="params">(tx *valinternal.Transaction, pvtdata *ledger.TxPvtData)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">for</span> _, nsPvtdata := <span class="keyword">range</span> pvtdata.WriteSet.NsPvtRwset &#123;</span><br><span class="line">		<span class="keyword">for</span> _, collPvtdata := <span class="keyword">range</span> nsPvtdata.CollectionPvtRwset &#123;</span><br><span class="line">			<span class="comment">// 基于原始数据计算隐私数据哈希值</span></span><br><span class="line">			collPvtdataHash := util.ComputeHash(collPvtdata.Rwset)</span><br><span class="line">			<span class="comment">// 获取 交易中的数据哈希值</span></span><br><span class="line">			hashInPubdata := tx.RetrieveHash(nsPvtdata.Namespace, collPvtdata.CollectionName)</span><br><span class="line">			<span class="comment">// 比较隐私数据哈希值</span></span><br><span class="line">			<span class="keyword">if</span> !bytes.Equal(collPvtdataHash, hashInPubdata) &#123;</span><br><span class="line">				...</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="提交区块和隐私数据到账本中"><a href="#提交区块和隐私数据到账本中" class="headerlink" title="提交区块和隐私数据到账本中"></a>提交区块和隐私数据到账本中</h3><p>函数调用：<strong>l.blockStore.CommitWithPvtData(pvtdataAndBlock)</strong></p>
+<blockquote>
+<p>core&#x2F;ledger&#x2F;ledgerstorage&#x2F;store.go&#x2F;CommitWithPvtData</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Store)</span></span> CommitWithPvtData(blockAndPvtdata *ledger.BlockAndPvtData) <span class="type">error</span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> blockAndPvtdata.BlockPvtData &#123;</span><br><span class="line">		<span class="comment">// 添加隐私数据到隐私数据列表pvtdata</span></span><br><span class="line">		pvtdata = <span class="built_in">append</span>(pvtdata, v)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 准备将隐私数据列表pvtdata提交到账本中，先提交再确认</span></span><br><span class="line">	<span class="keyword">if</span> err := s.pvtdataStore.Prepare(blockAndPvtdata.Block.Header.Number, pvtdata); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 提交区块到账本中</span></span><br><span class="line">	<span class="keyword">if</span> err := s.AddBlock(blockAndPvtdata.Block); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		s.pvtdataStore.Rollback()</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 确认提交隐私数据</span></span><br><span class="line">	<span class="keyword">return</span> s.pvtdataStore.Commit()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大概就做了以下几件事：</p>
+<ol>
+<li>准备提交隐私数据：<code>Prepare</code></li>
+<li>提交区块数据：<code>s.AddBlock</code></li>
+<li>确认提交隐私数据：<code>s.pvtdataStore.Commit()</code></li>
+</ol>
+<p>①：准备提交隐私数据</p>
+<p>通过隐私数据存储对象调用s.pvtdataStore.Prepare()→store.Prepare()方法，将pvtdata列表中的每个隐私数据对象重新编码并构成KV键值对，添加到账本上隐私数据库的更新批量操作中，并同步更新到数据库中。最后，等待区块数据提交操作确认后，根据提交结果状态确认提交或回滚恢复隐私数据。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *store)</span></span> Prepare(blockNum <span class="type">uint64</span>, pvtData []*ledger.TxPvtData) <span class="type">error</span> &#123;</span><br><span class="line">	<span class="comment">// 检查合法性，执行Prepare()时应该是false，因为Commit和Rollback操作会重置该标志位</span></span><br><span class="line">	<span class="keyword">if</span> s.batchPending &#123;</span><br><span class="line">		<span class="keyword">return</span> &amp;ErrIllegalCall&#123;<span class="string">`A pending batch exists as as result of last invoke to &quot;Prepare&quot; call.</span></span><br><span class="line"><span class="string">			 Invoke &quot;Commit&quot; or &quot;Rollback&quot; on the pending batch before invoking &quot;Prepare&quot; function`</span>&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 获取下一个区块号</span></span><br><span class="line">	expectedBlockNum := s.nextBlockNum()</span><br><span class="line">	<span class="comment">// 检查区块号的合法性</span></span><br><span class="line">	<span class="keyword">if</span> expectedBlockNum != blockNum &#123;</span><br><span class="line">		<span class="keyword">return</span> &amp;ErrIllegalArgs&#123;fmt.Sprintf(<span class="string">&quot;Expected block number=%d, recived block number=%d&quot;</span>, expectedBlockNum, blockNum)&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 创建数据库更新操作集合batch，记录所有需要删除或增加数据的key键</span></span><br><span class="line">	batch := leveldbhelper.NewUpdateBatch()</span><br><span class="line">	<span class="keyword">var</span> key, value []<span class="type">byte</span></span><br><span class="line">	<span class="keyword">var</span> err <span class="type">error</span></span><br><span class="line">	<span class="comment">// 遍历隐私数据列表，构造该隐私数据KV键值对</span></span><br><span class="line">	<span class="keyword">for</span> _, txPvtData := <span class="keyword">range</span> pvtData &#123;</span><br><span class="line">		<span class="comment">// 遍历隐私数据列表，构造该隐私数据KV键值对</span></span><br><span class="line">		key = encodePK(blockNum, txPvtData.SeqInBlock)</span><br><span class="line">		<span class="keyword">if</span> value, err = encodePvtRwSet(txPvtData.WriteSet); err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="comment">// 构造value值：隐私数据写集合</span></span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">		logger.Debugf(<span class="string">&quot;Adding private data to LevelDB batch for block [%d], tran [%d]&quot;</span>, blockNum, txPvtData.SeqInBlock)</span><br><span class="line">		<span class="comment">// 添加隐私数据键值对的操作</span></span><br><span class="line">		batch.Put(key, value)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 添加pendingCommitKey键值对的操作</span></span><br><span class="line">	batch.Put(pendingCommitKey, emptyValue)</span><br><span class="line">	<span class="comment">// 同步执行数据库的更新操作集合</span></span><br><span class="line">	<span class="keyword">if</span> err := s.db.WriteBatch(batch, <span class="literal">true</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 更新状态标志位</span></span><br><span class="line">	s.batchPending = <span class="literal">true</span></span><br><span class="line">	logger.Debugf(<span class="string">&quot;Saved %d private data write sets for block [%d]&quot;</span>, <span class="built_in">len</span>(pvtData), blockNum)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>②：提交区块数据</p>
+<p>调用<code>s.AddBlock(blockAndPvtdata.Block)</code>方法，实际上是通过区块文件管理器，调用<code>blockfileMgr.addBlock()</code>方法，提交新区块<code>blockAndPvt-data.Block</code>到区块数据文件中，并保存新的区块检查点信息<code>newCPInfo</code>。接着，调用<code>indexBlock()</code>方法，建立当前区块的索引信息与索引检查点信息（当前区块号等），更新到区块索引数据库中。然后，调用<code>mgr.updateCheckpoint(newCPInfo)</code>方法，更新区块文件管理器上的区块检查点信息，再执行mgr.cpInfoCond.Broadcast()方法，广播唤醒所有等待该同步条件变量的程序，通知已有新区块提交到账本中。最后，调用<code>mgr.updateBlockchain-Info()</code>方法，更新区块链信息，如最新区块高度、最新区块头哈希值等。</p>
+<p>③：确认提交隐私数据</p>
+<p>调用 <code>s.pvtdataStore.Commit()</code>方法，执行隐私数据的提交确认操作。由于前面的<code>Prepare()</code>方法已经更新了所有的隐私数据键值对到数据库中，因此，该方法实际上是在隐私数据库上删除<code>pendingCommitKey</code>键值对，并添加<code>lastCommittedBlkkey</code>键值对，以保存最近提交成功的区块号<code>committingBlockNum</code>。最后，更新隐私数据相关标志位与变量，将等待提交确认标志位batchPending与标志位<code>isEmpty</code>设置为<code>false</code>，将<code>lastCommitted-Block</code>更新为提交账本的区块号<code>committingBlockNum</code>。 </p>
+<p>如果提交区块数据失败，则<code>CommitWithPvtData()</code>将通过隐私数据存储对象调用s.pvt-dataStore.Rollback()方法执行回滚操作，将已提交的隐私数据恢复到提交数据库之前的状态。</p>
+<h3 id="提交数据到状态数据库"><a href="#提交数据到状态数据库" class="headerlink" title="提交数据到状态数据库"></a>提交数据到状态数据库</h3><p>入口：<strong>core&#x2F;ledger&#x2F;kvledger&#x2F;txmgmt&#x2F;txmgr&#x2F;lockbasedtxmgr&#x2F;lockbased_txmgr.go&#x2F; Commit()</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(txmgr *LockBasedTxMgr)</span></span> Commit() <span class="type">error</span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">if</span> err := txmgr.db.ApplyPrivacyAwareUpdates(txmgr.batch,</span><br><span class="line">		version.NewHeight(txmgr.currentBlock.Header.Number, <span class="type">uint64</span>(<span class="built_in">len</span>(txmgr.currentBlock.Data.Data)<span class="number">-1</span>)))</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *CommonStorageDB)</span></span> ApplyPrivacyAwareUpdates(updates *UpdateBatch, height *version.Height) <span class="type">error</span> &#123;</span><br><span class="line">	addPvtUpdates(updates.PubUpdates, updates.PvtUpdates)</span><br><span class="line">	addHashedUpdates(updates.PubUpdates, updates.HashUpdates, !s.BytesKeySuppoted())</span><br><span class="line">	<span class="keyword">return</span> s.VersionedDB.ApplyUpdates(updates.PubUpdates.UpdateBatch, height)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最终会进入到下面的函数中：</p>
+<blockquote>
+<p>core&#x2F;ledger&#x2F;kvledger&#x2F;txmgmt&#x2F;statedb&#x2F;stateleveldb&#x2F;stateleveldb.go</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(vdb *versionedDB)</span></span> ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height) <span class="type">error</span> &#123;</span><br><span class="line">	dbBatch := leveldbhelper.NewUpdateBatch()</span><br><span class="line">	namespaces := batch.GetUpdatedNamespaces()</span><br><span class="line">	<span class="keyword">for</span> _, ns := <span class="keyword">range</span> namespaces &#123;</span><br><span class="line">		updates := batch.GetUpdates(ns)</span><br><span class="line">		<span class="keyword">for</span> k, vv := <span class="keyword">range</span> updates &#123;</span><br><span class="line">			compositeKey := constructCompositeKey(ns, k)</span><br><span class="line">			logger.Debugf(<span class="string">&quot;Channel [%s]: Applying key(string)=[%s] key(bytes)=[%#v]&quot;</span>, vdb.dbName, <span class="type">string</span>(compositeKey), compositeKey)</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> vv.Value == <span class="literal">nil</span> &#123;</span><br><span class="line">				dbBatch.Delete(compositeKey)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				dbBatch.Put(compositeKey, statedb.EncodeValue(vv.Value, vv.Version))</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	dbBatch.Put(savePointKey, height.ToBytes())</span><br><span class="line">	<span class="comment">// Setting snyc to true as a precaution, false may be an ok optimization after further testing.</span></span><br><span class="line">	<span class="keyword">if</span> err := vdb.db.WriteBatch(dbBatch, <span class="literal">true</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ApplyUpdates()</code>方法主要做了以下几件事：</p>
+<ol>
+<li>遍历更新批量操作，对于其包含的键值对（键k与值vv），调用<code>constructCompositeKey(ns，k)</code>方法重新构造组合键<code>compositeKey</code></li>
+<li>检查该键值对操作的删除标识。如果vv.Value为nil，说明该键值对更新操作为删除操作，则继续调用<code>dbBatch.Delete(compositeKey)</code>方法，添加该删除操作到<code>dbBatch</code>对象中。否则，将vv.Version中的区块号与交易序号经过编码序列化成字节数组，并与<code>vv.Value</code>组合成编码值<code>encodedValue</code>，再将其写入操作添加到dbBatch对象中</li>
+<li>调用<code>dbBatch.Put</code>方法，添加保存点标识的<code>KV</code>键值对。其中，键为<code>[]byte&#123;0x00&#125;</code>，值为版本<code>height</code>经过编码序列化后的字节数组</li>
+<li>调用<code>vdb.db.WriteBatch</code>方法，以原子操作方式将<code>dbBatch</code>更新同步到状态数据库上。注意，在写入数据库时同样会重新构造KV键值对，在原来的键上添加数据库名称（链ID&#x2F;账本ID）前缀，即<code>[]byte(dbName)+[]byte&#123;0x00&#125;</code>，以隔离不同通道上的状态数据。</li>
+</ol>
+<h3 id="更新历史数据库"><a href="#更新历史数据库" class="headerlink" title="更新历史数据库"></a>更新历史数据库</h3><p>调用<code>l.historyDB.Commit(block)</code>方法，以更新区块<code>block</code>中经过<code>Endorser</code>背书的有效交易数据到历史数据库中，代码如下：</p>
+<blockquote>
+<p>core&#x2F;ledger&#x2F;kvledger&#x2F;history&#x2F;historydb&#x2F;historyleveldb&#x2F;historyleveldb.go</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(historyDB *historyDB)</span></span> Commit(block *common.Block) <span class="type">error</span> &#123;</span><br><span class="line"></span><br><span class="line">	blockNo := block.Header.Number <span class="comment">// 获取区块号</span></span><br><span class="line">	<span class="comment">//Set the starting tranNo to 0</span></span><br><span class="line">	<span class="keyword">var</span> tranNo <span class="type">uint64</span></span><br><span class="line">...</span><br><span class="line">	<span class="comment">// Get the invalidation byte array for the block</span></span><br><span class="line">	<span class="comment">// 获取交易验证码列表</span></span><br><span class="line">	txsFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])</span><br><span class="line">	<span class="comment">// Initialize txsFilter if it does not yet exist (e.g. during testing, for genesis block, etc)</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(txsFilter) == <span class="number">0</span> &#123;</span><br><span class="line">		txsFilter = util.NewTxValidationFlags(<span class="built_in">len</span>(block.Data.Data))</span><br><span class="line">		block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER] = txsFilter</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// write each tran&#x27;s write set to history db</span></span><br><span class="line">	<span class="keyword">for</span> _, envBytes := <span class="keyword">range</span> block.Data.Data &#123; <span class="comment">// 遍历区块所有交易数据</span></span><br><span class="line">		<span class="keyword">if</span> txsFilter.IsInvalid(<span class="type">int</span>(tranNo)) &#123; <span class="comment">// 过滤掉无效交易</span></span><br><span class="line">			logger.Debugf(<span class="string">&quot;Channel [%s]: Skipping history write for invalid transaction number %d&quot;</span>,</span><br><span class="line">				historyDB.dbName, tranNo)</span><br><span class="line">			tranNo++</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// 解析获取交易消息Envelope结构对象</span></span><br><span class="line">		env, err := putils.GetEnvelopeFromBlock(envBytes)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	...</span><br><span class="line">		<span class="comment">// 检查类型：经Endorser背书的普通交易消息</span></span><br><span class="line">		<span class="keyword">if</span> common.HeaderType(chdr.Type) == common.HeaderType_ENDORSER_TRANSACTION &#123;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// extract actions from the envelope message</span></span><br><span class="line">			<span class="comment">// 从交易消息中解析提取链码动作</span></span><br><span class="line">			respPayload, err := putils.GetActionFromEnvelope(envBytes)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> err</span><br><span class="line">			&#125;</span><br><span class="line">...</span><br><span class="line">			<span class="comment">// 解析交易读写集到TxReadWriteSet结构对象中</span></span><br><span class="line">			<span class="keyword">if</span> err = txRWSet.FromProtoBytes(respPayload.Results); err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> err</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="comment">// 遍历所有读写集，重新构造KV键值对添加到历史数据库</span></span><br><span class="line">			<span class="keyword">for</span> _, nsRWSet := <span class="keyword">range</span> txRWSet.NsRwSets &#123;</span><br><span class="line">				ns := nsRWSet.NameSpace</span><br><span class="line"></span><br><span class="line">				<span class="keyword">for</span> _, kvWrite := <span class="keyword">range</span> nsRWSet.KvRwSet.Writes &#123;</span><br><span class="line">					writeKey := kvWrite.Key</span><br><span class="line"></span><br><span class="line">					<span class="comment">// 构造组合键</span></span><br><span class="line">					compositeHistoryKey := historydb.ConstructCompositeHistoryKey(ns, writeKey, blockNo, tranNo)</span><br><span class="line"></span><br><span class="line">					<span class="comment">// 写入空的字节数组[]byte&#123;&#125;</span></span><br><span class="line">					dbBatch.Put(compositeHistoryKey, emptyValue)</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// 跳过交易，因为该消息不是经过Endorser背书的普通交易消息</span></span><br><span class="line">			logger.Debugf(<span class="string">&quot;Skipping transaction [%d] since it is not an endorsement transaction\n&quot;</span>, tranNo)</span><br><span class="line">		&#125;</span><br><span class="line">		tranNo++</span><br><span class="line">	&#125;</span><br><span class="line">	height := version.NewHeight(blockNo, tranNo) <span class="comment">// 创建版本对象</span></span><br><span class="line">	dbBatch.Put(savePointKey, height.ToBytes())  <span class="comment">// 添加保存点用于恢复</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 同步更新批量操作dbBatch到历史数据库中</span></span><br><span class="line">	<span class="keyword">if</span> err := historyDB.db.WriteBatch(dbBatch, <span class="literal">true</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此为止：账本提交功能分析结束。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/fabric/" rel="tag"># fabric</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_%E4%BA%A4%E6%98%93%E5%B9%BF%E6%92%AD-3/" rel="prev" title="死磕hyperledger fabric源码|交易广播">
+      <i class="fa fa-chevron-left"></i> 死磕hyperledger fabric源码|交易广播
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Deliver%E5%8C%BA%E5%9D%97%E5%88%86%E5%8F%91-5/" rel="next" title="死磕hyperledger fabric源码|Deliver区块分发">
+      死磕hyperledger fabric源码|Deliver区块分发 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9B%E5%BB%BACommitter%E5%8A%9F%E8%83%BD%E6%A8%A1%E5%9D%97"><span class="nav-number">2.</span> <span class="nav-text">创建Committer功能模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81%E4%BA%A4%E6%98%93%E6%95%B0%E6%8D%AE%E7%9A%84%E5%90%88%E6%B3%95%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">验证交易数据的合法性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B4%A6%E6%9C%AC%E6%8F%90%E4%BA%A4%E5%99%A8"><span class="nav-number">4.</span> <span class="nav-text">账本提交器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81%E5%B9%B6%E5%87%86%E5%A4%87%E5%8C%BA%E5%9D%97%E5%92%8C%E9%9A%90%E7%A7%81%E6%95%B0%E6%8D%AE%E5%AF%B9%E8%B1%A1"><span class="nav-number">4.1.</span> <span class="nav-text">验证并准备区块和隐私数据对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%90%E4%BA%A4%E5%8C%BA%E5%9D%97%E5%92%8C%E9%9A%90%E7%A7%81%E6%95%B0%E6%8D%AE%E5%88%B0%E8%B4%A6%E6%9C%AC%E4%B8%AD"><span class="nav-number">4.2.</span> <span class="nav-text">提交区块和隐私数据到账本中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%90%E4%BA%A4%E6%95%B0%E6%8D%AE%E5%88%B0%E7%8A%B6%E6%80%81%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">4.3.</span> <span class="nav-text">提交数据到状态数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E6%96%B0%E5%8E%86%E5%8F%B2%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">4.4.</span> <span class="nav-text">更新历史数据库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

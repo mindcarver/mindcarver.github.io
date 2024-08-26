@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕hyperledger fabric源码|Order节点概述">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕hyperledger fabric源码|Order节点概述">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕hyperledger fabric源码|Order节点概述">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn15th0ollj31c00u0qcl.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn16qf76aaj31ev0u0top.jpg">
+<meta property="article:published_time" content="2024-08-26T06:59:11.366Z">
+<meta property="article:modified_time" content="2024-08-26T07:02:35.809Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="fabric">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gn15th0ollj31c00u0qcl.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕hyperledger fabric源码|Order节点概述 | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕hyperledger fabric源码|Order节点概述
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 14:59:11 / Modified: 15:02:35" itemprop="dateCreated datePublished" datetime="2024-08-26T14:59:11+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fabric/" itemprop="url" rel="index"><span itemprop="name">fabric</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E6%A6%82%E8%BF%B0-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">死磕hyperledger fabric源码|Order节点概述</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕hyperledger fabric源码|Order节点概述</p>
+<p>文章及代码：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>分支：v1.1.0</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gn15th0ollj31c00u0qcl.jpg" alt="bcc633a6c26528720cf16ed170f6a141"></p>
+<h2 id="前言及源码目录"><a href="#前言及源码目录" class="headerlink" title="前言及源码目录"></a>前言及源码目录</h2><p><code>Orderer</code>排序节点这块内容主要包括了节点启动流程、<code>Broadcast</code>广播交易服务、<code>Orderer</code>共识排序服务以及<code>Deliver</code>区块分发服务。其相关源码目录文件如下：</p>
+<blockquote>
+<p>&#x2F;orderer</p>
+<p>|-common</p>
+<p>​	|-blockcutter:交易切割打包模块  ✨✨✨✨✨✨</p>
+<p>​	|-bootstrap:引导启动模块，生成创世块  ✨✨✨✨✨✨</p>
+<p>​	|-broadcast:交易广播服务模块 ✨✨✨✨✨✨</p>
+<p>​	|-localconfig:本地配置模块</p>
+<p>​	|-metadata：获取元数据模块</p>
+<p>​	|-msgprocessor:消息处理器模块 </p>
+<p>​	|-multichannel：多管道注册管理器模块</p>
+<p>​	|-performance：性能测量模块</p>
+<p>​	|-server：Order排序服务器模块  ✨✨✨✨✨✨</p>
+<p>|-consensus</p>
+<p>​	|-kafka:kafka共识组件模块 ✨✨✨✨✨✨</p>
+<p>​	|-solo:solo共识组件模块 </p>
+<p>​	|-consensus.go:定义共识组件相关接口 </p>
+<p>|-main.go:orderer主程序</p>
+</blockquote>
+<blockquote>
+<p>&#x2F;common</p>
+<p>|-deliver:定义Deliver服务器及处理器接口 ✨✨✨✨✨✨</p>
+</blockquote>
+<blockquote>
+<p>&#x2F;core</p>
+<p>|-deliverservice</p>
+<p>​	|-blocksprovider:区块提供者模块 ✨✨✨✨✨✨</p>
+<p>​	|-client.go:提供broadcastClient客户端 ✨✨✨✨✨✨</p>
+<p>​	|-deliveryClient：Deliver服务客户端 ✨✨✨✨✨✨</p>
+<p>​	|-requester.go:请求区块数据 ✨✨✨✨✨✨</p>
+</blockquote>
+<blockquote>
+<p>&#x2F;protos</p>
+<p>|-orderer:protobuf消息定义模块</p>
+</blockquote>
+<h2 id="主要功能"><a href="#主要功能" class="headerlink" title="主要功能"></a>主要功能</h2><p><code>Orderer</code>排序节点在<code>Hyperledger Fabric</code>系统架构中处于核心角色地位，管理着系统通道与所有应用通道，负责通道创建、通道配置更新等操作，并处理客户端提交的交易消息请求，对交易进行排序并按规则打包成新区块，提交账本并维护通道账本数据，为全网节点提供<code>Broadcast</code>交易广播服务、<code>Orderer</code>共识排序服务、<code>Deliver</code>区块分发服务等。通常，Hyperledger Fabric启动时需要先启动Orderer排序节点，创建系统通道提供正常服务后，再启动其他角色的<code>Peer</code>节点进入正常工作状态。其服务模块关系与架构示如图：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gn16qf76aaj31ev0u0top.jpg" alt="image-20210126163847049"></p>
+<p><code>Orderer</code>节点启动后基于创世区块初始化系统通道，创建<code>Orderer</code>排序服务器，封装了<code>Broadcast</code>服务处理句柄、<code>Deliver</code>服务处理句柄与多通道注册管理器对象，并提供<code>Broadcast</code>()交易广播服务接口与 <code>Deliver</code>()区块分发服务接口。</p>
+<p>其中，<code>Orderer</code>排序服务器基于<code>Broadcast</code>()接口接收交易广播服务请求，调用<code>Broadcast</code>服务处理句柄的<code>Handle</code>()方法进行处理，建立消息处理循环，接收与处理客户端提交的普通交易消息、配置交易消息等请求消息，经过滤后发送至通道绑定的共识组件链对象（<code>Solo</code>类型、<code>Kafka</code>类型等）进行排序。接着，再将排序后的交易添加到本地待处理的缓存交易消息列表，并按照交易出块规则构造新区块，提交到<code>Orderer</code>节点指定通道账本的区块数据文件中，同时负责创建新的应用通道、更新通道配置等通道管理工作。目前，<code>Orderer</code>排序服务器负责接收与处理两类交易消息，具体如下。</p>
+<ul>
+<li><p>配置交易消息（ConfigMsg）：通道头部类型是<code>CONFIG_UPDATE</code>的通道配置交易消息，含有最新的通道配置信息，经过通道消息处理器过滤后，转换为通道头部类型为 <code>ORDERER_TRANSACTION</code>或<code>CONFIG</code>的配置交易消息（<code>Envelope</code>类型），分别用于创建新的应用通道或更新通道配置，同时，将通道配置交易消息单独打包成新区块，并提交到系统通道账本与应用通道账本。 </p>
+</li>
+<li><p>普通交易消息（NormalMsg）：通道头部类型是<code>ENDORSER_TRANSACTION</code>等的标准交易消息（经过<code>Endorser</code>背书的交易消息或其他非配置交易消息），含有改变世界状态的模拟执行结果读写集，经过<code>Endorser</code>节点签名背书后打包发送到<code>Orderer</code>节点请求处 </p>
+<p>理，经过通道消息处理器过滤后，将合法交易提交到共识组件链对象进行排序，再按照交易出块规则（出块时间周期、打包最大交易数量、区块字节数限制等）生成新区块，并提交到通道账本。</p>
+</li>
+</ul>
+<p>同时，<code>Orderer</code>排序服务器提供<code>Deliver</code>()区块分发服务接口，将接收的服务请求交由Deliver服务处理句柄的<code>Handle</code>()方法处理，建立消息处理循环，负责接收与处理客户端提交的区块请求消息，封装了指定区块请求范围的区块搜索信息（SeekInfo类型）。接着，Deliver服务处理句柄循环从本地账本获取区块数据，依次发送给请求节点（如<code>Leader</code>主节点）。如果账本中还未生成指定区块，则Deliver服务处理句柄默认一直阻塞等待，直到该区块创建完成并提交账本后再回复给请求节点。</p>
+<p>另外，<code>Orderer</code>排序服务器还提供了多通道注册管理器<code>Registrar</code>对象，负责管理系统通道与所有应用通道，封装了所有通道的链支持对象字典、共识组件字典、区块账本工厂对象等组件，维护所有通道上的通道配置、区块账本对象、共识组件等核心资源，创建通道上的共识组件链对象提供<code>Orderer</code>共识排序服务，负责对交易消息排序，切割打包构造新区块并提交账本，同时负责创建新的应用通道与更新通道配置，其相当于<code>Orderer</code>节点上的“资源管理器”。 </p>
+<p>实际上，<code>Orderer</code>排序服务器上的通道共识组件链对象利用<code>Golang</code>通道（<code>Solo</code>共识组件）或<code>Kafka</code>集群（<code>Kafka</code>共识组件）作为共识排序后端，对经过通道消息处理器过滤的合法交易消息进行排序，对交易顺序等达成一致性观点。同时，在新通道创建时或启动恢复现有通道时，启动通道绑定的链支持对象以及共识组件链对象，构建交易消息处理循环，接收共识组件已经完成排序的交易消息，并添加到本地待处理的缓存交易消息列表中，包括配置交易消息、普通交易消息等，采用相互独立的消息处理流程分别处理 。</p>
+<p>注意，目前<code>Orderer</code>节点账本只包括区块数据文件与区块索引数据库，负责保存区块数据即公有数据（包含公共数据与隐私数据哈希值），不存在状态数据库、历史数据库、隐私数据库等。不同于<code>Peer</code>节点，<code>Orderer</code>节点在提交区块到本地账本前不需要验证交易背书策略与执行<code>MVCC</code>检查，也不保存任何隐私数据（明文），只负责存储所有通道账本上的区块数据。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/fabric/" rel="tag"># fabric</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_kafka%E5%85%B1%E8%AF%86%E6%8E%92%E5%BA%8F-4/" rel="prev" title="死磕hyperledger fabric源码|kafka共识排序">
+      <i class="fa fa-chevron-left"></i> 死磕hyperledger fabric源码|kafka共识排序
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95hyperledger%20fabric%E6%BA%90%E7%A0%81_Order%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8-2/" rel="next" title="死磕hyperledger fabric源码|Order节点启动">
+      死磕hyperledger fabric源码|Order节点启动 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80%E5%8F%8A%E6%BA%90%E7%A0%81%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">前言及源码目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E5%8A%9F%E8%83%BD"><span class="nav-number">2.</span> <span class="nav-text">主要功能</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

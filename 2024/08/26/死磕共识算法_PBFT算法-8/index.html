@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="死磕共识算法|实用拜占庭容错算法(PBFT)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕共识算法|实用拜占庭容错算法(PBFT)">
+<meta property="og:url" content="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_PBFT%E7%AE%97%E6%B3%95-8/index.html">
+<meta property="og:site_name" content="mindcarver&#39;s blog">
+<meta property="og:description" content="死磕共识算法|实用拜占庭容错算法(PBFT)">
+<meta property="og:locale">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7uqdgnmj31hc0u0wk5.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnxgennnu6j31fu0g6aet.jpg">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnxgw54qrsj31a00dw7be.jpg">
+<meta property="og:image" content="http://example.com/Users/carver/Downloads/PBFT-PR.svg">
+<meta property="article:published_time" content="2024-08-26T07:10:40.718Z">
+<meta property="article:modified_time" content="2024-08-26T07:13:53.573Z">
+<meta property="article:author" content="mindcarver">
+<meta property="article:tag" content="共识算法">
+<meta property="article:tag" content="PBTF">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7uqdgnmj31hc0u0wk5.jpg">
+
+<link rel="canonical" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_PBFT%E7%AE%97%E6%B3%95-8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>死磕共识算法|实用拜占庭容错算法(PBFT) | mindcarver's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">mindcarver's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-关于">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_PBFT%E7%AE%97%E6%B3%95-8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpeg">
+      <meta itemprop="name" content="mindcarver">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mindcarver's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕共识算法|实用拜占庭容错算法(PBFT)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2024-08-26 15:10:40 / Modified: 15:13:53" itemprop="dateCreated datePublished" datetime="2024-08-26T15:10:40+08:00">2024-08-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">共识算法</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_PBFT%E7%AE%97%E6%B3%95-8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_PBFT%E7%AE%97%E6%B3%95-8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">死磕共识算法|实用拜占庭容错算法(PBFT)</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>死磕共识算法|实用拜占庭容错算法(PBFT)</p>
+<p>配合以下代码进行阅读：<a target="_blank" rel="noopener" href="https://github.com/blockchainGuide/">https://github.com/blockchainGuide/</a></p>
+<p>写文不易，给个小关注，有什么问题可以指出，便于大家交流学习。</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnv7uqdgnmj31hc0u0wk5.jpg" alt="816246ba75a183d188bdd3bf9c5eed69"></p>
+<h1 id="拜占庭容错BFT"><a href="#拜占庭容错BFT" class="headerlink" title="拜占庭容错BFT"></a>拜占庭容错BFT</h1><p>拜占庭容错是分布式协议的一种属性，如果这种协议可以解决不可信任环境下的分布式一致性问题，那么它就是拜占庭容错。</p>
+<p>pbft 算法的提出主要是为了解决拜占庭将军问题。网上关于 pbft 的算法介绍基本上是基于 liskov 在 1999 年发表的论文《 Practical Byzantine Fault Tolerance 》来进行解释的。</p>
+<h1 id="raft和pbft的最大容错节点数"><a href="#raft和pbft的最大容错节点数" class="headerlink" title="raft和pbft的最大容错节点数"></a>raft和pbft的最大容错节点数</h1><p>对于raft算法，raft算法只支持容错故障节点，不支持容错作恶节点。假设集群总节点数为n，故障节点为 f ，集群里正常节点只需要比 f 个节点再多一个节点，即 f+1 个节点，正确节点的数量就会比故障节点数量多，那么集群就能达成共识。因此 raft 算法支持的最大容错节点数量是（n-1）&#x2F;2。</p>
+<p>对于 pbft 算法，因为 pbft 算法的除了需要支持容错故障节点之外，还需要支持容错作恶节点。假设集群节点数为 N，有问题的节点为 f。有问题的节点中，可以既是故障节点，也可以是作恶节点，或者只是故障节点或者只是作恶节点。那么会产生以下两种极端情况：</p>
+<ol>
+<li>第一种情况，f 个有问题节点既是故障节点，又是作恶节点，那么根据小数服从多数的原则，集群里正常节点只需要比f个节点再多一个节点，即 f+1 个节点，确节点的数量就会比故障节点数量多，那么集群就能达成共识。也就是说这种情况支持的最大容错节点数量是 （n-1）&#x2F;2。</li>
+<li>第二种情况，故障节点和作恶节点都是不同的节点。那么就会有 f 个问题节点和 f 个故障节点，当发现节点是问题节点后，会被集群排除在外，剩下 f 个故障节点，那么根据小数服从多数的原则，集群里正常节点只需要比f个节点再多一个节点，即 f+1 个节点，确节点的数量就会比故障节点数量多，那么集群就能达成共识。所以，所有类型的节点数量加起来就是 f+1 个正确节点，f个故障节点和f个问题节点，即 3f+1&#x3D;n。</li>
+</ol>
+<p>结合上述两种情况，因此 pbft 算法支持的最大容错节点数量是（n-1）&#x2F;3。</p>
+<h1 id="PBFT算法流程"><a href="#PBFT算法流程" class="headerlink" title="PBFT算法流程"></a>PBFT算法流程</h1><p>基本流程如下：</p>
+<ol>
+<li>客户端发送请求给主节点</li>
+<li>主节点广播请求给其它节点，节点执行 pbft 算法的三阶段共识流程。</li>
+<li>节点处理完三阶段流程后，返回消息给客户端。</li>
+<li>客户端收到来自 f+1 个节点的相同消息后，代表共识已经正确完成。</li>
+</ol>
+<p>无论是最好的情况还是最坏的情况，如果客户端收到 f+1 个节点的相同消息，那么就代表有足够多的正确节点已全部达成共识并处理完毕了。</p>
+<p>PBFT 算法中, 存在一个主节点(primary) 和其他的备份节点 (replica), PBFT 共识机制主要包含两部分: 第一部分是分布式共识达成,在主节点正常工作时, PBFT 通过预准备 (pre-prepare)、准备 (prepare) 和承诺 (commit) 三个步骤完成共识; 第二部分是视图转换 (view-change), 当主节点出现问题不能及时处理数据请求时, 其他备份节点发起视图转换, 转换成功后新的主节点开始工作. 主节点以轮转 (round robin) 的方式交替更换.</p>
+<p>PBFT 的分布式共识达成过程如下:</p>
+<ol>
+<li>请求 (propose)：客户端 (client) 上传请求消息 <em>m</em> 至网络中的节点, 包括主节点和其他备份节点。</li>
+<li>预准备 (pre-prepare)：主节点收到客户端上传的请求消息 <em>m</em>, 赋予消息序列号 <em>s</em>, 计算得到预准备消息 (pre-prepare*, H*(<em>m</em>)<em>, s, v</em>)，其中 <em>H</em>(m) 是单向哈希函数, <em>v</em> 代表的是此时的视图 (view),视图一般用于记录主节点的更替, 主节点发生更替时, 视图随之增加 1 。消息发送者节点在发送消息前需利用自身私钥对消息实施数字签名。主节点将预准备消息发送给其他备份节点.</li>
+<li>准备 (prepare)：备份节点收到主节点的预准备消息, 验证 <em>H</em>(<em>m</em>) 的合法性。即对于视图 <em>v</em> 和序列号<em>s</em> 来说, 备份节点先前并未收到其他消息。验证通过后, 备份节点计算准备消息 (prepare*, H*(<em>m</em>)<em>, s, v</em>) 并将其在全网广播. 与此同时, 所有节点收集准备消息,如果收集到的合法准备消息数量大于等于 2<em>f</em> + 1(包含自身准备消息) 个, 则将其组成准备凭证 (prepared certificate)</li>
+<li>承诺 (commit)：如果在准备阶段中, 节点收集到足够的准备消息并生成了准备凭证, 那么节点将计算承诺消息 (commit*, s, v*) 并广播，将消息 <em>m</em> 放入到本地日志中. 与此同时节点收集网络中的承诺消息,如果收集到的合法承诺消息数量大于等于 2<em>f</em> +1(包含自身承诺消息), 那么将其组成承诺凭证 (committedcertificate), 证明消息 <em>m</em> 完成最终承诺。</li>
+<li>答复 (reply)：备份节点和主节点中任意收集到足够承诺消息并组成承诺凭证的节点, 将承诺凭证作为对消息 <em>m</em> 的答复发送给客户端, 客户端确认消息 <em>m</em> 的最终承诺.</li>
+</ol>
+<p>PBFT的共识过程如下：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnxgennnu6j31fu0g6aet.jpg" alt="image-20210223143130925"></p>
+<h1 id="checkpoint机制"><a href="#checkpoint机制" class="headerlink" title="checkpoint机制"></a>checkpoint机制</h1><p>在 PBFT 中, 存在检查点 (checkpoint) 机制, 由于每个消息都被赋予了一定的序列号, 如消息 <em>m</em> 对应的序列号为 118, 当不少于 2<em>f</em> + 1 个节点组成消息 <em>m</em> 的承诺凭证, 完成消息承诺之后, 序列号 118 成为当前的稳定检查点 (stable checkpoint). 检查点机制被用于实现存储删减, 即当历史日志内容过多时, 节点可以选择清除稳定检查点之前的数据, 减少存储成本. 另外稳定检查点在 PBFT 的视图转换中也起到了关键作用.</p>
+<h1 id="viewChange机制"><a href="#viewChange机制" class="headerlink" title="viewChange机制"></a>viewChange机制</h1><p>当主节点挂了（超时无响应）或者从节点集体认为主节点是问题节点时，就会触发 ViewChange 事件， ViewChange 完成后，视图编号将会加 1 。下图展示 ViewChange 的三个阶段流程：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnxgw54qrsj31a00dw7be.jpg" alt="image-20210223144812547"></p>
+<p>viewchange 会有三个阶段，分别是 <code>view-change</code> ， <code>view-change-ack</code> 和 <code>new-view</code> 阶段。从节点认为主节点有问题时，会向其它节点发送 view-change 消息，当前存活的节点编号最小的节点将成为新的主节点。当新的主节点收到 2f 个其它节点的 view-change 消息，则证明有足够多人的节点认为主节点有问题，于是就会向其它节点广播 New-view 消息。注意：从节点不会发起 new-view 事件。对于主节点，发送 new-view 消息后会继续执行上个视图未处理完的请求，从 pre-prepare 阶段开始。其它节点验证 new-view 消息通过后，就会处理主节点发来的 pre-prepare 消息，这时执行的过程就是前面描述的 pbft 过程。</p>
+<p>最后一张图来了解一下PBFT算法：</p>
+<p><img src="/Users/carver/Downloads/PBFT-PR.svg" alt="PBFT-PR"></p>
+<hr>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><blockquote>
+<p> <a target="_blank" rel="noopener" href="https://github.com/blockchainGuide">https://github.com/blockchainGuide</a></p>
+<p> <a target="_blank" rel="noopener" href="http://pmg.csail.mit.edu/papers/osdi99.pdf">http://pmg.csail.mit.edu/papers/osdi99.pdf</a> </p>
+<p> <a target="_blank" rel="noopener" href="https://blog.csdn.net/shangsongwww/article/details/88942215">https://blog.csdn.net/shangsongwww/article/details/88942215</a></p>
+<p> <a target="_blank" rel="noopener" href="https://www.microsoft.com/en-us/research/wp-content/uploads/2017/01/thesis-mcastro.pdf">https://www.microsoft.com/en-us/research/wp-content/uploads/2017/01/thesis-mcastro.pdf</a></p>
+<p> <a target="_blank" rel="noopener" href="https://www.comp.nus.edu.sg/~rahul/allfiles/cs6234-16-pbft.pdf">https://www.comp.nus.edu.sg/~rahul/allfiles/cs6234-16-pbft.pdf</a></p>
+<p> <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/35847127">https://zhuanlan.zhihu.com/p/35847127</a></p>
+<p> <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/0bef4fb1662b">https://www.jianshu.com/p/0bef4fb1662b</a></p>
+<p> <a target="_blank" rel="noopener" href="https://learnblockchain.cn/article/781%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%B8%89%E9%98%B6%E6%AE%B5%E6%B6%88%E6%81%AF%EF%BC%89">https://learnblockchain.cn/article/781（为什么需要三阶段消息）</a></p>
+<p> <a target="_blank" rel="noopener" href="https://lessisbetter.site/2020/03/22/why-pbft-needs-viewchange/%EF%BC%88View">https://lessisbetter.site/2020/03/22/why-pbft-needs-viewchange/（View</a> Change的作用）</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" rel="tag"># 共识算法</a>
+              <a href="/tags/PBTF/" rel="tag"># PBTF</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_Paxos%E7%AE%97%E6%B3%95-5/" rel="prev" title="死磕共识算法|Paxos算法">
+      <i class="fa fa-chevron-left"></i> 死磕共识算法|Paxos算法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/08/26/%E6%AD%BB%E7%A3%95%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95_POS%E7%AE%97%E6%B3%95-2/" rel="next" title="死磕共识算法|POS算法">
+      死磕共识算法|POS算法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8B%9C%E5%8D%A0%E5%BA%AD%E5%AE%B9%E9%94%99BFT"><span class="nav-number">1.</span> <span class="nav-text">拜占庭容错BFT</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#raft%E5%92%8Cpbft%E7%9A%84%E6%9C%80%E5%A4%A7%E5%AE%B9%E9%94%99%E8%8A%82%E7%82%B9%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">raft和pbft的最大容错节点数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#PBFT%E7%AE%97%E6%B3%95%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">PBFT算法流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#checkpoint%E6%9C%BA%E5%88%B6"><span class="nav-number">4.</span> <span class="nav-text">checkpoint机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#viewChange%E6%9C%BA%E5%88%B6"><span class="nav-number">5.</span> <span class="nav-text">viewChange机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="mindcarver"
+      src="/images/avatar.jpeg">
+  <p class="site-author-name" itemprop="name">mindcarver</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mindcarver" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mindcarver" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/626984947@qq.com" title="E-Mail → 626984947@qq.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/mindcarver001" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;mindcarver001" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mindcarver</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="Symbols count total">322k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:53</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'mvGWtuPpkVTSqWCt8xxQ8x8p-gzGzoHsz',
+      appKey     : 'IYnOZJ2Y6xvBXl8J1LtKZ59G',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
