@@ -626,9 +626,324 @@ for code, result in results.items():
     print(f"行业{code}: IC={result['ic']:.4f}, 样本数={result['n_samples']}")
 ```
 
-## 7. IC在模型评估中的应用
+## 7. IC 胜率
 
-### 7.1 交叉验证中的IC评估
+### 7.1 IC 胜率的定义
+
+**定义：**
+
+IC 胜率 = IC > 0 的天数比例
+
+**标准：**
+
+- 胜率 > 50%: 预测整体有效
+- 胜率 > 55%: 较为理想
+- 胜率 > 60%: 非常好
+
+**注意：**
+
+即使平均 IC 很高，如果胜率低，说明模型可能只在少数天有效，风险较大。
+
+**实现代码：**
+
+```python
+def calculate_ic_win_rate(ic_series):
+    """
+    计算 IC 胜率
+
+    参数:
+        ic_series: IC 序列
+
+    返回:
+        win_rate: 胜率 (0~1)
+    """
+    return (ic_series > 0).mean()
+
+# 使用示例
+win_rate = calculate_ic_win_rate(ic_series)
+print(f"IC 胜率: {win_rate * 100:.1f}%")
+```
+
+### 7.2 IC 胜率与均值的关系
+
+**场景分析：**
+
+```python
+# 场景1: 高均值，低胜率（不稳定）
+ic_scenario1 = np.array([0.15, 0.12, -0.05, 0.18, -0.08, 0.20])
+win_rate1 = (ic_scenario1 > 0).mean()
+mean_ic1 = ic_scenario1.mean()
+print(f"场景1 - IC均值={mean_ic1:.4f}, 胜率={win_rate1*100:.1f}% (高均值低胜率)")
+
+# 场景2: 中等均值，高胜率（稳定）
+ic_scenario2 = np.array([0.04, 0.05, 0.03, 0.06, 0.04, 0.05])
+win_rate2 = (ic_scenario2 > 0).mean()
+mean_ic2 = ic_scenario2.mean()
+print(f"场景2 - IC均值={mean_ic2:.4f}, 胜率={win_rate2*100:.1f}% (中等均值高胜率)")
+
+# 场景3: 低均值，高胜率（稳定但信号弱）
+ic_scenario3 = np.array([0.02, 0.01, 0.02, 0.01, 0.02, 0.01])
+win_rate3 = (ic_scenario3 > 0).mean()
+mean_ic3 = ic_scenario3.mean()
+print(f"场景3 - IC均值={mean_ic3:.4f}, 胜率={win_rate3*100:.1f}% (低均值高胜率)")
+```
+
+**建议：**
+- 优先选择高胜率模型（稳定性好）
+- 在高胜率基础上，追求更高IC均值
+- 避免低胜率但高均值的模型（风险大）
+
+## 8. 完整评估函数
+
+### 8.1 评估报告生成
+
+```python
+def calculate_daily_ic(pred, true):
+    """
+    计算每日 IC
+
+    参数:
+        pred: 预测值 (Series 或 DataFrame)
+        true: 真实值 (Series 或 DataFrame)
+
+    返回:
+        ic: IC 值
+        pvalue: 显著性 p 值
+    """
+    ic, pvalue = pearsonr(pred, true)
+    return ic, pvalue
+
+def calculate_ic_series(pred_df, true_df):
+    """
+    计算时间序列 IC
+
+    参数:
+        pred_df: 预测值 DataFrame (index: [date, instrument])
+        true_df: 真实值 DataFrame (同上)
+
+    返回:
+        ic_series: IC 序列
+    """
+    # 按日期分组
+    dates = pred_df.index.get_level_values(0).unique()
+
+    ic_values = []
+    for date in dates:
+        pred = pred_df.loc[date]
+        true = true_df.loc[date]
+
+        ic, _ = calculate_daily_ic(pred.values, true.values)
+        ic_values.append(ic)
+
+    return pd.Series(ic_values, index=dates)
+
+def evaluate_model(pred_df, true_df):
+    """
+    完整的模型评估函数
+
+    参数:
+        pred_df: 预测值 DataFrame (index: [date, instrument])
+        true_df: 真实值 DataFrame (同上)
+
+    返回:
+        evaluation_report: 评估报告
+    """
+    # 计算 IC 系列和 Rank IC 系列
+    ic_series = calculate_ic_series(pred_df, true_df)
+    rank_ic_series = calculate_rank_ic_series(pred_df, true_df)
+
+    # 计算指标
+    metrics = {
+        'IC_mean': ic_series.mean(),
+        'IC_std': ic_series.std(),
+        'ICIR': ic_series.mean() / ic_series.std() if ic_series.std() > 0 else 0,
+        'IC_positive_ratio': (ic_series > 0).mean(),
+        'Rank_IC_mean': rank_ic_series.mean(),
+        'Rank_IC_std': rank_ic_series.std(),
+        'n_days': len(ic_series),
+    }
+
+    # 打印报告
+    print("=" * 60)
+    print("📊 模型评估报告")
+    print("=" * 60)
+
+    print("\nIC 指标:")
+    print(f"  IC 均值: {metrics['IC_mean']:.4f}")
+    print(f"  IC 标准差: {metrics['IC_std']:.4f}")
+    print(f"  ICIR: {metrics['ICIR']:.4f}")
+    print(f"  IC 胜率: {metrics['IC_positive_ratio'] * 100:.2f}%")
+
+    print("\nRank IC 指标:")
+    print(f"  Rank IC 均值: {metrics['Rank_IC_mean']:.4f}")
+    print(f"  Rank IC 标准差: {metrics['Rank_IC_std']:.4f}")
+
+    print("\n模型质量评估:")
+    if metrics['IC_mean'] > 0.05:
+        print("  ✅ IC 均值优秀")
+    elif metrics['IC_mean'] > 0.03:
+        print("  ✅ IC 均值有效")
+    else:
+        print("  ⚠️ IC 均值较弱")
+
+    if metrics['ICIR'] > 0.5:
+        print("  🌟 ICIR 非常稳定")
+    elif metrics['ICIR'] > 0.3:
+        print("  ✅ ICIR 较稳定")
+    else:
+        print("  ⚠️ ICIR 稳定性一般")
+
+    if metrics['IC_positive_ratio'] > 0.55:
+        print("  ✅ IC 胜率良好")
+    else:
+        print("  ⚠️ IC 胜率一般")
+
+    print("=" * 60)
+
+    return metrics
+
+def calculate_rank_ic_series(pred_df, true_df):
+    """
+    计算时间序列 Rank IC
+
+    参数:
+        pred_df: 预测值 DataFrame
+        true_df: 真实值 DataFrame
+
+    返回:
+        rank_ic_series: Rank IC 序列
+    """
+    dates = pred_df.index.get_level_values(0).unique()
+    
+    rank_ic_values = []
+    for date in dates:
+        pred = pred_df.loc[date]
+        true = true_df.loc[date]
+        
+        rank_ic, _ = spearmanr(pred.values, true.values)
+        rank_ic_values.append(rank_ic)
+    
+    return pd.Series(rank_ic_values, index=dates)
+
+# 使用示例
+import pandas as pd
+
+# 创建示例数据
+n_days = 100
+n_stocks = 300
+
+dates = pd.date_range('2020-01-01', periods=n_days, freq='D')
+stocks = [f'stock_{i}' for i in range(n_stocks)]
+index = pd.MultiIndex.from_product([dates, stocks], names=['date', 'instrument'])
+
+pred_df = pd.DataFrame(np.random.randn(len(index)), index=index, columns=['pred'])
+true_df = pd.DataFrame(np.random.randn(len(index)), index=index, columns=['true'])
+
+# 评估模型
+metrics = evaluate_model(pred_df, true_df)
+```
+
+### 8.2 模型质量判断标准
+
+**IC 均值标准：**
+
+| IC 值 | 模型质量 |
+|--------|----------|
+| > 0.10 | 🌟 顶级 (非常罕见) |
+| > 0.05 | ✅ 优秀 |
+| > 0.03 | ✅ 有效 |
+| 0.02~0.03 | ⚠️ 一般 |
+| < 0.02 | ❌ 较弱 |
+
+**ICIR 标准：**
+
+| ICIR 值 | 稳定性 |
+|----------|----------|
+| > 0.5 | 🌟 非常稳定 |
+| > 0.3 | ✅ 较稳定 |
+| > 0.2 | ⚠️ 一般 |
+| < 0.2 | ❌ 不稳定 |
+
+**IC 胜率标准：**
+
+| 胜率 | 评价 |
+|------|------|
+| > 60% | 🌟 优秀 |
+| > 55% | ✅ 良好 |
+| > 50% | ⚠️ 一般 |
+| < 50% | ❌ 较差 |
+
+### 8.3 可视化评估结果
+
+```python
+import matplotlib.pyplot as plt
+
+def plot_ic_evaluation(ic_series, rank_ic_series):
+    """
+    绘制IC评估结果
+    
+    参数:
+        ic_series: IC 序列
+        rank_ic_series: Rank IC 序列
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+    
+    # IC 时间序列
+    axes[0, 0].plot(ic_series, linewidth=1, alpha=0.7)
+    axes[0, 0].axhline(y=0, color='r', linestyle='--', alpha=0.5)
+    axes[0, 0].axhline(y=ic_series.mean(), color='g', linestyle='--', 
+                       label=f'Mean: {ic_series.mean():.4f}')
+    axes[0, 0].set_xlabel('Date')
+    axes[0, 0].set_ylabel('IC')
+    axes[0, 0].set_title('IC Time Series')
+    axes[0, 0].legend()
+    axes[0, 0].grid(True, alpha=0.3)
+    
+    # IC 分布
+    axes[0, 1].hist(ic_series, bins=30, alpha=0.7, edgecolor='black')
+    axes[0, 1].axvline(x=ic_series.mean(), color='r', linestyle='--',
+                       label=f'Mean: {ic_series.mean():.4f}')
+    axes[0, 1].axvline(x=0, color='gray', linestyle='-', alpha=0.5)
+    axes[0, 1].set_xlabel('IC')
+    axes[0, 1].set_ylabel('Frequency')
+    axes[0, 1].set_title('IC Distribution')
+    axes[0, 1].legend()
+    axes[0, 1].grid(True, alpha=0.3)
+    
+    # Rank IC 时间序列
+    axes[1, 0].plot(rank_ic_series, linewidth=1, alpha=0.7, color='orange')
+    axes[1, 0].axhline(y=0, color='r', linestyle='--', alpha=0.5)
+    axes[1, 0].axhline(y=rank_ic_series.mean(), color='g', linestyle='--',
+                       label=f'Mean: {rank_ic_series.mean():.4f}')
+    axes[1, 0].set_xlabel('Date')
+    axes[1, 0].set_ylabel('Rank IC')
+    axes[1, 0].set_title('Rank IC Time Series')
+    axes[1, 0].legend()
+    axes[1, 0].grid(True, alpha=0.3)
+    
+    # IC vs Rank IC 散点图
+    axes[1, 1].scatter(ic_series, rank_ic_series, alpha=0.6, s=20)
+    axes[1, 1].axhline(y=0, color='r', linestyle='--', alpha=0.3)
+    axes[1, 1].axvline(x=0, color='r', linestyle='--', alpha=0.3)
+    axes[1, 1].plot([min(ic_series), max(ic_series)], 
+                     [min(ic_series), max(ic_series)], 
+                     'r--', alpha=0.5, label='y=x')
+    axes[1, 1].set_xlabel('IC')
+    axes[1, 1].set_ylabel('Rank IC')
+    axes[1, 1].set_title('IC vs Rank IC')
+    axes[1, 1].legend()
+    axes[1, 1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+# 使用示例
+plot_ic_evaluation(ic_series, rank_ic_series)
+```
+
+## 9. IC在模型评估中的应用
+
+### 9.1 交叉验证中的IC评估
 
 ```python
 from sklearn.model_selection import TimeSeriesSplit

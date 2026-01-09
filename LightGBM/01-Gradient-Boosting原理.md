@@ -444,7 +444,146 @@ quant_params = {
 }
 ```
 
-## 5. 总结
+## 5. Bagging vs Boosting 对比
+
+### 5.1 核心区别
+
+| 维度 | Bagging (随机森林) | Boosting (GBDT) |
+|------|------------------|-----------------|
+| 树的关系 | 并行、独立 | 串行、依赖前一棵 |
+| 采样方式 | 有放回随机采样 | 全部数据 |
+| 权重 | 等权重平均 | 学习率加权累加 |
+| 偏差-方差 | 降低方差 | 降低偏差 |
+| 过拟合 | 不容易 | 需要早停控制 |
+| 代表算法 | Random Forest | XGBoost, LightGBM |
+
+### 5.2 可视化对比
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 模拟训练过程
+boosting_train_loss = [1.0, 0.8, 0.6, 0.5, 0.45, 0.42, 0.40, 0.39, 0.38, 0.38]
+boosting_val_loss = [1.0, 0.85, 0.72, 0.65, 0.62, 0.61, 0.62, 0.64, 0.66, 0.68]
+
+bagging_train_loss = [0.6, 0.58, 0.57, 0.56, 0.56, 0.56, 0.56, 0.56, 0.56, 0.56]
+bagging_val_loss = [0.65, 0.63, 0.62, 0.61, 0.61, 0.61, 0.61, 0.61, 0.61, 0.61]
+
+# 绘图
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Boosting
+axes[0].plot(boosting_train_loss, 'b-', label='Train Loss', linewidth=2)
+axes[0].plot(boosting_val_loss, 'r-', label='Val Loss', linewidth=2)
+axes[0].axhline(y=0.62, color='g', linestyle='--', label='Overfitting Point')
+axes[0].set_xlabel('Iterations')
+axes[0].set_ylabel('Loss')
+axes[0].set_title('Boosting: 逐步纠错，易过拟合')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Bagging
+axes[1].plot(bagging_train_loss, 'b-', label='Train Loss', linewidth=2)
+axes[1].plot(bagging_val_loss, 'r-', label='Val Loss', linewidth=2)
+axes[1].set_xlabel('Iterations')
+axes[1].set_ylabel('Loss')
+axes[1].set_title('Bagging: 并行训练，难过拟合')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+### 5.3 为什么量化偏爱 Boosting？
+
+**量化场景特点：**
+
+1. **信号很弱** 📊
+   - 股票预测的 IC 通常只有 0.03~0.08
+   - 需要模型精确捕捉微弱模式
+   - → Boosting 擅长降低偏差，提取弱信号
+
+2. **特征稀疏** 🔍
+   - 不是所有特征都有用
+   - 需要自动选择重要特征
+   - → LightGBM 的 feature_fraction 参数
+
+3. **需要快速迭代** ⚡
+   - 每天都有新数据
+   - 需要快速重训练
+   - → LightGBM 比 XGBoost 快 10x
+
+## 6. Boosting 的迭代纠错机制可视化
+
+### 6.1 残差学习过程
+
+```python
+def visualize_residual_learning():
+    """可视化残差学习过程"""
+    
+    # 生成模拟数据
+    np.random.seed(42)
+    X = np.linspace(0, 10, 100)
+    y = np.sin(X) + np.random.normal(0, 0.2, 100)
+    
+    # 使用 sklearn 的 GradientBoostingRegressor
+    from sklearn.ensemble import GradientBoostingRegressor
+    
+    # 逐步训练
+    n_trees = 5
+    gbr = GradientBoostingRegressor(n_estimators=n_trees, max_depth=2, 
+                                    learning_rate=0.5, random_state=42)
+    gbr.fit(X.reshape(-1, 1), y)
+    
+    # 绘图
+    fig, axes = plt.subplots(2, n_trees, figsize=(15, 8))
+    
+    for i in range(n_trees):
+        # 获取第i棵树的预测
+        pred_i = gbr.predict(X.reshape(-1, 1), start=i, end=i+1)
+        
+        # 获取第i步的累计预测
+        pred_cumulative = gbr.predict(X.reshape(-1, 1), start=0, end=i+1)
+        
+        # 计算残差
+        if i == 0:
+            residual = y - np.mean(y)
+        else:
+            residual = y - gbr.predict(X.reshape(-1, 1), start=0, end=i)
+        
+        # 第i棵树的预测
+        axes[0, i].scatter(X, y, alpha=0.3, color='gray')
+        axes[0, i].plot(X, pred_i, 'r-', linewidth=2)
+        axes[0, i].set_title(f'Tree {i+1}: Learning Residual')
+        axes[0, i].grid(True, alpha=0.3)
+        
+        # 累计预测
+        axes[1, i].scatter(X, y, alpha=0.3, color='gray')
+        axes[1, i].plot(X, pred_cumulative, 'b-', linewidth=2)
+        axes[1, i].set_title(f'Cumulative: Trees 1-{i+1}')
+        axes[1, i].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+# 使用示例
+visualize_residual_learning()
+```
+
+### 6.2 迭代过程示意
+
+```
+迭代过程:
+Tree₁ → 预测 ŷ₁ → 残差 r₁ = y - ŷ₁
+Tree₂ → 学习 r₁ → 预测 ŷ₂ → 残差 r₂ = r₁ - ŷ₂
+Tree₃ → 学习 r₂ → 预测 ŷ₃ → 残差 r₃ = r₂ - ŷ₃
+...
+最终预测 = ŷ₁ + ŷ₂ + ŷ₃ + ...
+```
+
+## 7. 总结
 
 Gradient Boosting通过前向分步算法和梯度下降思想，将多个弱学习器组合成强学习器。LightGBM在传统GBDT基础上，通过GOSS、EFB和Leaf-wise三大创新，大幅提升了训练效率和性能。
 
@@ -453,5 +592,7 @@ Gradient Boosting通过前向分步算法和梯度下降思想，将多个弱学
 2. 自适应处理不平衡样本
 3. 支持自定义量化评估指标
 4. 强大的正则化防止过拟合
+5. 捕捉微弱预测信号的能力
+6. 快速迭代适应市场变化
 
 理解LightGBM的原理，是构建有效量化模型的基础。

@@ -9,7 +9,7 @@
 
 ## 🚀 快速开始
 
-访问在线文档：[量化投资技术文档](https://[your-username].github.io/doc-workspace/)
+访问在线文档：[量化投资技术文档](/)
 
 ## 📖 本地开发
 
