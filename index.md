@@ -2,139 +2,219 @@
 layout: default
 ---
 
-# 量化投资技术文档
+# 欢迎来到我的技术博客
 
-欢迎来到量化投资技术文档站，专注于特征工程、LightGBM模型和回测引擎的实践与探索。
+> 探索技术、分享知识、记录成长
 
 ---
 
+## 👋 关于我
+
+我是一名热爱技术的开发者，专注于以下领域：
+
+- **量化投资**：使用机器学习和深度学习进行量化分析和交易策略研究
+- **区块链技术**：智能合约开发、去中心化应用（DApp）构建
+- **深度学习**：PyTorch、TensorFlow等框架的实践与应用
+
+---
+
+## 📚 博客内容
+
+### 量化投资
+
+探索量化世界的奥秘，从特征工程到深度学习模型应用。
+
 <div class="card">
-  <h2 style="margin-top: 0;">📊 快速导航</h2>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
-    <div style="padding: 1rem; background: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <strong style="color: #667eea; font-size: 1.2rem;">📚 特征工程</strong>
-      <p style="margin: 0.5rem 0;">Qlib特征工程的系统讲解</p>
-      <a href="特征工程/" style="color: #667eea;">进入模块 →</a>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #667eea;">
+      <strong style="color: #667eea; font-size: 1.1rem;">📊 特征工程</strong>
+      <p style="margin: 0.5rem 0; color: #666;">Qlib特征工程的系统讲解</p>
+      <a href="quant/qlib/week1/" style="color: #667eea; font-weight: 500;">进入模块 →</a>
     </div>
-    <div style="padding: 1rem; background: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <strong style="color: #667eea; font-size: 1.2rem;">⚡ LightGBM</strong>
-      <p style="margin: 0.5rem 0;">机器学习在量化中的应用</p>
-      <a href="LightGBM/" style="color: #667eea;">进入模块 →</a>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #764ba2;">
+      <strong style="color: #764ba2; font-size: 1.1rem;">⚡ LightGBM</strong>
+      <p style="margin: 0.5rem 0; color: #666;">机器学习在量化中的应用</p>
+      <a href="quant/qlib/week2/" style="color: #764ba2; font-weight: 500;">进入模块 →</a>
     </div>
-    <div style="padding: 1rem; background: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <strong style="color: #667eea; font-size: 1.2rem;">📊 回测引擎</strong>
-      <p style="margin: 0.5rem 0;">策略回测与绩效评估</p>
-      <a href="backtest/" style="color: #667eea;">进入模块 →</a>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #f093fb;">
+      <strong style="color: #f093fb; font-size: 1.1rem;">📊 回测引擎</strong>
+      <p style="margin: 0.5rem 0; color: #666;">策略回测与绩效评估</p>
+      <a href="quant/qlib/week3/" style="color: #f093fb; font-weight: 500;">进入模块 →</a>
     </div>
-    <div style="padding: 1rem; background: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-      <strong style="color: #667eea; font-size: 1.2rem;">🚀 快速开始</strong>
-      <p style="margin: 0.5rem 0;">新手入门指南</p>
-      <a href="快速开始.md" style="color: #667eea;">开始学习 →</a>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #4facfe;">
+      <strong style="color: #4facfe; font-size: 1.1rem;">🧠 LSTM深度学习</strong>
+      <p style="margin: 0.5rem 0; color: #666;">时序数据的深度学习方法</p>
+      <a href="quant/qlib/week5/" style="color: #4facfe; font-weight: 500;">进入模块 →</a>
+    </div>
+  </div>
+</div>
+
+#### Qlib 学习路径
+
+| 周 | 主题 | 文档 | 状态 |
+|---|------|------|------|
+| **Week 1** | 特征工程 | [查看文档](quant/qlib/week1/) | ✅ 完成 |
+| **Week 2** | LightGBM | [查看文档](quant/qlib/week2/) | ✅ 完成 |
+| **Week 3** | 回测系统 | [查看文档](quant/qlib/week3/) | ✅ 完成 |
+| **Week 4** | 强化学习 | 敬请期待 | 🚧 计划中 |
+| **Week 5** | LSTM深度学习 | [查看文档](quant/qlib/week5/) | ✅ 完成 |
+
+---
+
+### 区块链技术
+
+<div class="card">
+  <div style="padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
+    <h3 style="margin: 0 0 0.5rem 0;">🔗 区块链技术</h3>
+    <p style="margin: 0 0 1rem 0; opacity: 0.9;">智能合约开发、DeFi应用、Web3开发</p>
+    <a href="blockchain/" style="background: white; color: #667eea; padding: 0.6rem 1.2rem; border-radius: 5px; text-decoration: none; font-weight: 500;">查看文档</a>
+  </div>
+</div>
+
+> 🚧 **建设中** - 区块链相关内容正在整理中，敬请期待！
+
+---
+
+## 🔥 最新更新
+
+### Week 5 - LSTM深度学习模型 ✨
+
+深入学习LSTM神经网络，掌握时序数据的深度学习方法。
+
+<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <div>
+      <strong style="color: #667eea;">📚 基础理论</strong>
+      <p style="margin: 0.5rem 0; font-size: 0.9rem;">RNN与LSTM原理</p>
+      <a href="quant/qlib/week5/01_基础理论系列/" style="font-size: 0.9rem;">查看 →</a>
+    </div>
+    <div>
+      <strong style="color: #764ba2;">🔧 PyTorch框架</strong>
+      <p style="margin: 0.5rem 0; font-size: 0.9rem;">Tensor与模型构建</p>
+      <a href="quant/qlib/week5/02_PyTorch框架系列/" style="font-size: 0.9rem;">查看 →</a>
+    </div>
+    <div>
+      <strong style="color: #f093fb;">🏗️ 模型构建</strong>
+      <p style="margin: 0.5rem 0; font-size: 0.9rem;">架构与实现</p>
+      <a href="quant/qlib/week5/03_LSTM模型构建系列/" style="font-size: 0.9rem;">查看 →</a>
+    </div>
+    <div>
+      <strong style="color: #4facfe;">💾 数据处理</strong>
+      <p style="margin: 0.5rem 0; font-size: 0.9rem;">预处理与Dataset</p>
+      <a href="quant/qlib/week5/04_时序数据处理系列/" style="font-size: 0.9rem;">查看 →</a>
+    </div>
+    <div>
+      <strong style="color: #43e97b;">⚙️ 训练优化</strong>
+      <p style="margin: 0.5rem 0; font-size: 0.9rem;">训练与优化策略</p>
+      <a href="quant/qlib/week5/05_模型训练优化系列/" style="font-size: 0.9rem;">查看 →</a>
+    </div>
+    <div>
+      <strong style="color: #fa709a;">🎯 实战应用</strong>
+      <p style="margin: 0.5rem 0; font-size: 0.9rem;">案例与最佳实践</p>
+      <a href="quant/qlib/week5/06_实战应用系列/" style="font-size: 0.9rem;">查看 →</a>
     </div>
   </div>
 </div>
 
 ---
 
-## 📚 文档导航
+## 🛠️ 技术栈
 
-### 特征工程模块
+### 量化投资
 
-[→ 进入特征工程文档](特征工程/)
+<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+  <span style="background: #667eea; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Python</span>
+  <span style="background: #764ba2; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Qlib</span>
+  <span style="background: #f093fb; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">PyTorch</span>
+  <span style="background: #4facfe; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">LightGBM</span>
+  <span style="background: #43e97b; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Pandas</span>
+  <span style="background: #fa709a; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">NumPy</span>
+</div>
 
-系统讲解Qlib特征工程的核心概念与实践方法：
+### 区块链
 
-- [01-qlib特征工程全景概览](特征工程/01-qlib特征工程全景概览.md)
-- [02-horizon对齐详解](特征工程/02-horizon对齐详解.md)
-- [03-横截面标准化与中性化](特征工程/03-横截面标准化与中性化.md)
-- [04-相对强弱预测的量化思维](特征工程/04-相对强弱预测的量化思维.md)
-- [05-qlib特征工程实践指南](特征工程/05-qlib特征工程实践指南.md)
-
----
-
-### LightGBM模块
-
-[→ 进入LightGBM文档](LightGBM/)
-
-深入学习LightGBM在量化投资中的应用：
-
-- [01-Gradient Boosting原理](LightGBM/01-Gradient-Boosting原理.md) - GOSS、EFB、Leaf-wise三大创新
-- [02-时序数据划分](LightGBM/02-时序数据划分.md) - 因果性约束、交叉验证、滚动窗口
-- [03-模型训练](LightGBM/03-模型训练.md) - IC优化、在线学习、分布式训练
-- [04-IC-Rank-IC评估指标](LightGBM/04-IC-Rank-IC评估指标.md) - 统计检验、时序分析、IR指标
-- [05-特征重要性分析](LightGBM/05-特征重要性分析.md) - Permutation、SHAP、稳定性分析
-- [06-学习检查清单](LightGBM/06-学习检查清单.md) - 学习目标与实践建议
+<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+  <span style="background: #667eea; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Solidity</span>
+  <span style="background: #764ba2; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Ethers.js</span>
+  <span style="background: #f093fb; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Hardhat</span>
+  <span style="background: #4facfe; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">Web3.js</span>
+  <span style="background: #43e97b; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.9rem;">React</span>
+</div>
 
 ---
 
-### 回测引擎模块
+## 📖 推荐资源
 
-[→ 进入回测引擎文档](backtest/)
+### 📚 书籍
 
-完整讲解策略回测、投资组合构建、绩效评估：
+#### 量化投资
+1. 《量化投资：策略与技术》
+2. 《Python金融大数据分析》
+3. 《统计套利》
 
-- [01-交易策略理论](backtest/01-交易策略理论.md) - Top-K、IC权重、MV优化
-- [02-投资组合构建方法](backtest/02-投资组合构建方法.md) - 三种组合构建方法对比
-- [03-Executor与成本模型](backtest/03-Executor与成本模型.md) - 交易成本与执行机制
-- [04-绩效评估指标](backtest/04-绩效评估指标.md) - 收益、风险、绩效指标
-- [05-实验分析方法](backtest/05-实验分析方法.md) - 参数敏感性、样本外验证
-- [06-回测流程与实践](backtest/06-回测流程与实践.md) - Qlib回测框架
-- [07-学习检查清单](backtest/07-学习检查清单.md) - 学习目标与实践建议
+#### 深度学习
+1. 《深度学习》（Ian Goodfellow）
+2. 《动手学深度学习》
+3. 《Python深度学习》（François Chollet）
 
----
+#### 区块链
+1. 《精通比特币》
+2. 《以太坊技术详解与实战》
+3. 《智能合约开发实战》
 
-### AI辅助策略研究
-
-- [AI辅助策略研究](zlyq/AI 辅助策略研究.md)
-- [ResearchAgent](zlyq/ResearchAgent.md)
-- [提示词](zlyq/提示词.md)
-
----
-
-## 🎯 学习路径
-
-### 新手入门
-
-```
-特征工程基础 → LightGBM原理 → 模型训练 → 投资组合构建 → 策略回测
-```
-
-适合初学者，从基础概念开始，逐步学习完整的量化投资流程。
-
-### 进阶提升
-
-```
-时序数据划分 → IC优化训练 → 特征重要性分析 → 成本模型 → 绩效评估
-```
-
-适合有一定基础的学习者，深入理解和优化各个环节。
-
-### 实战应用
-
-```
-从实际项目出发 → 遇到问题查文档 → 理论学习 → 实践应用
-```
-
-适合有经验的开发者，通过解决实际问题提升技能。
+### 🎓 在线课程
+- Coursera: Deep Learning Specialization
+- Fast.ai: Practical Deep Learning for Coders
+- edX: Blockchain Basics
 
 ---
 
-## 💡 学习建议
+## 📝 写作计划
 
-1. **循序渐进**：按照建议的学习路径逐步学习，不要跳过基础概念
-2. **动手实践**：每个模块都包含代码示例，建议动手运行和修改
-3. **理解原理**：不仅要会用，还要理解背后的原理
-4. **多维度思考**：从不同角度理解问题，如风险、收益、成本等
-5. **持续优化**：量化投资是一个持续优化的过程，不要满足于一次性结果
+### 2025年计划
+
+#### 量化投资
+- [x] Week 1 - 特征工程
+- [x] Week 2 - LightGBM模型
+- [x] Week 3 - 回测系统
+- [ ] Week 4 - 强化学习
+- [x] Week 5 - LSTM深度学习
+- [ ] Week 6 - Transformer模型
+- [ ] 高级回测技巧
+- [ ] 多因子模型
+
+#### 区块链
+- [ ] 区块链基础
+- [ ] 智能合约开发
+- [ ] DeFi项目实战
+- [ ] NFT市场开发
+- [ ] DAO治理机制
 
 ---
 
-<div class="card" style="text-align: center; margin-top: 2rem;">
-  <h3 style="margin-top: 0;">💡 技术支持</h3>
-  <p style="margin-bottom: 1rem;">文档支持数学公式渲染（使用 KaTeX）和代码高亮，适合在线阅读和本地开发参考</p>
+## 🤝 交流与合作
+
+欢迎与我交流技术问题、分享学习心得！
+
+- 📧 Email: [待添加]
+- 🐦 Twitter: [待添加]
+- 💻 GitHub: [待添加]
+- 💬 微信: [待添加]
+
+---
+
+<div class="card" style="text-align: center; margin-top: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+  <h3 style="margin-top: 0;">💡 开始学习</h3>
+  <p style="margin-bottom: 1.5rem; opacity: 0.9;">从量化投资到区块链，探索技术的无限可能</p>
   <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-    <a href="快速开始.md" style="background: #667eea; color: white; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none;">快速开始</a>
-    <a href="站点导航.md" style="background: #764ba2; color: white; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none;">查看导航</a>
-    <a href="关于.md" style="background: #667eea; color: white; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none;">关于我们</a>
+    <a href="quant/qlib/" style="background: white; color: #667eea; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">量化学习</a>
+    <a href="blockchain/" style="background: rgba(255,255,255,0.2); color: white; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">区块链</a>
   </div>
+</div>
+
+---
+
+<div align="center" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee; color: #999; font-size: 0.9rem;">
+  <p style="margin: 0;">持续更新中，欢迎收藏和分享！</p>
+  <p style="margin: 0.5rem 0 0 0;">Made with ❤️ by [你的名字]</p>
 </div>
