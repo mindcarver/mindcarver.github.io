@@ -46,11 +46,6 @@ layout: default
        <p style="margin: 0.5rem 0; color: #666;">时序数据的深度学习方法</p>
        <a href="quant/qlib/week5/" style="color: #4facfe; font-weight: 500;">进入模块 →</a>
      </div>
-     <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #fa709a;">
-       <strong style="color: #fa709a; font-size: 1.1rem;">🚀 高级量化系统</strong>
-       <p style="margin: 0.5rem 0; color: #666;">完整系统架构与工程实践</p>
-       <a href="week6/" style="color: #fa709a; font-weight: 500;">进入模块 →</a>
-     </div>
    </div>
  </div>
 
@@ -63,7 +58,6 @@ layout: default
  | **Week 3** | 回测系统 | [查看文档](quant/qlib/week3/) | ✅ 完成 |
  | **Week 4** | 强化学习 | 敬请期待 | 🚧 计划中 |
  | **Week 5** | LSTM深度学习 | [查看文档](quant/qlib/week5/) | ✅ 完成 |
- | **Week 6** | 高级量化系统 | [查看文档](week6/) | ✅ 完成 |
 
 ---
 
@@ -82,47 +76,6 @@ layout: default
 ---
 
 ## 🔥 最新更新
-
-### Week 6 - 高级量化系统 🚀
-
-构建完整的量化交易系统，从滚动重训练到系统架构设计，掌握工程化实践。
-
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 8px; margin-top: 1rem; color: white;">
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-    <div>
-      <strong style="font-size: 0.9rem;">🔄 滚动重训练</strong>
-      <p style="margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">模型持续进化</p>
-      <a href="week6/01-滚动重训练基础.md" style="font-size: 0.85rem;">查看 →</a>
-    </div>
-    <div>
-      <strong style="font-size: 0.9rem;">🛡️ 风险控制</strong>
-      <p style="margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">仓位管理与止损</p>
-      <a href="week6/03-风险控制方法.md" style="font-size: 0.85rem;">查看 →</a>
-    </div>
-    <div>
-      <strong style="font-size: 0.9rem;">🔮 集成策略</strong>
-      <p style="margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">模型组合方法</p>
-      <a href="week6/04-集成策略原理.md" style="font-size: 0.85rem;">查看 →</a>
-    </div>
-    <div>
-      <strong style="font-size: 0.9rem;">🏰 系统架构</strong>
-      <p style="margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">模块化设计</p>
-      <a href="week6/05-系统架构设计.md" style="font-size: 0.85rem;">查看 →</a>
-    </div>
-    <div>
-      <strong style="font-size: 0.9rem;">📊 性能监控</strong>
-      <p style="margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">实时监控体系</p>
-      <a href="week6/06-性能监控与评估.md" style="font-size: 0.85rem;">查看 →</a>
-    </div>
-    <div>
-      <strong style="font-size: 0.9rem;">💎 最佳实践</strong>
-      <p style="margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.9;">工程实践指南</p>
-      <a href="week6/08-最佳实践.md" style="font-size: 0.85rem;">查看 →</a>
-    </div>
-  </div>
-</div>
-
----
 
 ### Week 5 - LSTM深度学习模型 ✨
 
