@@ -1,4 +1,3 @@
-
 ---
 title: "欢迎"
 description: "探索技术、分享知识、记录成长"
@@ -55,27 +54,66 @@ draft: false
 
 #### Qlib 学习路径
 
-| 周 | 主题 | 文档 | 状态 |
-|---|------|------|------|
- | **Week 1** | 特征工程 | [查看文档](quant/qlib/week1/) | ✅ 完成 |
- | **Week 2** | LightGBM | [查看文档](quant/qlib/week2/) | ✅ 完成 |
- | **Week 3** | 回测系统 | [查看文档](quant/qlib/week3/) | ✅ 完成 |
- | **Week 4** | 强化学习 | 敬请期待 | 🚧 计划中 |
- | **Week 5** | LSTM深度学习 | [查看文档](quant/qlib/week5/) | ✅ 完成 |
+| 周         | 主题         | 文档                          | 状态      |
+| ---------- | ------------ | ----------------------------- | --------- |
+| **Week 1** | 特征工程     | [查看文档](quant/qlib/week1/) | ✅ 完成   |
+| **Week 2** | LightGBM     | [查看文档](quant/qlib/week2/) | ✅ 完成   |
+| **Week 3** | 回测系统     | [查看文档](quant/qlib/week3/) | ✅ 完成   |
+| **Week 4** | 强化学习     | 敬请期待                      | 🚧 计划中 |
+| **Week 5** | LSTM深度学习 | [查看文档](quant/qlib/week5/) | ✅ 完成   |
 
 ---
 
 ### 区块链技术
 
+探索区块链世界，从智能合约到DeFi应用，从公链开发到Layer2解决方案。
+
 <div class="card">
-  <div style="padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
-    <h3 style="margin: 0 0 0.5rem 0;">🔗 区块链技术</h3>
-    <p style="margin: 0 0 1rem 0; opacity: 0.9;">智能合约开发、DeFi应用、Web3开发</p>
-    <a href="blockchain/" style="background: white; color: #667eea; padding: 0.6rem 1.2rem; border-radius: 5px; text-decoration: none; font-weight: 500;">查看文档</a>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #667eea;">
+      <strong style="color: #667eea; font-size: 1.1rem;">🔗 公链开发</strong>
+      <p style="margin: 0.5rem 0; color: #666;">以太坊、Cosmos、Fabric等</p>
+      <a href="blockchainguide/Public_Chain_Development/" style="color: #667eea; font-weight: 500;">进入模块 →</a>
+    </div>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #764ba2;">
+      <strong style="color: #764ba2; font-size: 1.1rem;">💻 DApp开发</strong>
+      <p style="margin: 0.5rem 0; color: #666;">智能合约、安全审计、DeFi</p>
+      <a href="blockchainguide/DApp_Development/" style="color: #764ba2; font-weight: 500;">进入模块 →</a>
+    </div>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #f093fb;">
+      <strong style="color: #f093fb; font-size: 1.1rem;">⚡ Layer2</strong>
+      <p style="margin: 0.5rem 0; color: #666;">Optimism、Arbitrum、zkRollup</p>
+      <a href="blockchainguide/Layer2_Solutions/" style="color: #f093fb; font-weight: 500;">进入模块 →</a>
+    </div>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #4facfe;">
+      <strong style="color: #4facfe; font-size: 1.1rem;">🌐 跨链技术</strong>
+      <p style="margin: 0.5rem 0; color: #666;">IBC、跨链桥、HTLC</p>
+      <a href="blockchainguide/Cross_Chain_Technology/" style="color: #4facfe; font-weight: 500;">进入模块 →</a>
+    </div>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #43e97b;">
+      <strong style="color: #43e97b; font-size: 1.1rem;">🔒 隐私计算</strong>
+      <p style="margin: 0.5rem 0; color: #666;">零知识证明、安全多方计算</p>
+      <a href="blockchainguide/Privacy_Computing/" style="color: #43e97b; font-weight: 500;">进入模块 →</a>
+    </div>
+    <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #fa709a;">
+      <strong style="color: #fa709a; font-size: 1.1rem;">💾 去中心化存储</strong>
+      <p style="margin: 0.5rem 0; color: #666;">IPFS、FileCoin</p>
+      <a href="blockchainguide/Decentralized_Storage/" style="color: #fa709a; font-weight: 500;">进入模块 →</a>
+    </div>
   </div>
 </div>
 
-> 🚧 **建设中** - 区块链相关内容正在整理中，敬请期待！
+#### 区块链学习路径
+
+| 模块 | 主题           | 文档                                                         | 状态    |
+| ---- | -------------- | ------------------------------------------------------------ | ------- |
+|      | **区块链基础** | [查看文档](blockchainguide/Blockchain_Basics/)               | ✅ 完成 |
+|      | **公链开发**   | [查看文档](blockchainguide/Public_Chain_Development/)        | ✅ 完成 |
+|      | **DApp开发**   | [查看文档](blockchainguide/DApp_Development/)                | ✅ 完成 |
+|      | **Layer2技术** | [查看文档](blockchainguide/Layer2_Solutions/)                | ✅ 完成 |
+|      | **跨链技术**   | [查看文档](blockchainguide/Cross_Chain_Technology/)          | ✅ 完成 |
+|      | **隐私计算**   | [查看文档](blockchainguide/Privacy_Computing/)               | ✅ 完成 |
+|      | **学习路线**   | [查看文档](blockchainguide/Learning_Roadmaps_And_Resources/) | ✅ 完成 |
 
 ---
 
@@ -152,21 +190,25 @@ draft: false
 ### 📚 书籍
 
 #### 量化投资
+
 1. 《量化投资：策略与技术》
 2. 《Python金融大数据分析》
 3. 《统计套利》
 
 #### 深度学习
+
 1. 《深度学习》（Ian Goodfellow）
 2. 《动手学深度学习》
 3. 《Python深度学习》（François Chollet）
 
 #### 区块链
+
 1. 《精通比特币》
 2. 《以太坊技术详解与实战》
 3. 《智能合约开发实战》
 
 ### 🎓 在线课程
+
 - Coursera: Deep Learning Specialization
 - Fast.ai: Practical Deep Learning for Coders
 - edX: Blockchain Basics
@@ -178,6 +220,7 @@ draft: false
 ### 2025年计划
 
 #### 量化投资
+
 - [x] Week 1 - 特征工程
 - [x] Week 2 - LightGBM模型
 - [x] Week 3 - 回测系统
@@ -188,11 +231,14 @@ draft: false
 - [ ] 多因子模型
 
 #### 区块链
-- [ ] 区块链基础
-- [ ] 智能合约开发
-- [ ] DeFi项目实战
-- [ ] NFT市场开发
-- [ ] DAO治理机制
+
+- [x] 区块链基础
+- [x] 智能合约开发
+- [x] 公链开发研究
+- [x] DeFi项目实战
+- [x] Layer2技术
+- [x] 跨链技术
+- [x] 隐私计算
 
 ---
 
@@ -212,7 +258,7 @@ draft: false
   <p style="margin-bottom: 1.5rem; opacity: 0.9;">从量化投资到区块链，探索技术的无限可能</p>
   <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
     <a href="quant/qlib/" style="background: white; color: #667eea; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">量化学习</a>
-    <a href="blockchain/" style="background: rgba(255,255,255,0.2); color: white; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">区块链</a>
+    <a href="blockchainguide/" style="background: rgba(255,255,255,0.2); color: white; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">区块链</a>
   </div>
 </div>
 
