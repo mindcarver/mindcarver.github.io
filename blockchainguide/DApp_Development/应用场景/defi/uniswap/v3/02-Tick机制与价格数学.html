@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>02-Tick机制与价格数学</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="02-Tick机制与价格数学"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="02-Tick机制与价格数学"/><meta name="twitter:description" content="死磕Uniswap V3（二）：Tick机制与价格数学 本文是「死磕Uniswap V3」系列的第二篇，深入探讨Tick机制的设计原理和价格数学的核心算法。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta property="og:description" content="死磕Uniswap V3（二）：Tick机制与价格数学 本文是「死磕Uniswap V3」系列的第二篇，深入探讨Tick机制的设计原理和价格数学的核心算法。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta property="og:image:alt" content="死磕Uniswap V3（二）：Tick机制与价格数学 本文是「死磕Uniswap V3」系列的第二篇，深入探讨Tick机制的设计原理和价格数学的核心算法。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/02-Tick机制与价格数学"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/02-Tick机制与价格数学"/><link rel="icon" href="../../../../../../static/icon.png"/><meta name="description" content="死磕Uniswap V3（二）：Tick机制与价格数学 本文是「死磕Uniswap V3」系列的第二篇，深入探讨Tick机制的设计原理和价格数学的核心算法。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta name="generator" content="Quartz"/><link href="../../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/02-Tick机制与价格数学"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-200"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-200" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/">DApp_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/">应用场景</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/">defi</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/uniswap/">uniswap</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/">v3</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>02 Tick机制与价格数学</a></div></nav><h1 class="article-title">02-Tick机制与价格数学</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.423Z">2026年1月12日</time><span>17分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="死磕uniswap-v3二tick机制与价格数学">死磕Uniswap V3（二）：Tick机制与价格数学<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#死磕uniswap-v3二tick机制与价格数学" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p>本文是「死磕Uniswap V3」系列的第二篇，深入探讨Tick机制的设计原理和价格数学的核心算法。</p>
+</blockquote>
+<h2 id="系列导航">系列导航<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#系列导航" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>序号</th><th>标题</th><th>核心内容</th></tr></thead><tbody><tr><td>01</td><td>概述与集中流动性</td><td>AMM演进、集中流动性原理</td></tr><tr><td><strong>02</strong></td><td><strong>Tick机制与价格数学</strong></td><td><strong>Tick设计、价格转换算法</strong></td></tr><tr><td>03</td><td>架构与合约设计</td><td>Factory、Pool合约结构</td></tr><tr><td>04</td><td>交换机制深度解析</td><td>swap函数、价格发现</td></tr><tr><td>05</td><td>流动性管理与头寸</td><td>Position、mint/burn</td></tr><tr><td>06</td><td>费用系统与预言机</td><td>费用分配、TWAP</td></tr><tr><td>07</td><td>MEV与套利策略</td><td>JIT、三明治攻击</td></tr></tbody></table></div>
+<hr/>
+<h2 id="1-tick机制概述">1. Tick机制概述<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-tick机制概述" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="11-为什么需要tick">1.1 为什么需要Tick？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-为什么需要tick" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在传统AMM中，价格是连续的实数。但在区块链上，我们需要：</p>
+<ul>
+<li><strong>高效存储</strong>：连续价格需要无限存储</li>
+<li><strong>快速计算</strong>：整数运算远快于浮点运算</li>
+<li><strong>精确定位</strong>：方便LP设定价格区间边界</li>
+</ul>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    subgraph Problems[\&quot;问题\&quot;]\n        P1[\&quot;连续价格空间&lt;br/>[0, ∞]\&quot;]\n        P2[\&quot;无限精度需求\&quot;]\n        P3[\&quot;存储成本高\&quot;]\n        P4[\&quot;计算效率低\&quot;]\n    end\n\n    subgraph Solutions[\&quot;解决方案\&quot;]\n        S1[\&quot;离散化价格空间\&quot;]\n        S2[\&quot;Tick索引系统\&quot;]\n        S3[\&quot;紧凑存储\&quot;]\n        S4[\&quot;整数运算\&quot;]\n    end\n\n    P1 --> S1\n    P2 --> S2\n    P3 --> S3\n    P4 --> S4\n\n    style Solutions fill:#c8e6c9&quot;">flowchart LR
+    subgraph Problems[&quot;问题&quot;]
+        P1[&quot;连续价格空间&lt;br/>[0, ∞]&quot;]
+        P2[&quot;无限精度需求&quot;]
+        P3[&quot;存储成本高&quot;]
+        P4[&quot;计算效率低&quot;]
+    end
+
+    subgraph Solutions[&quot;解决方案&quot;]
+        S1[&quot;离散化价格空间&quot;]
+        S2[&quot;Tick索引系统&quot;]
+        S3[&quot;紧凑存储&quot;]
+        S4[&quot;整数运算&quot;]
+    end
+
+    P1 --> S1
+    P2 --> S2
+    P3 --> S3
+    P4 --> S4
+
+    style Solutions fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="12-tick的数学定义">1.2 Tick的数学定义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-tick的数学定义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>核心公式</strong>：</p>
+<pre><code>price = 1.0001^tick
+</code></pre>
+<p>这意味着：</p>
+<ul>
+<li>每个Tick代表**0.01%**的价格变化</li>
+<li>相邻Tick的价格比为 <strong>1.0001</strong>（即100.01%）</li>
+</ul>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph TickRange[\&quot;Tick范围\&quot;]\n        MIN[\&quot;MIN_TICK = -887272\&quot;]\n        ZERO[\&quot;TICK = 0&lt;br/>price = 1\&quot;]\n        MAX[\&quot;MAX_TICK = 887272\&quot;]\n    end\n\n    MIN -->|\&quot;价格递增\&quot;| ZERO\n    ZERO -->|\&quot;价格递增\&quot;| MAX\n\n    subgraph PriceMapping[\&quot;价格对应\&quot;]\n        PMIN[\&quot;最小价格 ≈ 2.94e-39\&quot;]\n        P1[\&quot;price = 1.0001^0 = 1\&quot;]\n        PMAX[\&quot;最大价格 ≈ 3.40e+38\&quot;]\n    end\n\n    MIN -.-> PMIN\n    ZERO -.-> P1\n    MAX -.-> PMAX&quot;">graph TB
+    subgraph TickRange[&quot;Tick范围&quot;]
+        MIN[&quot;MIN_TICK = -887272&quot;]
+        ZERO[&quot;TICK = 0&lt;br/>price = 1&quot;]
+        MAX[&quot;MAX_TICK = 887272&quot;]
+    end
+
+    MIN -->|&quot;价格递增&quot;| ZERO
+    ZERO -->|&quot;价格递增&quot;| MAX
+
+    subgraph PriceMapping[&quot;价格对应&quot;]
+        PMIN[&quot;最小价格 ≈ 2.94e-39&quot;]
+        P1[&quot;price = 1.0001^0 = 1&quot;]
+        PMAX[&quot;最大价格 ≈ 3.40e+38&quot;]
+    end
+
+    MIN -.-> PMIN
+    ZERO -.-> P1
+    MAX -.-> PMAX
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="13-为什么选择10001作为基数">1.3 为什么选择1.0001作为基数？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#13-为什么选择10001作为基数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>考量因素</th><th>1.0001的优势</th></tr></thead><tbody><tr><td>精度需求</td><td>0.01%变化足够精细，满足大多数交易场景</td></tr><tr><td>范围覆盖</td><td>±887272个Tick可覆盖天文数字级别的价格范围</td></tr><tr><td>计算效率</td><td>可通过二进制分解高效计算幂运算</td></tr><tr><td>存储优化</td><td>int24类型（3字节）即可存储所有Tick值</td></tr></tbody></table></div>
+<hr/>
+<h2 id="2-价格的平方根表示">2. 价格的平方根表示<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-价格的平方根表示" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="21-为什么使用price">2.1 为什么使用√price？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-为什么使用price" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>V3不直接存储价格，而是存储<strong>价格的平方根</strong>（sqrtPrice）：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph DirectPriceProblems[\&quot;直接存储价格的问题\&quot;]\n        A1[\&quot;价格可能极大或极小\&quot;]\n        A2[\&quot;乘法容易溢出\&quot;]\n        A3[\&quot;AMM公式大量涉及√P\&quot;]\n    end\n\n    subgraph SqrtPriceAdvantages[\&quot;存储√price的优势\&quot;]\n        B1[\&quot;数值范围更稳定\&quot;]\n        B2[\&quot;减少溢出风险\&quot;]\n        B3[\&quot;简化公式计算\&quot;]\n        B4[\&quot;更高精度\&quot;]\n    end\n\n    A1 --> B1\n    A2 --> B2\n    A3 --> B3\n\n    style SqrtPriceAdvantages fill:#e8f5e9&quot;">flowchart TD
+    subgraph DirectPriceProblems[&quot;直接存储价格的问题&quot;]
+        A1[&quot;价格可能极大或极小&quot;]
+        A2[&quot;乘法容易溢出&quot;]
+        A3[&quot;AMM公式大量涉及√P&quot;]
+    end
+
+    subgraph SqrtPriceAdvantages[&quot;存储√price的优势&quot;]
+        B1[&quot;数值范围更稳定&quot;]
+        B2[&quot;减少溢出风险&quot;]
+        B3[&quot;简化公式计算&quot;]
+        B4[&quot;更高精度&quot;]
+    end
+
+    A1 --> B1
+    A2 --> B2
+    A3 --> B3
+
+    style SqrtPriceAdvantages fill:#e8f5e9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>AMM公式中的应用</strong>：</p>
+<p>在集中流动性公式中，代币数量的计算大量涉及√P：</p>
+<pre><code>Δx = L × (1/√Pa - 1/√Pb)  // token0变化量
+Δy = L × (√Pb - √Pa)      // token1变化量
+</code></pre>
+<h3 id="22-q6496定点数格式">2.2 Q64.96定点数格式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-q6496定点数格式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>V3使用<strong>Q64.96定点数</strong>格式存储√price：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    subgraph SqrtPriceX96Format[\&quot;uint160 sqrtPriceX96\&quot;]\n        I[\&quot;整数部分&lt;br/>64位\&quot;]\n        D[\&quot;小数部分&lt;br/>96位\&quot;]\n    end\n\n    I --> R1[\&quot;范围: 0 ~ 2^64\&quot;]\n    D --> R2[\&quot;精度: 2^-96\&quot;]\n\n    subgraph ActualValueCalc[\&quot;实际值计算\&quot;]\n        F[\&quot;实际√price = sqrtPriceX96 / 2^96\&quot;]\n    end\n\n    I --> F\n    D --> F&quot;">graph LR
+    subgraph SqrtPriceX96Format[&quot;uint160 sqrtPriceX96&quot;]
+        I[&quot;整数部分&lt;br/>64位&quot;]
+        D[&quot;小数部分&lt;br/>96位&quot;]
+    end
+
+    I --> R1[&quot;范围: 0 ~ 2^64&quot;]
+    D --> R2[&quot;精度: 2^-96&quot;]
+
+    subgraph ActualValueCalc[&quot;实际值计算&quot;]
+        F[&quot;实际√price = sqrtPriceX96 / 2^96&quot;]
+    end
+
+    I --> F
+    D --> F
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>格式详解</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>值</th></tr></thead><tbody><tr><td>总位数</td><td>160位（正好适配uint160）</td></tr><tr><td>整数部分</td><td>64位，范围 [0, 2^64)</td></tr><tr><td>小数部分</td><td>96位，精度 2^(-96) ≈ 1.26×10^(-29)</td></tr><tr><td>表示范围</td><td>覆盖所有可能的价格</td></tr></tbody></table></div>
+<p><strong>示例代码</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// √1 在Q64.96格式下的值</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint160</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sqrtPriceX96 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 79228162514264337593543950336</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 2^96</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 从sqrtPriceX96计算实际价格</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> getPrice</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtPriceX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // price = (sqrtPriceX96 / 2^96)^2 = sqrtPriceX96^2 / 2^192</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> FullMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">mulDiv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<hr/>
+<h2 id="3-tick与价格的双向转换">3. Tick与价格的双向转换<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-tick与价格的双向转换" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="31-转换关系总览">3.1 转换关系总览<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-转换关系总览" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    T[\&quot;Tick&lt;br/>(int24)\&quot;]\n    SP[\&quot;sqrtPriceX96&lt;br/>(uint160)\&quot;]\n    P[\&quot;实际价格&lt;br/>(uint256)\&quot;]\n\n    T -->|\&quot;getSqrtRatioAtTick()\&quot;| SP\n    SP -->|\&quot;getTickAtSqrtRatio()\&quot;| T\n    SP -->|\&quot;平方运算\&quot;| P\n    P -->|\&quot;开方运算\&quot;| SP\n\n    style T fill:#e3f2fd\n    style SP fill:#fff3e0\n    style P fill:#fce4ec&quot;">flowchart LR
+    T[&quot;Tick&lt;br/>(int24)&quot;]
+    SP[&quot;sqrtPriceX96&lt;br/>(uint160)&quot;]
+    P[&quot;实际价格&lt;br/>(uint256)&quot;]
+
+    T -->|&quot;getSqrtRatioAtTick()&quot;| SP
+    SP -->|&quot;getTickAtSqrtRatio()&quot;| T
+    SP -->|&quot;平方运算&quot;| P
+    P -->|&quot;开方运算&quot;| SP
+
+    style T fill:#e3f2fd
+    style SP fill:#fff3e0
+    style P fill:#fce4ec
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="32-正向转换tick--price">3.2 正向转换：Tick → √Price<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-正向转换tick--price" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>核心算法</strong>：使用<strong>二进制分解</strong>实现高效幂运算</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph Input[\&quot;输入\&quot;]\n        T[\&quot;tick = 13\&quot;]\n    end\n\n    subgraph BinaryDecomposition[\&quot;二进制分解\&quot;]\n        B[\&quot;13 = 1101₂ = 8 + 4 + 1\&quot;]\n    end\n\n    subgraph PowerDecomposition[\&quot;幂运算分解\&quot;]\n        P1[\&quot;1.0001^13\&quot;]\n        P2[\&quot;= 1.0001^8 × 1.0001^4 × 1.0001^1\&quot;]\n    end\n\n    subgraph PrecomputedLookup[\&quot;预计算表查找\&quot;]\n        L1[\&quot;查表: √(1.0001^1)\&quot;]\n        L2[\&quot;查表: √(1.0001^4)\&quot;]\n        L3[\&quot;查表: √(1.0001^8)\&quot;]\n    end\n\n    subgraph Result[\&quot;结果\&quot;]\n        R[\&quot;ratio = L1 × L2 × L3\&quot;]\n    end\n\n    T --> B --> P1 --> P2\n    P2 --> L1\n    P2 --> L2\n    P2 --> L3\n    L1 --> R\n    L2 --> R\n    L3 --> R&quot;">flowchart TD
+    subgraph Input[&quot;输入&quot;]
+        T[&quot;tick = 13&quot;]
+    end
+
+    subgraph BinaryDecomposition[&quot;二进制分解&quot;]
+        B[&quot;13 = 1101₂ = 8 + 4 + 1&quot;]
+    end
+
+    subgraph PowerDecomposition[&quot;幂运算分解&quot;]
+        P1[&quot;1.0001^13&quot;]
+        P2[&quot;= 1.0001^8 × 1.0001^4 × 1.0001^1&quot;]
+    end
+
+    subgraph PrecomputedLookup[&quot;预计算表查找&quot;]
+        L1[&quot;查表: √(1.0001^1)&quot;]
+        L2[&quot;查表: √(1.0001^4)&quot;]
+        L3[&quot;查表: √(1.0001^8)&quot;]
+    end
+
+    subgraph Result[&quot;结果&quot;]
+        R[&quot;ratio = L1 × L2 × L3&quot;]
+    end
+
+    T --> B --> P1 --> P2
+    P2 --> L1
+    P2 --> L2
+    P2 --> L3
+    L1 --> R
+    L2 --> R
+    L3 --> R
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>预计算常数表</strong>（部分）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>二进制位</th><th>对应幂次</th><th>预计算值（×2^128）</th></tr></thead><tbody><tr><td>0x1</td><td>√(1.0001^1)</td><td>0xfffcb933bd6fad37aa2d162d1a594001</td></tr><tr><td>0x2</td><td>√(1.0001^2)</td><td>0xfff97272373d413259a46990580e213a</td></tr><tr><td>0x4</td><td>√(1.0001^4)</td><td>0xfff2e50f5f656932ef12357cf3c7fdcc</td></tr><tr><td>0x8</td><td>√(1.0001^8)</td><td>0xffe5caca7e10e4e61c3624eaa0941cd0</td></tr><tr><td>…</td><td>…</td><td>…</td></tr></tbody></table></div>
+<p><strong>核心代码实现</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> getSqrtRatioAtTick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtPriceX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> absTick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tick)) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tick));</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(absTick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(MAX_TICK), </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">'T'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 二进制分解 + 预计算表查找</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> absTick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> !=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        ?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0xfffcb933bd6fad37aa2d162d1a594001</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x100000000000000000000000000000000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 检查每一位并累乘对应的预计算值</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (absTick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> !=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0xfff97272373d413259a46990580e213a</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (absTick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x4</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> !=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0xfff2e50f5f656932ef12357cf3c7fdcc</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (absTick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x8</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> !=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0xffe5caca7e10e4e61c3624eaa0941cd0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // ... 继续检查到第20位</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 处理负tick：取倒数</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ratio;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 从Q128转为Q96格式，向上舍入</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    sqrtPriceX96 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint160</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((ratio </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (ratio % (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;&lt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">));</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<p><strong>算法复杂度</strong>：O(log(tick))，最多20次乘法运算</p>
+<h3 id="33-反向转换price--tick">3.3 反向转换：√Price → Tick<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-反向转换price--tick" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>反向转换使用<strong>对数运算</strong>：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph InputSP[\&quot;输入\&quot;]\n        SP[\&quot;sqrtPriceX96\&quot;]\n    end\n\n    subgraph Step1MSB[\&quot;Step 1: MSB查找\&quot;]\n        MSB[\&quot;找到最高有效位&lt;br/>确定数值范围\&quot;]\n    end\n\n    subgraph Step2Log[\&quot;Step 2: 计算log₂\&quot;]\n        LOG[\&quot;使用汇编优化&lt;br/>计算log₂(ratio)\&quot;]\n    end\n\n    subgraph Step3Convert[\&quot;Step 3: 转换基数\&quot;]\n        CONV[\&quot;log₂ → log_{√1.0001}&lt;br/>乘以转换因子\&quot;]\n    end\n\n    subgraph Step4Boundary[\&quot;Step 4: 边界处理\&quot;]\n        BOUND[\&quot;处理舍入误差&lt;br/>验证tick准确性\&quot;]\n    end\n\n    subgraph OutputTick[\&quot;输出\&quot;]\n        T[\&quot;tick (int24)\&quot;]\n    end\n\n    SP --> MSB --> LOG --> CONV --> BOUND --> T&quot;">flowchart TD
+    subgraph InputSP[&quot;输入&quot;]
+        SP[&quot;sqrtPriceX96&quot;]
+    end
+
+    subgraph Step1MSB[&quot;Step 1: MSB查找&quot;]
+        MSB[&quot;找到最高有效位&lt;br/>确定数值范围&quot;]
+    end
+
+    subgraph Step2Log[&quot;Step 2: 计算log₂&quot;]
+        LOG[&quot;使用汇编优化&lt;br/>计算log₂(ratio)&quot;]
+    end
+
+    subgraph Step3Convert[&quot;Step 3: 转换基数&quot;]
+        CONV[&quot;log₂ → log_{√1.0001}&lt;br/>乘以转换因子&quot;]
+    end
+
+    subgraph Step4Boundary[&quot;Step 4: 边界处理&quot;]
+        BOUND[&quot;处理舍入误差&lt;br/>验证tick准确性&quot;]
+    end
+
+    subgraph OutputTick[&quot;输出&quot;]
+        T[&quot;tick (int24)&quot;]
+    end
+
+    SP --> MSB --> LOG --> CONV --> BOUND --> T
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>核心数学原理</strong>：</p>
+<pre><code>price = 1.0001^tick
+log(price) = tick × log(1.0001)
+tick = log(price) / log(1.0001)
+tick = log₂(price) / log₂(1.0001)
+tick = log₂(sqrtPrice²) / log₂(√1.0001)
+tick = 2 × log₂(sqrtPrice) / log₂(1.0001)
+</code></pre>
+<p><strong>边界处理的必要性</strong>：</p>
+<p>由于浮点计算存在精度误差，需要额外验证：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 计算可能的tick范围</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickLow </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((log_sqrt10001 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 3402992956809132418596140100660247210</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickHi </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((log_sqrt10001 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 291339464771989622907027621153398088495</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 验证并选择正确的tick</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickLow </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickHi</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    ?</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickLow</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    :</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> getSqrtRatioAtTick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tickHi) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sqrtPriceX96 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">?</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickHi </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickLow;</span></span></code></pre></figure>
+<hr/>
+<h2 id="4-tickbitmap高效的tick查找">4. TickBitmap：高效的Tick查找<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-tickbitmap高效的tick查找" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="41-设计目标">4.1 设计目标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#41-设计目标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在交换过程中，需要快速找到<strong>下一个已初始化的Tick</strong>（即有流动性的价格边界）。</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    subgraph Problem[\&quot;问题\&quot;]\n        Q[\&quot;如何快速找到&lt;br/>下一个活跃Tick?\&quot;]\n    end\n\n    subgraph BruteForce[\&quot;暴力搜索\&quot;]\n        B1[\&quot;遍历所有Tick\&quot;]\n        B2[\&quot;O(n)复杂度\&quot;]\n        B3[\&quot;Gas成本高\&quot;]\n    end\n\n    subgraph TickBitmapSolution[\&quot;TickBitmap方案\&quot;]\n        T1[\&quot;位图压缩存储\&quot;]\n        T2[\&quot;O(1)查找\&quot;]\n        T3[\&quot;Gas优化\&quot;]\n    end\n\n    Q --> B1 --> B2 --> B3\n    Q --> T1 --> T2 --> T3\n\n    style TickBitmapSolution fill:#c8e6c9&quot;">flowchart LR
+    subgraph Problem[&quot;问题&quot;]
+        Q[&quot;如何快速找到&lt;br/>下一个活跃Tick?&quot;]
+    end
+
+    subgraph BruteForce[&quot;暴力搜索&quot;]
+        B1[&quot;遍历所有Tick&quot;]
+        B2[&quot;O(n)复杂度&quot;]
+        B3[&quot;Gas成本高&quot;]
+    end
+
+    subgraph TickBitmapSolution[&quot;TickBitmap方案&quot;]
+        T1[&quot;位图压缩存储&quot;]
+        T2[&quot;O(1)查找&quot;]
+        T3[&quot;Gas优化&quot;]
+    end
+
+    Q --> B1 --> B2 --> B3
+    Q --> T1 --> T2 --> T3
+
+    style TickBitmapSolution fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="42-位图结构">4.2 位图结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#42-位图结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>每个uint256存储256个Tick的初始化状态：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph BitmapStorage[\&quot;TickBitmap存储结构\&quot;]\n        M[\&quot;mapping(int16 => uint256)\&quot;]\n    end\n\n    subgraph SingleWord[\&quot;单个Word (256位)\&quot;]\n        W[\&quot;bit0 | bit1 | bit2 | ... | bit255\&quot;]\n    end\n\n    subgraph PositionCalc[\&quot;位置计算\&quot;]\n        P1[\&quot;wordPos = tick >> 8\&quot;]\n        P2[\&quot;bitPos = tick % 256\&quot;]\n    end\n\n    M --> W\n    W --> P1\n    W --> P2\n\n    subgraph Example[\&quot;示例\&quot;]\n        E[\&quot;tick = 300&lt;br/>wordPos = 1&lt;br/>bitPos = 44\&quot;]\n    end&quot;">graph TB
+    subgraph BitmapStorage[&quot;TickBitmap存储结构&quot;]
+        M[&quot;mapping(int16 => uint256)&quot;]
+    end
+
+    subgraph SingleWord[&quot;单个Word (256位)&quot;]
+        W[&quot;bit0 | bit1 | bit2 | ... | bit255&quot;]
+    end
+
+    subgraph PositionCalc[&quot;位置计算&quot;]
+        P1[&quot;wordPos = tick >> 8&quot;]
+        P2[&quot;bitPos = tick % 256&quot;]
+    end
+
+    M --> W
+    W --> P1
+    W --> P2
+
+    subgraph Example[&quot;示例&quot;]
+        E[&quot;tick = 300&lt;br/>wordPos = 1&lt;br/>bitPos = 44&quot;]
+    end
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>存储效率</strong>：</p>
+<ul>
+<li>每个Tick仅占用<strong>1 bit</strong></li>
+<li>256个相邻Tick共享一个存储槽</li>
+<li>极大节省存储成本</li>
+</ul>
+<h3 id="43-核心操作">4.3 核心操作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#43-核心操作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="翻转tick状态">翻转Tick状态<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#翻转tick状态" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> flipTick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> => </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">storage</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tickSpacing</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tick % tickSpacing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">); </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 确保tick对齐</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> wordPos, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing);</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mask </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    self[wordPos] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">^=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mask; </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// XOR操作翻转状态</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h4 id="查找下一个初始化的tick">查找下一个初始化的Tick<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#查找下一个初始化的tick" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph InputParams[\&quot;输入\&quot;]\n        I[\&quot;当前tick&lt;br/>交换方向(lte)\&quot;]\n    end\n\n    subgraph SearchLeft[\&quot;向左查找 (价格下降)\&quot;]\n        L1[\&quot;获取当前word\&quot;]\n        L2[\&quot;掩码屏蔽右侧位\&quot;]\n        L3[\&quot;查找最高有效位MSB\&quot;]\n        L4[\&quot;计算目标tick\&quot;]\n    end\n\n    subgraph SearchRight[\&quot;向右查找 (价格上升)\&quot;]\n        R1[\&quot;获取下一word\&quot;]\n        R2[\&quot;掩码屏蔽左侧位\&quot;]\n        R3[\&quot;查找最低有效位LSB\&quot;]\n        R4[\&quot;计算目标tick\&quot;]\n    end\n\n    I -->|\&quot;zeroForOne=true\&quot;| SearchLeft\n    I -->|\&quot;zeroForOne=false\&quot;| SearchRight\n\n    SearchLeft --> O[\&quot;返回(nextTick, initialized)\&quot;]\n    SearchRight --> O&quot;">flowchart TD
+    subgraph InputParams[&quot;输入&quot;]
+        I[&quot;当前tick&lt;br/>交换方向(lte)&quot;]
+    end
+
+    subgraph SearchLeft[&quot;向左查找 (价格下降)&quot;]
+        L1[&quot;获取当前word&quot;]
+        L2[&quot;掩码屏蔽右侧位&quot;]
+        L3[&quot;查找最高有效位MSB&quot;]
+        L4[&quot;计算目标tick&quot;]
+    end
+
+    subgraph SearchRight[&quot;向右查找 (价格上升)&quot;]
+        R1[&quot;获取下一word&quot;]
+        R2[&quot;掩码屏蔽左侧位&quot;]
+        R3[&quot;查找最低有效位LSB&quot;]
+        R4[&quot;计算目标tick&quot;]
+    end
+
+    I -->|&quot;zeroForOne=true&quot;| SearchLeft
+    I -->|&quot;zeroForOne=false&quot;| SearchRight
+
+    SearchLeft --> O[&quot;返回(nextTick, initialized)&quot;]
+    SearchRight --> O
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>代码实现</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> nextInitializedTickWithinOneWord</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> => </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">storage</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tickSpacing</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    bool</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> lte</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">less</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> than</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> or</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> equal</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">，</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">表示向左查找</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> view</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> next</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">bool</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> initialized</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> compressed </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tick % tickSpacing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) compressed</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">--</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (lte) {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 向左查找（价格下降方向）</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> wordPos, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(compressed);</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 创建掩码，保留当前位及左侧所有位</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mask </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> +</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos);</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> masked </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> self[wordPos] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mask;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        initialized </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> masked </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        next </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> initialized</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            ?</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (compressed </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(bitPos </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> BitMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">mostSignificantBit</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(masked))) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            :</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (compressed </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(bitPos)) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 向右查找（价格上升方向）</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> wordPos, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(compressed </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 创建掩码，保留当前位及右侧所有位</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mask </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ~((</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> masked </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> self[wordPos] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mask;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        initialized </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> masked </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        next </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> initialized</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            ?</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (compressed </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> +</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(BitMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">leastSignificantBit</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(masked) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos)) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            :</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (compressed </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> +</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> bitPos)) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<hr/>
+<h2 id="5-bitmath库高级位运算">5. BitMath库：高级位运算<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-bitmath库高级位运算" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="51-最高有效位msb查找">5.1 最高有效位(MSB)查找<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-最高有效位msb查找" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>使用<strong>二分查找</strong>思想，时间复杂度O(log n)：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph InputX[\&quot;输入\&quot;]\n        X[\&quot;x = 0x0000...1234\&quot;]\n    end\n\n    subgraph BinarySearch[\&quot;二分查找过程\&quot;]\n        C1[\&quot;x >= 2^128?\&quot;]\n        C2[\&quot;x >= 2^64?\&quot;]\n        C3[\&quot;x >= 2^32?\&quot;]\n        C4[\&quot;x >= 2^16?\&quot;]\n        C5[\&quot;x >= 2^8?\&quot;]\n        C6[\&quot;x >= 2^4?\&quot;]\n        C7[\&quot;x >= 2^2?\&quot;]\n        C8[\&quot;x >= 2^1?\&quot;]\n    end\n\n    X --> C1\n    C1 -->|\&quot;是\&quot;| A1[\&quot;r += 128; x >>= 128\&quot;]\n    C1 -->|\&quot;否\&quot;| C2\n    C2 -->|\&quot;是\&quot;| A2[\&quot;r += 64; x >>= 64\&quot;]\n    C2 -->|\&quot;否\&quot;| C3\n    C3 --> |\&quot;...\&quot;| C8\n\n    C8 --> R[\&quot;返回 r\&quot;]&quot;">flowchart TD
+    subgraph InputX[&quot;输入&quot;]
+        X[&quot;x = 0x0000...1234&quot;]
+    end
+
+    subgraph BinarySearch[&quot;二分查找过程&quot;]
+        C1[&quot;x >= 2^128?&quot;]
+        C2[&quot;x >= 2^64?&quot;]
+        C3[&quot;x >= 2^32?&quot;]
+        C4[&quot;x >= 2^16?&quot;]
+        C5[&quot;x >= 2^8?&quot;]
+        C6[&quot;x >= 2^4?&quot;]
+        C7[&quot;x >= 2^2?&quot;]
+        C8[&quot;x >= 2^1?&quot;]
+    end
+
+    X --> C1
+    C1 -->|&quot;是&quot;| A1[&quot;r += 128; x >>= 128&quot;]
+    C1 -->|&quot;否&quot;| C2
+    C2 -->|&quot;是&quot;| A2[&quot;r += 64; x >>= 64&quot;]
+    C2 -->|&quot;否&quot;| C3
+    C3 --> |&quot;...&quot;| C8
+
+    C8 --> R[&quot;返回 r&quot;]
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>代码实现</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> mostSignificantBit</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> x</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> r</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 二分查找</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x100000000000000000000000000000000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x10000000000000000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x100000000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x10000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="52-最低有效位lsb查找">5.2 最低有效位(LSB)查找<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-最低有效位lsb查找" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> leastSignificantBit</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> x</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> r</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 255</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).max </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0xf</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x3</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> { x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>>=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; }</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0x1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) r </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<hr/>
+<h2 id="6-tick间距与费率的绑定">6. Tick间距与费率的绑定<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-tick间距与费率的绑定" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="61-设计原理">6.1 设计原理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-设计原理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>不同费率的池子使用不同的Tick间距：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph FeeTiers[\&quot;费率等级\&quot;]\n        F1[\&quot;0.01%&lt;br/>稳定币\&quot;]\n        F2[\&quot;0.05%&lt;br/>相关资产\&quot;]\n        F3[\&quot;0.30%&lt;br/>主流币\&quot;]\n        F4[\&quot;1.00%&lt;br/>高风险\&quot;]\n    end\n\n    subgraph TickSpacing[\&quot;Tick间距\&quot;]\n        T1[\&quot;间距: 1&lt;br/>精度: 0.01%\&quot;]\n        T2[\&quot;间距: 10&lt;br/>精度: 0.10%\&quot;]\n        T3[\&quot;间距: 60&lt;br/>精度: 0.60%\&quot;]\n        T4[\&quot;间距: 200&lt;br/>精度: 2.00%\&quot;]\n    end\n\n    subgraph Impact[\&quot;影响\&quot;]\n        I1[\&quot;位图更密集&lt;br/>Gas成本高\&quot;]\n        I2[\&quot;适中\&quot;]\n        I3[\&quot;适中\&quot;]\n        I4[\&quot;位图更稀疏&lt;br/>Gas成本低\&quot;]\n    end\n\n    F1 --> T1 --> I1\n    F2 --> T2 --> I2\n    F3 --> T3 --> I3\n    F4 --> T4 --> I4&quot;">graph TB
+    subgraph FeeTiers[&quot;费率等级&quot;]
+        F1[&quot;0.01%&lt;br/>稳定币&quot;]
+        F2[&quot;0.05%&lt;br/>相关资产&quot;]
+        F3[&quot;0.30%&lt;br/>主流币&quot;]
+        F4[&quot;1.00%&lt;br/>高风险&quot;]
+    end
+
+    subgraph TickSpacing[&quot;Tick间距&quot;]
+        T1[&quot;间距: 1&lt;br/>精度: 0.01%&quot;]
+        T2[&quot;间距: 10&lt;br/>精度: 0.10%&quot;]
+        T3[&quot;间距: 60&lt;br/>精度: 0.60%&quot;]
+        T4[&quot;间距: 200&lt;br/>精度: 2.00%&quot;]
+    end
+
+    subgraph Impact[&quot;影响&quot;]
+        I1[&quot;位图更密集&lt;br/>Gas成本高&quot;]
+        I2[&quot;适中&quot;]
+        I3[&quot;适中&quot;]
+        I4[&quot;位图更稀疏&lt;br/>Gas成本低&quot;]
+    end
+
+    F1 --> T1 --> I1
+    F2 --> T2 --> I2
+    F3 --> T3 --> I3
+    F4 --> T4 --> I4
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="62-间距限制的数学原因">6.2 间距限制的数学原因<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-间距限制的数学原因" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> enableFeeAmount</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> fee</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> tickSpacing</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">msg.sender</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> owner);</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(fee </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1000000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">); </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 最大100%费率</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // tick间距限制: (0, 16384)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tickSpacing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 16384</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(feeAmountTickSpacing[fee] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    feeAmountTickSpacing[fee] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    emit</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> FeeAmountEnabled</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(fee, tickSpacing);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<p><strong>为什么限制在16384以内？</strong></p>
+<pre><code>16384 tick对应的价格变化:
+1.0001^16384 ≈ 5.12
+
+即单个word(256个tick × 60间距)覆盖的价格变化约为:
+1.0001^(256 × 60) ≈ 4.7倍
+</code></pre>
+<p>这确保了在一个word内可以完成大部分正常交易的tick查找。</p>
+<hr/>
+<h2 id="7-实际计算示例">7. 实际计算示例<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-实际计算示例" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="71-ethusdc价格转换">7.1 ETH/USDC价格转换<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#71-ethusdc价格转换" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>假设ETH价格为2000 USDC：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    subgraph Step1[\&quot;步骤1\&quot;]\n        P[\&quot;ETH/USDC = 2000\&quot;]\n        SP[\&quot;√2000 ≈ 44.72\&quot;]\n    end\n\n    subgraph Step2[\&quot;步骤2\&quot;]\n        Q96[\&quot;sqrtPriceX96&lt;br/>= 44.72 × 2^96&lt;br/>≈ 3.54 × 10^30\&quot;]\n    end\n\n    subgraph Step3[\&quot;步骤3\&quot;]\n        T[\&quot;tick = log_{1.0001}(2000)&lt;br/>≈ 69082\&quot;]\n    end\n\n    P --> SP --> Q96 --> T&quot;">flowchart LR
+    subgraph Step1[&quot;步骤1&quot;]
+        P[&quot;ETH/USDC = 2000&quot;]
+        SP[&quot;√2000 ≈ 44.72&quot;]
+    end
+
+    subgraph Step2[&quot;步骤2&quot;]
+        Q96[&quot;sqrtPriceX96&lt;br/>= 44.72 × 2^96&lt;br/>≈ 3.54 × 10^30&quot;]
+    end
+
+    subgraph Step3[&quot;步骤3&quot;]
+        T[&quot;tick = log_{1.0001}(2000)&lt;br/>≈ 69082&quot;]
+    end
+
+    P --> SP --> Q96 --> T
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="72-代码验证">7.2 代码验证<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#72-代码验证" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 价格2000对应的tick</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tick </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 69082</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 验证</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint160</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sqrtPriceX96 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> TickMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">getSqrtRatioAtTick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tick);</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// sqrtPriceX96 ≈ 3543191142285914188532578</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 计算实际价格</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> price </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> FullMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">mulDiv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// price ≈ 2000 (以token1/token0表示)</span></span></code></pre></figure>
+<hr/>
+<h2 id="8-本章小结">8. 本章小结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-本章小结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="81-核心概念回顾">8.1 核心概念回顾<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#81-核心概念回顾" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((Tick机制))\n    价格离散化\n      price = 1.0001^tick\n      0.01%精度\n      int24存储\n    √price存储\n      Q64.96格式\n      uint160类型\n      数值稳定\n    双向转换\n      二进制分解\n      预计算表\n      对数运算\n    TickBitmap\n      位图存储\n      O(1)查找\n      Gas优化&quot;">mindmap
+  root((Tick机制))
+    价格离散化
+      price = 1.0001^tick
+      0.01%精度
+      int24存储
+    √price存储
+      Q64.96格式
+      uint160类型
+      数值稳定
+    双向转换
+      二进制分解
+      预计算表
+      对数运算
+    TickBitmap
+      位图存储
+      O(1)查找
+      Gas优化
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="82-关键公式总结">8.2 关键公式总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#82-关键公式总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>公式</th><th>说明</th><th>用途</th></tr></thead><tbody><tr><td><code>price = 1.0001^tick</code></td><td>Tick与价格的关系</td><td>价格计算</td></tr><tr><td><code>sqrtPriceX96 = √price × 2^96</code></td><td>平方根价格的定点数表示</td><td>合约存储</td></tr><tr><td><code>wordPos = tick >> 8</code></td><td>Tick在位图中的word位置</td><td>位图查找</td></tr><tr><td><code>bitPos = tick % 256</code></td><td>Tick在word中的bit位置</td><td>位图查找</td></tr></tbody></table></div>
+<h3 id="83-gas优化技巧">8.3 Gas优化技巧<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#83-gas优化技巧" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>预计算表</strong>：避免运行时计算复杂幂运算</li>
+<li><strong>位运算</strong>：使用位操作替代条件判断</li>
+<li><strong>位图压缩</strong>：256个状态共享一个存储槽</li>
+<li><strong>整数运算</strong>：避免浮点数带来的精度和效率问题</li>
+</ol>
+<hr/>
+<h2 id="下一篇预告">下一篇预告<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#下一篇预告" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在下一篇文章中，我们将深入探讨<strong>架构与合约设计</strong>，包括：</p>
+<ul>
+<li>Factory合约的单例模式</li>
+<li>Pool合约的状态管理</li>
+<li>Library模式的深度应用</li>
+<li>核心数据结构设计</li>
+</ul>
+<hr/>
+<h2 id="参考资料">参考资料<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参考资料" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><a href="https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol" class="external">Uniswap V3 Core - TickMath.sol<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/TickBitmap.sol" class="external">Uniswap V3 Core - TickBitmap.sol<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://en.wikipedia.org/wiki/Fixed-point_arithmetic" class="external">定点数数学基础<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-55" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#死磕uniswap-v3二tick机制与价格数学" data-for="死磕uniswap-v3二tick机制与价格数学">死磕Uniswap V3（二）：Tick机制与价格数学</a></li><li class="depth-1"><a href="#系列导航" data-for="系列导航">系列导航</a></li><li class="depth-1"><a href="#1-tick机制概述" data-for="1-tick机制概述">1. Tick机制概述</a></li><li class="depth-2"><a href="#11-为什么需要tick" data-for="11-为什么需要tick">1.1 为什么需要Tick？</a></li><li class="depth-2"><a href="#12-tick的数学定义" data-for="12-tick的数学定义">1.2 Tick的数学定义</a></li><li class="depth-2"><a href="#13-为什么选择10001作为基数" data-for="13-为什么选择10001作为基数">1.3 为什么选择1.0001作为基数？</a></li><li class="depth-1"><a href="#2-价格的平方根表示" data-for="2-价格的平方根表示">2. 价格的平方根表示</a></li><li class="depth-2"><a href="#21-为什么使用price" data-for="21-为什么使用price">2.1 为什么使用√price？</a></li><li class="depth-2"><a href="#22-q6496定点数格式" data-for="22-q6496定点数格式">2.2 Q64.96定点数格式</a></li><li class="depth-1"><a href="#3-tick与价格的双向转换" data-for="3-tick与价格的双向转换">3. Tick与价格的双向转换</a></li><li class="depth-2"><a href="#31-转换关系总览" data-for="31-转换关系总览">3.1 转换关系总览</a></li><li class="depth-2"><a href="#32-正向转换tick--price" data-for="32-正向转换tick--price">3.2 正向转换：Tick → √Price</a></li><li class="depth-2"><a href="#33-反向转换price--tick" data-for="33-反向转换price--tick">3.3 反向转换：√Price → Tick</a></li><li class="depth-1"><a href="#4-tickbitmap高效的tick查找" data-for="4-tickbitmap高效的tick查找">4. TickBitmap：高效的Tick查找</a></li><li class="depth-2"><a href="#41-设计目标" data-for="41-设计目标">4.1 设计目标</a></li><li class="depth-2"><a href="#42-位图结构" data-for="42-位图结构">4.2 位图结构</a></li><li class="depth-2"><a href="#43-核心操作" data-for="43-核心操作">4.3 核心操作</a></li><li class="depth-1"><a href="#5-bitmath库高级位运算" data-for="5-bitmath库高级位运算">5. BitMath库：高级位运算</a></li><li class="depth-2"><a href="#51-最高有效位msb查找" data-for="51-最高有效位msb查找">5.1 最高有效位(MSB)查找</a></li><li class="depth-2"><a href="#52-最低有效位lsb查找" data-for="52-最低有效位lsb查找">5.2 最低有效位(LSB)查找</a></li><li class="depth-1"><a href="#6-tick间距与费率的绑定" data-for="6-tick间距与费率的绑定">6. Tick间距与费率的绑定</a></li><li class="depth-2"><a href="#61-设计原理" data-for="61-设计原理">6.1 设计原理</a></li><li class="depth-2"><a href="#62-间距限制的数学原因" data-for="62-间距限制的数学原因">6.2 间距限制的数学原因</a></li><li class="depth-1"><a href="#7-实际计算示例" data-for="7-实际计算示例">7. 实际计算示例</a></li><li class="depth-2"><a href="#71-ethusdc价格转换" data-for="71-ethusdc价格转换">7.1 ETH/USDC价格转换</a></li><li class="depth-2"><a href="#72-代码验证" data-for="72-代码验证">7.2 代码验证</a></li><li class="depth-1"><a href="#8-本章小结" data-for="8-本章小结">8. 本章小结</a></li><li class="depth-2"><a href="#81-核心概念回顾" data-for="81-核心概念回顾">8.1 核心概念回顾</a></li><li class="depth-2"><a href="#82-关键公式总结" data-for="82-关键公式总结">8.2 关键公式总结</a></li><li class="depth-2"><a href="#83-gas优化技巧" data-for="83-gas优化技巧">8.3 Gas优化技巧</a></li><li class="depth-1"><a href="#下一篇预告" data-for="下一篇预告">下一篇预告</a></li><li class="depth-1"><a href="#参考资料" data-for="参考资料">参考资料</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../../postscript.js" type="module" data-persist="true"></script></html>

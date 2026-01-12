@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>cosmos_search</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="cosmos_search"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="cosmos_search"/><meta name="twitter:description" content="面向对象模型思考：Object-Capability Model | Cosmos SDK ABCI 允许替换共识，目前只有cometBFT 开发人员可以自由探索各种权衡（例如，验证器的数量与事务吞吐量、异步中的安全性与可用性等）和设计选择（用于存储的DB或IAVL树、UTXO或帐户模型等） ？？ 开发人员可以实现代码的自动执行。在Cosmos SDK中，逻辑可以在每个块的开始和结束时自动触发。他们还可以自由选择应用程序中使用的加密库，而不是在虚拟机区块链的情况下受到底层环境的限制 ？？ 开发人员不受底层虚拟机提供的加密功能的约束。他们可以使用自己的自定义密码，并依赖于经过良好审计的加密库。..."/><meta property="og:description" content="面向对象模型思考：Object-Capability Model | Cosmos SDK ABCI 允许替换共识，目前只有cometBFT 开发人员可以自由探索各种权衡（例如，验证器的数量与事务吞吐量、异步中的安全性与可用性等）和设计选择（用于存储的DB或IAVL树、UTXO或帐户模型等） ？？ 开发人员可以实现代码的自动执行。在Cosmos SDK中，逻辑可以在每个块的开始和结束时自动触发。他们还可以自由选择应用程序中使用的加密库，而不是在虚拟机区块链的情况下受到底层环境的限制 ？？ 开发人员不受底层虚拟机提供的加密功能的约束。他们可以使用自己的自定义密码，并依赖于经过良好审计的加密库。..."/><meta property="og:image:alt" content="面向对象模型思考：Object-Capability Model | Cosmos SDK ABCI 允许替换共识，目前只有cometBFT 开发人员可以自由探索各种权衡（例如，验证器的数量与事务吞吐量、异步中的安全性与可用性等）和设计选择（用于存储的DB或IAVL树、UTXO或帐户模型等） ？？ 开发人员可以实现代码的自动执行。在Cosmos SDK中，逻辑可以在每个块的开始和结束时自动触发。他们还可以自由选择应用程序中使用的加密库，而不是在虚拟机区块链的情况下受到底层环境的限制 ？？ 开发人员不受底层虚拟机提供的加密功能的约束。他们可以使用自己的自定义密码，并依赖于经过良好审计的加密库。..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/Cosmos-sdk/cosmos_search"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/Cosmos-sdk/cosmos_search"/><link rel="icon" href="../../../../../static/icon.png"/><meta name="description" content="面向对象模型思考：Object-Capability Model | Cosmos SDK ABCI 允许替换共识，目前只有cometBFT 开发人员可以自由探索各种权衡（例如，验证器的数量与事务吞吐量、异步中的安全性与可用性等）和设计选择（用于存储的DB或IAVL树、UTXO或帐户模型等） ？？ 开发人员可以实现代码的自动执行。在Cosmos SDK中，逻辑可以在每个块的开始和结束时自动触发。他们还可以自由选择应用程序中使用的加密库，而不是在虚拟机区块链的情况下受到底层环境的限制 ？？ 开发人员不受底层虚拟机提供的加密功能的约束。他们可以使用自己的自定义密码，并依赖于经过良好审计的加密库。..."/><meta name="generator" content="Quartz"/><link href="../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/Cosmos-sdk/cosmos_search"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-403"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-403" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/">Public_Chain_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/">Public_Chain_Research</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/">cosmos</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/Cosmos-sdk/">Cosmos sdk</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>cosmos_search</a></div></nav><h1 class="article-title">cosmos_search</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.458Z">2026年1月12日</time><span>27分钟阅读</span></p></div></div><article class="popover-hint"><ul>
+<li>
+<p>面向对象模型思考：<a href="https://docs.cosmos.network/main/core/ocap" class="external">Object-Capability Model | Cosmos SDK<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+</li>
+<li>
+<p>ABCI 允许替换共识，目前只有cometBFT</p>
+</li>
+<li>
+<p>开发人员可以自由探索各种权衡（例如，验证器的数量与事务吞吐量、异步中的安全性与可用性等）和设计选择（用于存储的DB或IAVL树、UTXO或帐户模型等） ？？</p>
+</li>
+<li>
+<p>开发人员可以实现代码的自动执行。在Cosmos SDK中，逻辑可以在每个块的开始和结束时自动触发。他们还可以自由选择应用程序中使用的加密库，而不是在虚拟机区块链的情况下受到底层环境的限制 ？？</p>
+</li>
+<li>
+<p>开发人员不受底层虚拟机提供的加密功能的约束。他们可以使用自己的自定义密码，并依赖于经过良好审计的加密库。</p>
+</li>
+<li>
+<p>特定应用程序区块链的主要好处之一是主权。去中心化的应用程序是一个涉及许多参与者的生态系统：用户、开发人员、第三方服务等等。当开发者在许多去中心化应用共存的虚拟机区块链上构建时，应用程序的社区与底层区块链的社区不同，后者在治理过程中取代前者。如果出现错误或需要新功能，应用程序的利益相关者几乎没有升级代码的余地。如果底层区块链的社区拒绝采取行动，什么都不会发生。</p>
+<p>这里的根本问题是应用程序的治理和网络的治理不一致。这个问题可以通过特定于应用程序的区块链来解决。由于特定于应用程序的区块链专门用于操作单个应用程序，因此应用程序的利益相关者可以完全控制整个链。这确保了如果发现漏洞，社区不会陷入困境，并且可以自由选择如何发展。</p>
+</li>
+</ul>
+<h2 id="application-specific-blockchains">Application-Specific Blockchains<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#application-specific-blockchains" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="markdown" data-theme="github-light github-dark"><code data-language="markdown" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                ^  +-------------------------------+  ^</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |                               |  |   Built with Cosmos SDK</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |  State-machine = Application  |  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |                               |  v</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  +-------------------------------+</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |                               |  ^</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Blockchain node |  |           Consensus           |  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |                               |  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  +-------------------------------+  |   CometBFT</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |                               |  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |           Networking          |  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                |  |                               |  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                v  +-------------------------------+  v</span></span></code></pre></figure>
+<h2 id="cometbft">cometBFT<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#cometbft" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>CometBFT共识算法使用一组称为Validators的特殊节点。验证器负责将交易块添加到区块链中。在任何给定的块上，都有一个验证器集V。<strong>算法选择V中的验证器作为下一个块的提议者</strong>。如果超过三分之二的V在其上签署了prevote和precommit，并且它包含的所有事务都是有效的，则该块被认为是有效的。<strong>验证程序集可以通过在状态机中编写的规则进行更改?????</strong>。</p>
+<h2 id="abci">ABCI<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#abci" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>参考bc_architecture</p>
+<h2 id="app-types">APP types<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#app-types" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><strong>baseApp</strong>:<code>baseapp</code> implements most of the core logic for the application, including all the <a href="https://docs.cometbft.com/v0.37/spec/abci/" class="external">ABCI methods<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> and the <a href="https://docs.cosmos.network/main/core/baseapp#routing" class="external">routing logic<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>.</li>
+<li><strong>A list of store keys</strong>: Each module uses one or multiple stores in the multistore to persist their part of the state. These stores can be accessed with specific keys that are declared in the <code>app</code> type.</li>
+<li><strong>A list of module’s <code>keeper</code>s</strong>：which handles reads and writes for this module’s store(s)</li>
+<li><strong>Appcodec</strong>:used to serialize and deserialize data structures in order to store them, as stores can only persist <code>[]bytes</code>. The default codec is <a href="https://docs.cosmos.network/main/core/encoding" class="external">Protocol Buffers<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>.</li>
+<li>Moudle manager:The module manager is an object that contains a list of the application’s modules.like registering their <a href="https://docs.cosmos.network/main/core/baseapp#msg-services" class="external"><code>Msg</code> service<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> and <a href="https://docs.cosmos.network/main/core/baseapp#grpc-query-services" class="external">gRPC <code>Query</code> service<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>, or setting the order of execution between modules for various functions like <a href="https://docs.cosmos.network/main/basics/app-anatomy#initchainer" class="external"><code>InitChainer</code><svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>, <a href="https://docs.cosmos.network/main/basics/app-anatomy#beginblocker-and-endblocker" class="external"><code>BeginBlocker</code> and <code>EndBlocker</code><svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>.</li>
+</ul>
+<h3 id="newsimapp">newSimApp<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#newsimapp" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>[initchainer]: 由cometbft 发到App里的消息，主要用来调用各个模块的Initgenesis 函数。</p>
+<h2 id="moudles">moudles<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#moudles" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>[Application Module Interface]:需要实现<a href="https://docs.cosmos.network/main/building-modules/module-manager#appmodulebasic" class="external"><code>AppModuleBasic</code><svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> and <a href="https://docs.cosmos.network/main/building-modules/module-manager#appmodule" class="external"><code>AppModule</code><svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>{diliver tx}: 节点收到有效块，然后cometBFT 通过diliver tx 传给app 去处理，然后1 decode, 2,validate tx , 3 route to module</p>
+<p>一般会在tx.proto中定义自己的Msg服务。</p>
+<p>{gRPC <code>Query</code> Services}: 了解grpc原理 🚩， rest路由</p>
+<h2 id="transaction-lifecycle">Transaction Lifecycle<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#transaction-lifecycle" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>
+<p>可以指定超时高度</p>
+</li>
+<li>
+<p>由cometbft 发送check tx 给app去检查交易是否正确</p>
+</li>
+<li>
+<p>[antehandler]:</p>
+</li>
+<li>
+<p>AnteHandlers: 实践中经常用于执行签名验证、气体计算、费用扣除和其他与区块链交易相关的核心操作。</p>
+<p>例如，身份验证模块AnteHandler检查并递增序列号，检查签名和帐号，并从交易的第一个签名者那里扣除费用——所有状态更改都是使用checkState进行的</p>
+</li>
+</ul>
+<p>「mempool」:验证器节点保留一个内存池以防止重放攻击，就像完整节点一样，但也将其用作未经确认的事务池，为包含块做准备。请注意，即使Tx在这个阶段通过了所有检查，以后仍有可能被发现无效，因为CheckTx并没有完全验证事</p>
+<p>「state chhange 」:</p>
+<p><strong>达成共识的下一步是执行事务以完全验证它们</strong>。所有从正确的提议者那里接收到块提议的完整节点都通过<strong>调用ABCI函数BeginBlock</strong>、每个事务的<strong>DeliverTx</strong>和<strong>EndBlock</strong>来执行事务。虽然每个完整节点都在本地运行所有内容，但由于消息的状态转换是确定性的，并且事务在块建议中是明确排序的，因此该过程会产生一个单一的、明确的结果。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="markdown" data-theme="github-light github-dark"><code data-language="markdown" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        |Receive Block Proposal|</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              v</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | BeginBlock          |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              v</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | DeliverTx(tx0)      |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | DeliverTx(tx1)      |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | DeliverTx(tx2)      |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | DeliverTx(tx3)      |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        |   .         |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        |   .         |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        |   .         |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              v</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | EndBlock        |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              v</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | Consensus       |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              v</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        | Commit          |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        -----------------------</span></span></code></pre></figure>
+<p>「deliever tx」:</p>
+<ul>
+<li>解码事务</li>
+<li>Checks和AnteHandler : 事务检查</li>
+<li>MsgServiceRouter： 消息路由到指定模块的处理器</li>
+<li>msg service： Protobuf-Msg服务负责执行Tx中的每个消息，并使状态转换持续到deliveryTxState ？？</li>
+<li>Posthandler:PostHandlers在消息执行之后运行。如果失败，那么runMsgs和PostHandlers的状态更改都将被恢复</li>
+<li>GasMeter: 跟踪交易执行所需要的气体</li>
+</ul>
+<p>「commIt」：</p>
+<p>最后一步是节点<strong>提交块和状态更改</strong>。<strong>Validator节点执行执行状态转换的前一步，以验证事务，然后对块进行签名以进行确认</strong>。非Validator的完整节点不参与共识，即他们不能投票，但会听取投票，以了解他们是否应该提交状态更改。</p>
+<p>当他们收到足够的验证器投票（2/3+按投票权加权的预提交）时，完整的节点提交到要添加到区块链的新块，并在应用层中完成状态转换。生成一个新的状态根，作为状态转换的merkle证明。<strong>应用程序使用从Baseapp继承的Commit ABCI方法；它通过将deliveryState写入应用程序的内部状态来同步所有状态转换</strong>。一旦提交了状态更改，checkState就会从最近提交的状态重新开始，deliveryState会重置为nil，以保持一致并反映更改</p>
+<p>请注意，并非所有区块都有相同数量的交易，共识可能会导致<strong>零区块或完全没有区块？？？？？？</strong>。在公共区块链网络中，验证器也可能是拜占庭式的或恶意的，这可能会阻止Tx在区块链中提交。可能的恶意行为包括提议者决定通过将Tx从块中排除来审查Tx，或者验证器投票反对该块。</p>
+<p>此时，Tx的事务生命周期已经结束：节点已经验证了它的有效性，通过执行状态更改来传递它，并提交这些更改。Tx本身以[]字节的形式存储在一个块中，并附加到区块链中</p>
+<h1 id="core-concepts">core concepts<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#core-concepts" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="baseapp">baseApp<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#baseapp" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>cosmos sdk的基本类型，实现了ABCI接口（所以开发者不需要考虑实现），用于和cometBFT通信</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">type</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> App</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  // reference to a BaseApp</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">baseapp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">BaseApp</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  // list of application store keys</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  // list of application keepers</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  // module manager</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h2 id="type-definition">type definition<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#type-definition" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>baseapp 的关键组件如下：</p>
+<ul>
+<li>CommitMutiStore: 多个存储，对应相应的模块，一笔模块相关的交易会改变相关的存储</li>
+<li>Database: 持久化 commitMutiStore</li>
+<li>Msg service router :  将sdk.msg 路由到适当模块的msg service 处理，不同于ABCI Msg</li>
+<li>Grpc query router:  路由到适当模块处理查询</li>
+<li>Txdecoder: 解码cometBFT 传过来的事务字节</li>
+<li>AntHandler: 用于在收到交易时处理签名验证、费用支付和其他消息执行前检查。它在CheckTx/RecheckTx和DeliverTx期间执行。</li>
+<li><a href="https://docs.cosmos.network/main/basics/app-anatomy#initchainer" class="external"><code>InitChainer</code><svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>, <a href="https://docs.cosmos.network/main/basics/app-anatomy#beginblocker-and-endblocker" class="external"><code>BeginBlocker</code> and <code>EndBlocker</code><svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>:这些是应用程序从底层CometBFT引擎接收<strong>InitChain、BeginBlock和EndBlock ABCI消息</strong>时执行的函数</li>
+</ul>
+<p>各个阶段的缓存状态：</p>
+<ul>
+<li>checkstate : 在CheckTx期间更新，并在提交时重置</li>
+<li>Deliverstate:在DeliverTx期间更新，在Commit时设置为nil，并在BeginBlock上重新初始化。</li>
+<li>processProposalState:processProposalState 更新</li>
+<li>prepareProposalState: prepareProposalState更新</li>
+</ul>
+<h2 id="状态更新-需要重点了解原理">状态更新 需要重点了解原理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#状态更新-需要重点了解原理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>我们通过使用一种称为<strong>存储分支的机制？？？？</strong>（由CacheWrap函数执行）导出四个易失性状态</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-c6660bdfda8fa3aeb44239780b465ecc.png" alt="Types"/></p>
+<h2 id="initchain-state-updates">InitChain State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#initchain-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在InitChain过程中，通过<strong>分支根？？？<strong>CommitMultiStore来设置四种易失性状态，checkState、prepareProposalState、processProposalState和deliveryState。任何后续的读取和写入都发生在</strong>CommitMultiStore的分支版本上？？？</strong>。为了避免不必要的到主状态的往返，对分支存储的所有读取都被缓存。</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-initchain-62da1a79d5dd67a6d1ab07f2805040da.png" alt="InitChain"/></p>
+<h3 id="checktx-state-updates">CheckTx State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#checktx-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在CheckTx期间，基于根存储中最后一个提交状态的checkState用于任何读取和写入。在这里，我们只执行AnteHandler，并验证事务中每个消息都存在服务路由器。注意，当我们执行AnteHandler时，我们对已经分支的checkState进行分支。这有一个副作用，即如果AnteHandler失败，状态转换将不会反映在checkState中——即checkState只在成功时更新。</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-checktx-5bb98c17c37b2b93e98cc681b6c1c9d6.png" alt="CheckTx"/></p>
+<h2 id="prepareproposal-state-updates">PrepareProposal State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#prepareproposal-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在PrepareProposal期间，通过分支根CommitMultiStore来设置prepareProposalState。prepareProposalState用于在PrepareProposal阶段发生的任何读取和写入。该函数使用内存池的Select（）方法来迭代事务。然后调用runTx，它对每个事务进行编码和验证，然后执行AnteHandler。如果成功，将返回有效的事务，包括在执行建议期间生成的事件、标记和数据。所描述的行为是默认处理程序的行为，应用程序可以灵活地定义自己的自定义内存池处理程序。</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-prepareproposal-bc5c8099ad94b823c376d1bde26d584a.png" alt="ProcessProposal"/></p>
+<h2 id="processproposal-state-updates">ProcessProposal State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#processproposal-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在ProcessProposal过程中，processProposalState是根据根存储中的最后一个提交状态设置的，用于处理从验证器接收的签名提案。在这种状态下，调用runTx并执行AnteHandler，并且在这种状态中使用的上下文是用来自标头和主状态的信息构建的，包括也设置的最低天然气价格。我们再次强调，所描述的行为是默认处理程序的行为，应用程序可以灵活地定义自己的自定义内存池处理程序</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-processproposal-486265a078da51c6f72ce7248e8021b3.png" alt="ProcessProposal"/></p>
+<h3 id="beginblock-state-updates">BeginBlock State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#beginblock-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在BeginBlock期间，deliveryState被设置为在随后的DeliverTx ABCI消息中使用。deliveryState基于根存储中最后一个提交的状态，并且是分支的。请注意，deliveryState在提交时设置为nil。</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-begin_block-dfbb5abb42a34744e7fe08df2f8d01e2.png" alt="BeginBlock"/></p>
+<h3 id="delivertx-state-updates">DeliverTx State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#delivertx-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>DeliverTx的状态流几乎与CheckTx相同，只是deliveryState上发生状态转换，并且执行事务中的消息。与CheckTx类似，状态转换发生在双分支状态deliveryState上。成功执行消息会导致写入被提交到deliveryState。请注意，如果消息执行失败，来自AnteHandler的状态转换将被持久化。</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-deliver_tx-5999f54501aa641d0c0a93279561f956.png" alt="DeliverTx"/></p>
+<h3 id="commit-state-updates">Commit State Updates<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#commit-state-updates" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在提交过程中，deliveryState中发生的所有状态转换最终都会写入根CommitMultiStore，然后提交到磁盘并生成新的应用程序根哈希。这些状态转换现在被认为是最终的。最后，checkState设置为新提交的状态，deliveryState设置为nil以在BeginBlock上重置</p>
+<p><img src="https://docs.cosmos.network/assets/images/baseapp_state-commit-247373784511c1db3ed2175551b22abb.png" alt="Commit"/></p>
+<h2 id="paramstore">ParamStore<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#paramstore" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在InitChain过程中，RequestInitChaine提供ConsensusParams，其中除了证据参数外，还包含与区块执行相关的参数，如最大气体和大小。如果这些参数不是nil，则在BaseApp的ParamStore中进行设置。在幕后，ParamStore由x/consensus_params模块管理。这允许<strong>通过链上治理来调整参数，这是一个很好的去中心化设计</strong></p>
+<h2 id="service-routers">Service Routers<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#service-routers" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>当应用程序接收到消息和查询时，必须将它们路由到适当的模块才能进行处理。路由是通过BaseApp完成的，它为消息保存一个msgServiceRouter，为查询保存一个grpcQueryRouter。</p>
+<h3 id="msg-service-router">msg service router<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#msg-service-router" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>为此，BaseApp持有一个msgServiceRouter，它将完全限定的服务方法（字符串，在每个模块的Protobuf-Msg服务中定义）映射到相应模块的MsgServer实现</p>
+<p>应用程序的模块管理器（通过RegisterServices方法）使用所有路由初始化应用程序的msgServiceRouter，模块管理器本身使用应用程序构造函数中的所有应用程序模块初始化.</p>
+<h3 id="grpc-query-router">grpc query router<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#grpc-query-router" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>BaseApp拥有一个grpcQueryRouter，它将模块的完全限定服务方法（字符串，在其Protobuf Query gRPC中定义）映射到其QueryServer实现。grpcQueryRouter在查询处理的初始阶段被调用，可以通过直接向gRPC端点发送gRPC查询，也可以通过CometBFT RPC端点上的query ABCI消息。</p>
+<p>与msgServiceRouter一样，grpcQueryRouter使用应用程序的模块管理器（通过RegisterServices方法）使用所有查询路由进行初始化，模块管理器本身使用应用程序构造函数中的所有应用程序模块进行初始化。</p>
+<h2 id="abci-msgs">ABCI msgs<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#abci-msgs" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>ABCI 是一个通用接口（由comeBFT定义），通过它连接状态机和共识引擎。共识引擎会发出ABCI消息，供app 采取行动，消息如下：</p>
+<ul>
+<li>
+<h3 id="prepare-proposal">Prepare Proposal<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#prepare-proposal" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+</li>
+<li>
+<p>Process Proposal</p>
+</li>
+<li>
+<p>CheckTx</p>
+</li>
+<li>
+<p>DeliverTx</p>
+</li>
+<li>
+<p>Initchain:主要用于初始化参数和状态</p>
+</li>
+<li>
+<p>begin block</p>
+</li>
+<li>
+<p>End block</p>
+</li>
+<li>
+<p>commit</p>
+</li>
+<li>
+<p>info</p>
+</li>
+<li>
+<p>query</p>
+</li>
+</ul>
+<h2 id="transaction">Transaction<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#transaction" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="transaction-process">transaction process<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#transaction-process" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>消息（或sdk.Msgs）是特定于模块的对象，用于触发所属模块范围内的状态转换。模块开发人员通过向Protobuf-Msg服务添加方法来定义模块的消息，并实现相应的MsgServer。</p>
+<p>每个sdk.Msgs都与一个Protobuf-Msg服务RPC相关，该服务在每个模块的tx.proto文件中定义。SDK应用程序路由器会自动将每个SDK.Msg映射到相应的RPC。Protobuf为每个模块Msg服务生成一个MsgServer接口，模块开发人员需要实现这个接口。这种设计将更多的责任交给了模块开发人员，允许应用程序开发人员重用通用功能，而不必重复实现状态转换逻辑。</p>
+<p>要了解有关Protobuf-Msg服务以及如何实现MsgServer的更多信息，请单击此处。</p>
+<p>虽然消息包含状态转换逻辑的信息，但事务的其他元数据和相关信息存储在TxBuilder和Context中</p>
+<h2 id="context">context<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#context" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>包装了go 的context ,设计理念以及他的应用场景？？？？上下文是事务处理不可或缺的一部分，因为它允许模块轻松访问多存储中各自的存储，并检索事务上下文，如块头和gadmeter</p>
+<h3 id="store-branching-context的用途">Store branching （context的用途）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#store-branching-context的用途" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Context包含一个MultiStore，它允许使用CacheMultiStore进行分支和缓存功能（缓存MultiStore中的查询以避免将来的往返）。每个KVStore都在一个安全且隔离的临时存储中进行分支。进程可以自由地将更改写入CacheMultiStore。如果在没有问题的情况下执行状态转换序列，则可以将存储分支提交到序列末尾的底层存储，或者在出现问题时忽略它们。上下文的使用模式如下：</p>
+<p>进程从其父进程接收上下文ctx，该上下文ctx提供执行该进程所需的信息。</p>
+<p>ctx.ms是一个分支存储，即多存储的一个分支，这样进程就可以在执行时对状态进行更改，而无需更改原始的alctx.ms。这有助于保护底层多存储，以防在执行过程中的某个时刻需要恢复更改。</p>
+<p>进程可以在执行时从ctx读取和写入。它可以调用一个子流程，并根据需要将ctx传递给它。</p>
+<p>当子流程返回时，它会检查结果是成功还是失败。如果发生故障，则无需执行任何操作——只需丢弃分支ctx。如果成功，可以通过Write（）将对CacheMultiStore所做的更改提交到原始ctx.ms。</p>
+<h2 id="store">store<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#store" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>cosmos sdk 的存储设计架构：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="markdown" data-theme="github-light github-dark"><code data-language="markdown" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">+-----------------------------------------------------+</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |  KVStore 1 - Manage by keeper of Module 1  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |  KVStore 2 - Manage by keeper of Module 2  |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |  KVStore 3 - Manage by keeper of Module 2  |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |  KVStore 4 - Manage by keeper of Module 3  |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |  KVStore 5 - Manage by keeper of Module 4  |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    |                                            |   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|    +--------------------------------------------+   |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                    Main Multistore                  |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">|                                                     |</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">+-----------------------------------------------------+</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                   Application's State</span></span></code></pre></figure>
+<h3 id="multistore">multistore<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#multistore" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>multistore 是 store的存储，Cosmos SDK中使用的Multistore的主要类型是CommitMultiStore，它是Multistore接口的扩展</p>
+<p>！！！！？？？？<a href="https://github.com/cosmos/iavl" class="external">I AVL Tree 详解<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><a href="https://github.com/cosmos/iavl/blob/master/docs/overview.md" class="external">ival doc <svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>Grpc 网关。rest路由</p>
+<h2 id="object-capability-model">Object-Capability Model<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#object-capability-model" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>对象能力系统的结构特性有利于代码设计中的模块化，并确保代码实现中的可靠封装。</p>
+<p>这些结构属性有助于分析对象能力程序或操作系统的一些安全属性。其中一些属性，特别是信息流属性，可以在对象引用和连接级别进行分析，而不依赖于确定对象行为的代码的任何知识或分析。</p>
+<p>因此，在存在包含未知且可能是恶意代码的新对象时，可以建立和维护这些安全属性。</p>
+<p>这些结构特性源于管理对现有对象的访问的两个规则：</p>
+<p>只有当对象A包含对B的引用时，对象A才能向B发送消息。</p>
+<p>只有当对象A接收到包含对C的引用的消息时，对象A才能获得对C的参考。由于这两个规则，一个对象只能通过预先存在的引用链获得对另一个对象的引用。简而言之，“只有连接才能产生连接。</p>
+<p><a href="https://en.wikipedia.org/wiki/Object-capability_model" class="external">对象模型<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<h2 id="p-ro-to-bu-f">p ro to bu f<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#p-ro-to-bu-f" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p><a href="https://buf.build/cosmos/cosmos-sdk/docs/main" class="external">https://buf.build/cosmos/cosmos-sdk/docs/main<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<h2 id="in-place-store-migrations">In-Place Store Migrations<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#in-place-store-migrations" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>必须非常理解，比较危险，手动升级模块</p>
+<p><a href="https://docs.cosmos.network/main/core/upgrade" class="external">这个需要自己动手尝试<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<h2 id="构建模块">构建模块<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#构建模块" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Cosmos SDK可以被认为是区块链开发的Ruby on Rails。它的核心提供了每个区块链应用程序所需的基本功能，如ABCI的样板实现，以与底层共识引擎通信，多存储持久状态，形成完整节点的服务器和处理查询的接口。</p>
+<p>Cosmos SDK模块可以被视为状态机中的小型状态机。它们通常使用主多存储中的一个或多个KVStores以及消息类型的子集来定义状态的子集。这些消息由Cosmos SDK核心的主要组件之一BaseApp路由到定义它们的模块Protobuf-Msg服务</p>
+<h3 id="如何处理构建模块">如何处理构建模块<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#如何处理构建模块" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>设计原则如下：</p>
+<ul>
+<li><strong>Composability</strong>：思考是否要和核心模块或其他模块集成</li>
+<li><strong>Specialization</strong>：模块应该专门化的，不得将多个功能集成到一个模块中，关注点分离设计思想，便于升级</li>
+<li><strong>Capabilities</strong>：大多数模块需要读取和/或写入其他模块的存储区。然而，在开源环境中，某些模块可能是恶意的。这就是为什么模块开发人员不仅需要仔细考虑他们的模块如何与其他模块交互，还需要仔细考虑如何访问模块的存储。Cosmos SDK采用了一种面向功能的方法来实现模块间安全。这意味着由模块定义的每个存储都由一个密钥访问，该密钥由模块的管理员持有。该管理员定义了如何访问商店以及在什么条件下访问。访问模块的存储是通过将引用传递给模块的keeper来完成的。</li>
+</ul>
+<h3 id="application-module-interfaces">Application Module Interfaces<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#application-module-interfaces" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>应用程序模块接口的存在有助于将模块组合在一起，形成一个功能强大的Cosmos SDK应用程序。有4个主要的应用程序模块接口：</p>
+<ul>
+<li>Appmoudlebasic:用于独立的模块功能。</li>
+<li>Appmoudle:用于相互依赖的模块功能</li>
+<li>appmoudleGenesis:用于相互依赖的genesis相关模块功能</li>
+<li>GenesisOnlyAppModule:定义仅具有导入/导出功能的AppModule</li>
+</ul>
+<h4 id="appmoudlebasic">appmoudlebasic<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#appmoudlebasic" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// AppModuleBasic is the standard form for basic non-dependant elements of an application module.</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">type</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> AppModuleBasic</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> interface</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	HasName</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	RegisterLegacyAminoCodec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">codec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">LegacyAmino</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	RegisterInterfaces</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">codectypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">InterfaceRegistry</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// client functionality</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  //为模块注册gRPC路由</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	RegisterGRPCGatewayRoutes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">client</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Context</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">runtime</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ServeMux</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	GetTxCmd</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cobra</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Command</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	GetQueryCmd</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cobra</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Command</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h4 id="appmoudle">appmoudle<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#appmoudle" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// AppModule is the form for an application module. Most of</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// its functionality has been moved to extension interfaces.</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">type</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> AppModule</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> interface</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	AppModuleBasic</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="m-s-g-services---时序图怎么看">m s g SERVICES   时序图怎么看？？？？？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#m-s-g-services---时序图怎么看" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>此图显示了Protobuf-Msg服务的典型结构，以及消息如何在模块中传播。</p>
+<p><img src="https://raw.githubusercontent.com/cosmos/cosmos-sdk/release/v0.46.x/docs/uml/svg/transaction_flow.svg" alt="probuf-msg structure"/></p>
+<h2 id="keeper">keeper<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#keeper" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="module-genesis">module Genesis<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#module-genesis" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>每当进行状态导出时，都会执行ExportGenesis方法。它获取模块管理的状态子集的最新已知版本，并从中创建一个新的GenesisState。这主要用于需要通过硬分叉升级链时</p>
+<p>grpc网关将REST调用转换为grpc调用，这对于不使用grpc的客户端可能很有用。 auto cli 包的使用</p>
+<h2 id="升级模块需要实际操作">升级模块，需要实际操作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#升级模块需要实际操作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h2 id="modules-depinject-ready--新加的内容">Modules depinject-ready  新加的内容<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#modules-depinject-ready--新加的内容" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-188" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-1"><a href="#application-specific-blockchains" data-for="application-specific-blockchains">Application-Specific Blockchains</a></li><li class="depth-1"><a href="#cometbft" data-for="cometbft">cometBFT</a></li><li class="depth-1"><a href="#abci" data-for="abci">ABCI</a></li><li class="depth-1"><a href="#app-types" data-for="app-types">APP types</a></li><li class="depth-2"><a href="#newsimapp" data-for="newsimapp">newSimApp</a></li><li class="depth-1"><a href="#moudles" data-for="moudles">moudles</a></li><li class="depth-1"><a href="#transaction-lifecycle" data-for="transaction-lifecycle">Transaction Lifecycle</a></li><li class="depth-0"><a href="#core-concepts" data-for="core-concepts">core concepts</a></li><li class="depth-1"><a href="#baseapp" data-for="baseapp">baseApp</a></li><li class="depth-1"><a href="#type-definition" data-for="type-definition">type definition</a></li><li class="depth-1"><a href="#状态更新-需要重点了解原理" data-for="状态更新-需要重点了解原理">状态更新 需要重点了解原理</a></li><li class="depth-1"><a href="#initchain-state-updates" data-for="initchain-state-updates">InitChain State Updates</a></li><li class="depth-2"><a href="#checktx-state-updates" data-for="checktx-state-updates">CheckTx State Updates</a></li><li class="depth-1"><a href="#prepareproposal-state-updates" data-for="prepareproposal-state-updates">PrepareProposal State Updates</a></li><li class="depth-1"><a href="#processproposal-state-updates" data-for="processproposal-state-updates">ProcessProposal State Updates</a></li><li class="depth-2"><a href="#beginblock-state-updates" data-for="beginblock-state-updates">BeginBlock State Updates</a></li><li class="depth-2"><a href="#delivertx-state-updates" data-for="delivertx-state-updates">DeliverTx State Updates</a></li><li class="depth-2"><a href="#commit-state-updates" data-for="commit-state-updates">Commit State Updates</a></li><li class="depth-1"><a href="#paramstore" data-for="paramstore">ParamStore</a></li><li class="depth-1"><a href="#service-routers" data-for="service-routers">Service Routers</a></li><li class="depth-2"><a href="#msg-service-router" data-for="msg-service-router">msg service router</a></li><li class="depth-2"><a href="#grpc-query-router" data-for="grpc-query-router">grpc query router</a></li><li class="depth-1"><a href="#abci-msgs" data-for="abci-msgs">ABCI msgs</a></li><li class="depth-2"><a href="#prepare-proposal" data-for="prepare-proposal">Prepare Proposal</a></li><li class="depth-1"><a href="#transaction" data-for="transaction">Transaction</a></li><li class="depth-2"><a href="#transaction-process" data-for="transaction-process">transaction process</a></li><li class="depth-1"><a href="#context" data-for="context">context</a></li><li class="depth-2"><a href="#store-branching-context的用途" data-for="store-branching-context的用途">Store branching （context的用途）</a></li><li class="depth-1"><a href="#store" data-for="store">store</a></li><li class="depth-2"><a href="#multistore" data-for="multistore">multistore</a></li><li class="depth-1"><a href="#object-capability-model" data-for="object-capability-model">Object-Capability Model</a></li><li class="depth-1"><a href="#p-ro-to-bu-f" data-for="p-ro-to-bu-f">p ro to bu f</a></li><li class="depth-1"><a href="#in-place-store-migrations" data-for="in-place-store-migrations">In-Place Store Migrations</a></li><li class="depth-1"><a href="#构建模块" data-for="构建模块">构建模块</a></li><li class="depth-2"><a href="#如何处理构建模块" data-for="如何处理构建模块">如何处理构建模块</a></li><li class="depth-2"><a href="#application-module-interfaces" data-for="application-module-interfaces">Application Module Interfaces</a></li><li class="depth-2"><a href="#m-s-g-services---时序图怎么看" data-for="m-s-g-services---时序图怎么看">m s g SERVICES   时序图怎么看？？？？？</a></li><li class="depth-1"><a href="#keeper" data-for="keeper">keeper</a></li><li class="depth-2"><a href="#module-genesis" data-for="module-genesis">module Genesis</a></li><li class="depth-1"><a href="#升级模块需要实际操作" data-for="升级模块需要实际操作">升级模块，需要实际操作</a></li><li class="depth-1"><a href="#modules-depinject-ready--新加的内容" data-for="modules-depinject-ready--新加的内容">Modules depinject-ready  新加的内容</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../postscript.js" type="module" data-persist="true"></script></html>

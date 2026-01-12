@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>死磕libp2p之发布订阅</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="死磕libp2p之发布订阅"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="死磕libp2p之发布订阅"/><meta name="twitter:description" content="什么是发布订阅 发布/订阅是一个系统，同行们聚集在他们感兴趣的主题周围。据说对某个主题感兴趣的同行们订阅了该主题。 同行可以向主题发送消息。每条消息都将发送给订阅该主题的所有对等方： 聊天室。每个房间都是一个酒吧/子主题，客户发布聊天消息，房间里的所有其他客户都会收到这些消息。 文件共享。每个发布/子主题代表一个可以下载的文件。上传者和下载者在发布/子主题中公布他们拥有的文件片段，并协调发布/子系统之外的下载。 设计目标 在对等发布/子系统中，所有对等体都参与在整个网络中传递消息。对等发布/订阅系统有几种不同的设计，它们提供了不同的权衡。理想的属性包括： 可靠性：所有消息都将传递给订阅该主题的..."/><meta property="og:description" content="什么是发布订阅 发布/订阅是一个系统，同行们聚集在他们感兴趣的主题周围。据说对某个主题感兴趣的同行们订阅了该主题。 同行可以向主题发送消息。每条消息都将发送给订阅该主题的所有对等方： 聊天室。每个房间都是一个酒吧/子主题，客户发布聊天消息，房间里的所有其他客户都会收到这些消息。 文件共享。每个发布/子主题代表一个可以下载的文件。上传者和下载者在发布/子主题中公布他们拥有的文件片段，并协调发布/子系统之外的下载。 设计目标 在对等发布/子系统中，所有对等体都参与在整个网络中传递消息。对等发布/订阅系统有几种不同的设计，它们提供了不同的权衡。理想的属性包括： 可靠性：所有消息都将传递给订阅该主题的..."/><meta property="og:image:alt" content="什么是发布订阅 发布/订阅是一个系统，同行们聚集在他们感兴趣的主题周围。据说对某个主题感兴趣的同行们订阅了该主题。 同行可以向主题发送消息。每条消息都将发送给订阅该主题的所有对等方： 聊天室。每个房间都是一个酒吧/子主题，客户发布聊天消息，房间里的所有其他客户都会收到这些消息。 文件共享。每个发布/子主题代表一个可以下载的文件。上传者和下载者在发布/子主题中公布他们拥有的文件片段，并协调发布/子系统之外的下载。 设计目标 在对等发布/子系统中，所有对等体都参与在整个网络中传递消息。对等发布/订阅系统有几种不同的设计，它们提供了不同的权衡。理想的属性包括： 可靠性：所有消息都将传递给订阅该主题的..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/P2P_Network/p2p/死磕libp2p之发布订阅"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/P2P_Network/p2p/死磕libp2p之发布订阅"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="什么是发布订阅 发布/订阅是一个系统，同行们聚集在他们感兴趣的主题周围。据说对某个主题感兴趣的同行们订阅了该主题。 同行可以向主题发送消息。每条消息都将发送给订阅该主题的所有对等方： 聊天室。每个房间都是一个酒吧/子主题，客户发布聊天消息，房间里的所有其他客户都会收到这些消息。 文件共享。每个发布/子主题代表一个可以下载的文件。上传者和下载者在发布/子主题中公布他们拥有的文件片段，并协调发布/子系统之外的下载。 设计目标 在对等发布/子系统中，所有对等体都参与在整个网络中传递消息。对等发布/订阅系统有几种不同的设计，它们提供了不同的权衡。理想的属性包括： 可靠性：所有消息都将传递给订阅该主题的..."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/Public_Chain_Development/P2P_Network/p2p/死磕libp2p之发布订阅"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-342"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-342" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/Public_Chain_Development/">Public_Chain_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/Public_Chain_Development/P2P_Network/">P2P_Network</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/Public_Chain_Development/P2P_Network/p2p/">p2p</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>死磕libp2p之发布订阅</a></div></nav><h1 class="article-title">死磕libp2p之发布订阅</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.443Z">2026年1月12日</time><span>15分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="什么是发布订阅">什么是发布订阅<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#什么是发布订阅" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>发布/订阅是一个系统，同行们聚集在他们感兴趣的主题周围。据说对某个主题感兴趣的同行们订阅了该主题。</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/subscribed_peers.png" alt="img"/></p>
+<p>同行可以向主题发送消息。每条消息都将发送给订阅该主题的所有对等方：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/message_delivered_to_all.png" alt="img"/></p>
+<ul>
+<li>
+<p>聊天室。每个房间都是一个酒吧/子主题，客户发布聊天消息，房间里的所有其他客户都会收到这些消息。</p>
+</li>
+<li>
+<p>文件共享。每个发布/子主题代表一个可以下载的文件。上传者和下载者在发布/子主题中公布他们拥有的文件片段，并协调发布/子系统之外的下载。</p>
+</li>
+</ul>
+<h2 id="设计目标">设计目标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#设计目标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在对等发布/子系统中，所有对等体都参与在整个网络中传递消息。对等发布/订阅系统有几种不同的设计，它们提供了不同的权衡。理想的属性包括：</p>
+<p>可靠性：所有消息都将传递给订阅该主题的所有对等方。</p>
+<p>速度：信息传递迅速。</p>
+<p>效率：网络中没有过多的消息副本。</p>
+<p>弹性：对等方可以在不中断网络的情况下加入和离开网络。没有故障的中心点。</p>
+<p>规模：主题可以有<strong>大量的订阅者，并处理大量的消息</strong>。</p>
+<p>简单性：该系统易于理解和实现。每个对等体只需要记住一小部分状态。</p>
+<p>ibp2p目前使用的是一种名为“八卦”的设计。它之所以命名，是因为同行们互相八卦他们看到了哪些消息，并利用这些信息来维护消息传递网络。</p>
+<h2 id="发现">发现<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#发现" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在对等方可以订阅某个主题之前，它必须找到其他对等方并与其建立网络连接。pub/sub系统本身没有任何发现对等点的方法。相反，它依靠应用程序来代表自己寻找新的对等点，这一过程称为环境对等点发现。</p>
+<p>发现对等点的潜在方法包括：</p>
+<ul>
+<li>
+<p>分布式哈希表</p>
+</li>
+<li>
+<p>本地网络广播</p>
+</li>
+<li>
+<p>与现有对等方交换对等方列表</p>
+</li>
+<li>
+<p>集中式跟踪器或集合点</p>
+</li>
+<li>
+<p>引导对等程序列表</p>
+</li>
+</ul>
+<p>例如，在Bittorrent应用程序中，上述大多数方法都将在下载文件的过程中使用。通过重复使用Bittorrent应用程序有关其常规业务时发现的同行，该应用程序也可以建立一个强大的酒吧/子网络。</p>
+<p>询问发现的同行是否支持酒吧/子协议，如果是的，则将其添加到酒吧/子网络中。</p>
+<h2 id="peer-类型">peer 类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#peer-类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在Gossipsub中，对等方通过全信息的同伴或仅限元数据的同伴相互连接。整体网络结构由这两个网络组成：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/types_of_peering.png" alt="img"/></p>
+<h2 id="完整的消息">完整的消息<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#完整的消息" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>全消息节点对被用于在整个网络中传输消息的完整内容。这个网络是稀疏连接的，每个节点只连接了几个其他节点。（在gossipsub规范中，这个稀疏连接的网络被称为网格，其中的节点称为网格成员。）</p>
+<p>限制完整消息节点对的数量很有用，因为它可以控制网络的流量量。每个节点只向少数几个节点转发消息，而不是所有节点。每个节点都有一个它想要连接的目标节点数。在这个例子中，每个节点理想情况下想要连接3个其他节点，但也可以接受2-4个连接：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/full_message_network.png" alt="img"/></p>
+<p>节点度数（也称为网络度数或D）控制了网络速度、可靠性、弹性和效率之间的权衡。更高的节点度数有助于更快地传递消息，有更好的机会到达所有订阅者，并且更少的机会被其他节点离开时干扰网络。然而，高节点度数也会导致每条消息的额外冗余副本在整个网络中发送，增加了参与网络所需的带宽。</p>
+<p>在libp2p的默认实现中，理想的网络节点度数为6，接受4-12个节点度数都可以。</p>
+<h2 id="仅元数据">仅元数据<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#仅元数据" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>除了全消息节点对的稀疏连接网络，还有一个密集连接的仅元数据节点对网络。这个网络由节点之间所有不是全消息节点对的网络连接组成。</p>
+<p>仅元数据网络分享有关可用消息的八卦，并执行帮助维护全消息节点对网络的功能。</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/metadata_only_network.png" alt="img"/></p>
+<h2 id="嫁接和修剪">嫁接和修剪<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#嫁接和修剪" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>节点对是双向的，这意味着对于任意两个连接的节点，两个节点都认为它们之间的连接是全消息或是两个节点都认为它们之间的连接是仅元数据。</p>
+<p>任何一个节点都可以通过通知另一个节点来更改连接类型。嫁接是将仅元数据连接转换为全消息的过程。修剪是相反的过程；将全消息节点对转换为仅元数据：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/graft_prune.png" alt="img"/></p>
+<p>当一个节点有太少的全消息节点对时，它会随机将一些仅元数据节点对转换为全消息节点对：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/maintain_graft.png" alt="img"/></p>
+<p>相反地，当一个节点有太多的全消息节点对时，它会随机地将其中一些节点对修剪为仅元数据节点对：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/maintain_prune.png" alt="img"/></p>
+<p>在libp2p的实现中，每个节点每1秒执行一系列检查。这些检查称为心跳。在此期间进行嫁接和修剪操作。</p>
+<h2 id="订阅和取消订阅">订阅和取消订阅<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#订阅和取消订阅" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>节点会跟踪其直接连接的节点订阅的主题。利用这些信息，每个节点可以建立其周围主题和订阅每个主题的节点的图像:</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/subscriptions_local_view.png" alt="img"/></p>
+<p>跟踪订阅是通过发送subscribe（订阅）和unsubscribe（取消订阅）消息来实现的。当两个节点之间建立新的连接时，它们首先彼此发送订阅主题的列表：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/subscription_list_first_connect.png" alt="img"/></p>
+<p>然后随着时间的推移，每当一个节点订阅或取消订阅某个主题，它会向每个节点发送subscribe或unsubscribe消息。这些消息会发送给所有连接的节点，无论接收节点是否订阅了相关主题：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/subscribe_graft.png" alt="img"/></p>
+<p>当一个节点取消订阅某个主题时，它会同时通知其全消息节点对其连接已被修剪，同时发送其unsubscribe消息：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/unsubscribe_prune.png" alt="img"/></p>
+<h2 id="发送消息">发送消息<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#发送消息" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>当一个节点想要发布一条消息时，它将向其连接的所有全消息节点发送一个副本：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/full_message_send.png" alt="img"/></p>
+<p>同样，当一个节点从另一个节点接收到一条新消息时，它会存储消息并将副本转发给其连接的所有其他全消息节点：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/full_message_forward.png" alt="img"/></p>
+<p>在Gossipsub规范中，节点也被称为路由器，因为它们通过网络路由消息的功能。</p>
+<p>节点会记住最近收到的消息清单。这使得节点只有在第一次看到消息时才会对其采取行动，并忽略已经收到的消息的重发。</p>
+<p>节点可能还会选择验证每个接收到的消息的内容。什么是有效和无效的，取决于应用程序。例如，聊天应用程序可能强制要求所有消息都必须短于100个字符。如果应用程序告诉libp2p某个消息无效，那么该消息将被丢弃，并且不会在整个网络中继续被复制。</p>
+<h2 id="gossip">gossip<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#gossip" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>节点会在网络中广播它们最近收到的消息。每秒钟，每个节点会随机选择6个仅有元数据的节点，并向它们发送自己最近收到的消息列表。</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/gossip_deliver.png" alt="img"/></p>
+<p>广播消息的目的是让节点有机会注意到它们在全消息网络中是否错过了某条消息。如果一个节点发现自己重复错过消息，则可以与已经拥有这些消息的节点建立新的全消息连接。</p>
+<p>以下是具体消息如何在仅有元数据连接中请求的示例：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/request_gossiped_message.png" alt="img"/></p>
+<p>在Gossipsub规范中，广播最近收到的消息被称为IHAVE消息，请求特定消息的消息被称为IWANT消息。</p>
+<h2 id="fan_out">Fan_out<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#fan_out" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>节点可以发布到它们未订阅的主题。有一些特殊的规则可以确保这些消息能够可靠地传递。</p>
+<p>当一个节点第一次想要向一个它未订阅的主题发布一条消息时，它会随机选择6个已订阅该主题的节点（下面显示了其中的3个），并将它们作为该主题的扇出节点进行记忆：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/fanout_initial_pick.png" alt="img"/></p>
+<p>与其他类型的连接不同，扇出连接是单向的；它们总是从主题外的节点指向订阅主题的节点。订阅该主题的节点不会被告知它们已被选中，并且仍将该连接视为任何其他仅有元数据的连接。</p>
+<p>每当发送方想要发送一条消息时，它会将消息发送给它的扇出节点，然后在主题内分发该消息。</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/fanout_message_send.png" alt="img"/></p>
+<p>如果发送方要发送一条消息，但注意到上次以来它的一些扇出节点已经离开了，它会随机选择其他扇出节点，将数量补充至6个。</p>
+<p>当节点订阅一个主题时，如果它已经有了一些扇出节点，它会优先选择它们作为全消息节点：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/fanout_grafting_preference.png" alt="img"/></p>
+<p>如果在某个主题上连续2分钟没有发送任何消息，所有该主题的扇出节点都将被遗忘：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/fanout_forget.png" alt="img"/></p>
+<h2 id="network-packets">Network packets<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#network-packets" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>节点在网络上实际发送给对方的数据包是本指南中涉及到的所有不同消息类型的组合（应用消息、有/想拥有、订阅/取消订阅、接受/拒绝）集合。这种结构允许将多种不同的请求批量发送到单个的网络数据包中。</p>
+<p>以下是网络数据包结构的图示表示：</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/network_packet_structure.png" alt="img"/></p>
+<p>请参考规范以了解用于编码网络数据包的确切 Protocol Buffers 模式。</p>
+<h2 id="状态">状态<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#状态" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>以下是每个节点在参与发布/订阅网络时必须记住的状态摘要：</p>
+<p>订阅：已订阅的主题列表。
+扇出主题：这些是最近发布过但未订阅的主题。对于每个主题，记住上次发送到该主题的时间。
+当前连接的对等方列表：对于每个已连接的对等方，状态包括它们订阅的所有主题以及每个主题的连接方式是完整内容、仅元数据还是扇出。
+最近查看的消息：这是一个最近查看的消息缓存。它用于检测和忽略重新发送的消息。对于每条消息，状态包括发送者和序列号，这足以唯一标识任何消息。对于非常近期的消息，仍然保留完整消息内容，因此可以将其发送给请求该消息的任何对等方。</p>
+<p><img src="https://docs.libp2p.io/concepts/assets/publish-subscribe/state.png" alt="img"/></p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-150" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#什么是发布订阅" data-for="什么是发布订阅">什么是发布订阅</a></li><li class="depth-1"><a href="#设计目标" data-for="设计目标">设计目标</a></li><li class="depth-1"><a href="#发现" data-for="发现">发现</a></li><li class="depth-1"><a href="#peer-类型" data-for="peer-类型">peer 类型</a></li><li class="depth-1"><a href="#完整的消息" data-for="完整的消息">完整的消息</a></li><li class="depth-1"><a href="#仅元数据" data-for="仅元数据">仅元数据</a></li><li class="depth-1"><a href="#嫁接和修剪" data-for="嫁接和修剪">嫁接和修剪</a></li><li class="depth-1"><a href="#订阅和取消订阅" data-for="订阅和取消订阅">订阅和取消订阅</a></li><li class="depth-1"><a href="#发送消息" data-for="发送消息">发送消息</a></li><li class="depth-1"><a href="#gossip" data-for="gossip">gossip</a></li><li class="depth-1"><a href="#fan_out" data-for="fan_out">Fan_out</a></li><li class="depth-1"><a href="#network-packets" data-for="network-packets">Network packets</a></li><li class="depth-1"><a href="#状态" data-for="状态">状态</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>

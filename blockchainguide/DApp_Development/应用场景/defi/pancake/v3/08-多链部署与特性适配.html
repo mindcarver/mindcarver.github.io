@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>08-多链部署与特性适配</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="08-多链部署与特性适配"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="08-多链部署与特性适配"/><meta name="twitter:description" content="死磕PancakeSwap V3（八）：多链部署与特性适配 本文是「死磕PancakeSwap V3」系列的第八篇，深入探讨PancakeSwap V3的多链部署策略和特性适配。 系列导航 序号标题核心内容01PancakeSwap V3概述发展历程、集中流动性、V3特色02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07V3与Uniswap V3对比差异点、优化、适用场景08多链部署与特性适配BNB Chai..."/><meta property="og:description" content="死磕PancakeSwap V3（八）：多链部署与特性适配 本文是「死磕PancakeSwap V3」系列的第八篇，深入探讨PancakeSwap V3的多链部署策略和特性适配。 系列导航 序号标题核心内容01PancakeSwap V3概述发展历程、集中流动性、V3特色02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07V3与Uniswap V3对比差异点、优化、适用场景08多链部署与特性适配BNB Chai..."/><meta property="og:image:alt" content="死磕PancakeSwap V3（八）：多链部署与特性适配 本文是「死磕PancakeSwap V3」系列的第八篇，深入探讨PancakeSwap V3的多链部署策略和特性适配。 系列导航 序号标题核心内容01PancakeSwap V3概述发展历程、集中流动性、V3特色02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07V3与Uniswap V3对比差异点、优化、适用场景08多链部署与特性适配BNB Chai..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/应用场景/defi/pancake/v3/08-多链部署与特性适配"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/应用场景/defi/pancake/v3/08-多链部署与特性适配"/><link rel="icon" href="../../../../../../static/icon.png"/><meta name="description" content="死磕PancakeSwap V3（八）：多链部署与特性适配 本文是「死磕PancakeSwap V3」系列的第八篇，深入探讨PancakeSwap V3的多链部署策略和特性适配。 系列导航 序号标题核心内容01PancakeSwap V3概述发展历程、集中流动性、V3特色02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07V3与Uniswap V3对比差异点、优化、适用场景08多链部署与特性适配BNB Chai..."/><meta name="generator" content="Quartz"/><link href="../../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/DApp_Development/应用场景/defi/pancake/v3/08-多链部署与特性适配"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-161"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-161" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/">DApp_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/">应用场景</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/">defi</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/pancake/">pancake</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/pancake/v3/">v3</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>08 多链部署与特性适配</a></div></nav><h1 class="article-title">08-多链部署与特性适配</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.421Z">2026年1月12日</time><span>13分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="死磕pancakeswap-v3八多链部署与特性适配">死磕PancakeSwap V3（八）：多链部署与特性适配<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#死磕pancakeswap-v3八多链部署与特性适配" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p>本文是「死磕PancakeSwap V3」系列的第八篇，深入探讨PancakeSwap V3的多链部署策略和特性适配。</p>
+</blockquote>
+<h2 id="系列导航">系列导航<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#系列导航" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>序号</th><th>标题</th><th>核心内容</th></tr></thead><tbody><tr><td>01</td><td>PancakeSwap V3概述</td><td>发展历程、集中流动性、V3特色</td></tr><tr><td>02</td><td>Tick机制与价格数学</td><td>Tick设计、价格转换算法</td></tr><tr><td>03</td><td>架构与合约设计</td><td>Factory、Pool合约结构</td></tr><tr><td>04</td><td>交换机制深度解析</td><td>swap函数、价格发现</td></tr><tr><td>05</td><td>流动性与头寸</td><td>Position、mint/burn</td></tr><tr><td>06</td><td>费用系统与预言机</td><td>费用分配、TWAP</td></tr><tr><td>07</td><td>V3与Uniswap V3对比</td><td>差异点、优化、适用场景</td></tr><tr><td><strong>08</strong></td><td><strong>多链部署与特性适配</strong></td><td><strong>BNB Chain、Ethereum、跨链策略</strong></td></tr><tr><td>09</td><td>集成开发指南</td><td>SDK使用、交易构建、最佳实践</td></tr><tr><td>10</td><td>MEV与套利策略</td><td>JIT、三明治攻击、防范策略</td></tr></tbody></table></div>
+<hr/>
+<h2 id="1-多链部署概述">1. 多链部署概述<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-多链部署概述" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="11-部署时间线">1.1 部署时间线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-部署时间线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;timeline\n    title PancakeSwap V3 多链部署历程\n    section BNB Chain\n        2023年4月 : V3在BNB Chain首发\n        2023年5月 : 主流池子上线\n        2023年6月 : 农场激励启动\n    section Ethereum\n        2023年6月 : V3在Ethereum部署\n        2023年7月 : 主要池子创建\n        2023年8月 : 社区推广\n    section Aptos\n        2023年9月 : 探索非EVM链\n        2023年10月 : Aptos版本测试\n        2024年     : 持续优化\n    section 未来\n        2024+     : 更多链部署计划\n        2024+     : 跨链桥整合&quot;">timeline
+    title PancakeSwap V3 多链部署历程
+    section BNB Chain
+        2023年4月 : V3在BNB Chain首发
+        2023年5月 : 主流池子上线
+        2023年6月 : 农场激励启动
+    section Ethereum
+        2023年6月 : V3在Ethereum部署
+        2023年7月 : 主要池子创建
+        2023年8月 : 社区推广
+    section Aptos
+        2023年9月 : 探索非EVM链
+        2023年10月 : Aptos版本测试
+        2024年     : 持续优化
+    section 未来
+        2024+     : 更多链部署计划
+        2024+     : 跨链桥整合
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="12-已部署链概况">1.2 已部署链概况<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-已部署链概况" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>链</th><th>部署时间</th><th>状态</th><th>TVL</th><th>特点</th></tr></thead><tbody><tr><td><strong>BNB Chain</strong></td><td>2023.04</td><td>✅ 活跃</td><td>~$500M</td><td>主阵地，高TVL</td></tr><tr><td><strong>Ethereum</strong></td><td>2023.06</td><td>✅ 活跃</td><td>~$50M</td><td>扩展，竞争激烈</td></tr><tr><td><strong>Aptos</strong></td><td>2023.09</td><td>⚠️ 测试</td><td>~$5M</td><td>非EVM探索</td></tr></tbody></table></div>
+<hr/>
+<h2 id="2-bnb-chain部署详解">2. BNB Chain部署详解<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-bnb-chain部署详解" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="21-bnb-chain优势">2.1 BNB Chain优势<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-bnb-chain优势" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph BNBChainAdvantages[\&quot;BNB Chain 优势\&quot;]\n        A1[低Gas成本&lt;br/>~0.05-0.5 USD/交易]\n        A2[快速确认&lt;br/>~3秒区块]\n        A3[大区块大小&lt;br/>~30M gas/区块]\n        A4[活跃社区&lt;br/>庞大用户群]\n        A5[丰富生态&lt;br/>DeFi、NFT、GameFi]\n    end\n\n    subgraph Impact[\&quot;影响\&quot;]\n        I1[高频交易可行]\n        I2[用户体验优秀]\n        I3[复杂操作成本低]\n        I4[高TVL潜力]\n        I5[跨链整合容易]\n    end\n\n    BNBChainAdvantages --> Impact\n\n    style BNBChainAdvantages fill:#ffeb3b&quot;">graph TB
+    subgraph BNBChainAdvantages[&quot;BNB Chain 优势&quot;]
+        A1[低Gas成本&lt;br/>~0.05-0.5 USD/交易]
+        A2[快速确认&lt;br/>~3秒区块]
+        A3[大区块大小&lt;br/>~30M gas/区块]
+        A4[活跃社区&lt;br/>庞大用户群]
+        A5[丰富生态&lt;br/>DeFi、NFT、GameFi]
+    end
+
+    subgraph Impact[&quot;影响&quot;]
+        I1[高频交易可行]
+        I2[用户体验优秀]
+        I3[复杂操作成本低]
+        I4[高TVL潜力]
+        I5[跨链整合容易]
+    end
+
+    BNBChainAdvantages --> Impact
+
+    style BNBChainAdvantages fill:#ffeb3b
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="22-bnb-chain配置参数">2.2 BNB Chain配置参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-bnb-chain配置参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>参数</th><th>值</th><th>说明</th></tr></thead><tbody><tr><td><strong>区块时间</strong></td><td>3秒</td><td>快速确认</td></tr><tr><td><strong>区块Gas上限</strong></td><td>30,000,000</td><td>大容量</td></tr><tr><td><strong>基础Gas价格</strong></td><td>3 gwei</td><td>低成本</td></tr><tr><td><strong>交易Gas消耗</strong></td><td>~50,000-200,000</td><td>Swap/Mint/Burn</td></tr><tr><td><strong>平均交易成本</strong></td><td>$0.05-0.5</td><td>极低成本</td></tr></tbody></table></div>
+<h3 id="23-bnb-chain上的热门池子">2.3 BNB Chain上的热门池子<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#23-bnb-chain上的热门池子" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    subgraph TopPools[\&quot;BNB Chain 热门池子\&quot;]\n        P1[CAKE/BNB&lt;br/>0.25%]\n        P2[USDT/USDC&lt;br/>0.01%]\n        P3[WBNB/USDT&lt;br/>0.05%]\n        P4[ETH/BNB&lt;br/>0.25%]\n        P5[BUSD/USDT&lt;br/>0.01%]\n    end\n\n    subgraph Features[\&quot;特点\&quot;]\n        F1[高流动性]\n        F2[低费率]\n        F3[高交易量]\n        F4[稳定币对]\n        F5[跨链资产]\n    end\n\n    P1 --> F1\n    P2 --> F2\n    P3 --> F3\n    P4 --> F5\n    P5 --> F4\n\n    style P1 fill:#ffeb3b\n    style P2 fill:#c8e6c9&quot;">graph LR
+    subgraph TopPools[&quot;BNB Chain 热门池子&quot;]
+        P1[CAKE/BNB&lt;br/>0.25%]
+        P2[USDT/USDC&lt;br/>0.01%]
+        P3[WBNB/USDT&lt;br/>0.05%]
+        P4[ETH/BNB&lt;br/>0.25%]
+        P5[BUSD/USDT&lt;br/>0.01%]
+    end
+
+    subgraph Features[&quot;特点&quot;]
+        F1[高流动性]
+        F2[低费率]
+        F3[高交易量]
+        F4[稳定币对]
+        F5[跨链资产]
+    end
+
+    P1 --> F1
+    P2 --> F2
+    P3 --> F3
+    P4 --> F5
+    P5 --> F4
+
+    style P1 fill:#ffeb3b
+    style P2 fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="24-bnb-chain生态整合">2.4 BNB Chain生态整合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#24-bnb-chain生态整合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((BNB Chain整合))\n    农场\n      V3流动性池\n      CAKE奖励\n      自动复投\n    跨链桥\n      Binance Bridge\n      Celer Bridge\n      Multichain\n    稳定币\n      USDT\n      USDC\n      BUSD\n      DAI\n    DeFi协议\n      Venus\n      Alpaca\n      PancakeSwap Lending\n    NFT生态\n      PancakeSwap NFT\n      Binance NFT\n      Gallery&quot;">mindmap
+  root((BNB Chain整合))
+    农场
+      V3流动性池
+      CAKE奖励
+      自动复投
+    跨链桥
+      Binance Bridge
+      Celer Bridge
+      Multichain
+    稳定币
+      USDT
+      USDC
+      BUSD
+      DAI
+    DeFi协议
+      Venus
+      Alpaca
+      PancakeSwap Lending
+    NFT生态
+      PancakeSwap NFT
+      Binance NFT
+      Gallery
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="3-ethereum部署详解">3. Ethereum部署详解<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-ethereum部署详解" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="31-ethereum挑战与对策">3.1 Ethereum挑战与对策<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-ethereum挑战与对策" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph Challenges[\&quot;Ethereum 挑战\&quot;]\n        C1[高Gas成本&lt;br/>$5-50/交易]\n        C2[慢确认&lt;br/>~12秒区块]\n        C3[小区块&lt;br/>~15M gas]\n        C4[竞争激烈&lt;br/>Uniswap主导]\n    end\n\n    subgraph Strategies[\&quot;应对策略\&quot;]\n        S1[Gas优化]\n        S2[聚合策略]\n        S3[差异化定位]\n        S4[用户教育]\n    end\n\n    Challenges --> Strategies\n\n    style Strategies fill:#c8e6c9&quot;">graph TB
+    subgraph Challenges[&quot;Ethereum 挑战&quot;]
+        C1[高Gas成本&lt;br/>$5-50/交易]
+        C2[慢确认&lt;br/>~12秒区块]
+        C3[小区块&lt;br/>~15M gas]
+        C4[竞争激烈&lt;br/>Uniswap主导]
+    end
+
+    subgraph Strategies[&quot;应对策略&quot;]
+        S1[Gas优化]
+        S2[聚合策略]
+        S3[差异化定位]
+        S4[用户教育]
+    end
+
+    Challenges --> Strategies
+
+    style Strategies fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="32-ethereum优化策略">3.2 Ethereum优化策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-ethereum优化策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>优化项</th><th>PancakeSwap V3</th><th>Uniswap V3</th><th>说明</th></tr></thead><tbody><tr><td><strong>Gas优化</strong></td><td>额外优化</td><td>标准实现</td><td>PancakeSwap更优</td></tr><tr><td><strong>批量操作</strong></td><td>支持</td><td>支持</td><td>两者类似</td></tr><tr><td><strong>价格查询</strong></td><td>优化实现</td><td>标准实现</td><td>PancakeSwap略优</td></tr><tr><td><strong>状态读写</strong></td><td>优化布局</td><td>标准布局</td><td>PancakeSwap更紧凑</td></tr></tbody></table></div>
+<h3 id="33-ethereum上的热门池子">3.3 Ethereum上的热门池子<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-ethereum上的热门池子" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    subgraph EthPools[\&quot;Ethereum 热门池子\&quot;]\n        P1[WETH/USDC&lt;br/>0.05%]\n        P2[USDT/USDC&lt;br/>0.01%]\n        P3[WETH/USDT&lt;br/>0.05%]\n        P4[DAI/USDC&lt;br/>0.01%]\n    end\n\n    subgraph Competition[\&quot;竞争环境\&quot;]\n        C1[Uniswap V3&lt;br/>主导地位]\n        C2[Curve&lt;br/>稳定币]\n        C3[Balancer&lt;br/>多资产]\n        C4[SushiSwap&lt;br/>社区驱动]\n    end\n\n    P1 --> C1\n    P2 --> C2\n\n    style P1 fill:#e3f2fd\n    style P2 fill:#c8e6c9&quot;">graph LR
+    subgraph EthPools[&quot;Ethereum 热门池子&quot;]
+        P1[WETH/USDC&lt;br/>0.05%]
+        P2[USDT/USDC&lt;br/>0.01%]
+        P3[WETH/USDT&lt;br/>0.05%]
+        P4[DAI/USDC&lt;br/>0.01%]
+    end
+
+    subgraph Competition[&quot;竞争环境&quot;]
+        C1[Uniswap V3&lt;br/>主导地位]
+        C2[Curve&lt;br/>稳定币]
+        C3[Balancer&lt;br/>多资产]
+        C4[SushiSwap&lt;br/>社区驱动]
+    end
+
+    P1 --> C1
+    P2 --> C2
+
+    style P1 fill:#e3f2fd
+    style P2 fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="34-ethereum差异化策略">3.4 Ethereum差异化策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#34-ethereum差异化策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((Ethereum差异化))\n    成本优势\n      稍低的Gas\n      优化实现\n    用户群体\n      PancakeSwap社区\n      Binance用户\n      跨链用户\n    工具整合\n      Binance Wallet\n      Trust Wallet\n      第三方工具\n    激励措施\n      CAKE奖励\n      社区活动\n      营销推广&quot;">mindmap
+  root((Ethereum差异化))
+    成本优势
+      稍低的Gas
+      优化实现
+    用户群体
+      PancakeSwap社区
+      Binance用户
+      跨链用户
+    工具整合
+      Binance Wallet
+      Trust Wallet
+      第三方工具
+    激励措施
+      CAKE奖励
+      社区活动
+      营销推广
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="4-aptos探索非evm链">4. Aptos探索（非EVM链）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-aptos探索非evm链" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="41-aptos部署的意义">4.1 Aptos部署的意义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#41-aptos部署的意义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph Significance[\&quot;Aptos部署意义\&quot;]\n        S1[非EVM链探索]\n        S2[新技术栈验证]\n        S3[Move语言适配]\n        S4[高性能区块链]\n        S5[未来发展布局]\n    end\n\n    subgraph Benefits[\&quot;潜在收益\&quot;]\n        B1[技术多样性]\n        B2[风险分散]\n        B3[生态扩张]\n        B4[经验积累]\n    end\n\n    Significance --> Benefits\n\n    style Significance fill:#ffeb3b&quot;">graph TB
+    subgraph Significance[&quot;Aptos部署意义&quot;]
+        S1[非EVM链探索]
+        S2[新技术栈验证]
+        S3[Move语言适配]
+        S4[高性能区块链]
+        S5[未来发展布局]
+    end
+
+    subgraph Benefits[&quot;潜在收益&quot;]
+        B1[技术多样性]
+        B2[风险分散]
+        B3[生态扩张]
+        B4[经验积累]
+    end
+
+    Significance --> Benefits
+
+    style Significance fill:#ffeb3b
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="42-move语言适配挑战">4.2 Move语言适配挑战<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#42-move语言适配挑战" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    subgraph Solidity[\&quot;Solidity\&quot;]\n        S1[EVM兼容]\n        S2[成熟工具链]\n        S3[丰富库]\n    end\n\n    subgraph Move[\&quot;Move\&quot;]\n        M1[资源导向]\n        M2[安全设计]\n        M3[并行执行]\n    end\n\n    subgraph Adaptation[\&quot;适配工作\&quot;]\n        A1[重新实现核心逻辑]\n        A2[适配Move特性]\n        A3[测试验证]\n        A4[性能优化]\n    end\n\n    Solidity -->|需要移植到| Move\n    Move --> Adaptation\n\n    style Move fill:#e8f5e9&quot;">graph LR
+    subgraph Solidity[&quot;Solidity&quot;]
+        S1[EVM兼容]
+        S2[成熟工具链]
+        S3[丰富库]
+    end
+
+    subgraph Move[&quot;Move&quot;]
+        M1[资源导向]
+        M2[安全设计]
+        M3[并行执行]
+    end
+
+    subgraph Adaptation[&quot;适配工作&quot;]
+        A1[重新实现核心逻辑]
+        A2[适配Move特性]
+        A3[测试验证]
+        A4[性能优化]
+    end
+
+    Solidity -->|需要移植到| Move
+    Move --> Adaptation
+
+    style Move fill:#e8f5e9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="43-aptos特性适配">4.3 Aptos特性适配<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#43-aptos特性适配" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>特性</th><th>适配策略</th><th>状态</th></tr></thead><tbody><tr><td><strong>并行执行</strong></td><td>利用Move并行特性</td><td>开发中</td></tr><tr><td><strong>资源模型</strong></td><td>适配资源管理</td><td>开发中</td></tr><tr><td><strong>高性能</strong></td><td>优化吞吐量</td><td>开发中</td></tr><tr><td><strong>低Gas</strong></td><td>充分利用成本优势</td><td>开发中</td></tr></tbody></table></div>
+<hr/>
+<h2 id="5-跨链部署架构">5. 跨链部署架构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-跨链部署架构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="51-架构设计">5.1 架构设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-架构设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph CrossChain[\&quot;跨链架构\&quot;]\n        Core[核心合约库]\n        BNB[BNB Chain部署]\n        ETH[Ethereum部署]\n        APT[Aptos部署]\n        Bridge[跨链桥]\n    end\n\n    subgraph Commonality[\&quot;共同性\&quot;]\n        C1[相同的核心逻辑]\n        C2[相同的数学模型]\n        C3[相同的接口设计]\n    end\n\n    subgraph Specificity[\&quot;特殊性\&quot;]\n        S1[链特定优化]\n        S2[不同Gas策略]\n        S3[不同参数配置]\n    end\n\n    Core --> BNB\n    Core --> ETH\n    Core --> APT\n    Core --> Commonality\n    BNB --> Specificity\n    ETH --> Specificity\n    APT --> Specificity\n\n    style Core fill:#ffeb3b&quot;">graph TB
+    subgraph CrossChain[&quot;跨链架构&quot;]
+        Core[核心合约库]
+        BNB[BNB Chain部署]
+        ETH[Ethereum部署]
+        APT[Aptos部署]
+        Bridge[跨链桥]
+    end
+
+    subgraph Commonality[&quot;共同性&quot;]
+        C1[相同的核心逻辑]
+        C2[相同的数学模型]
+        C3[相同的接口设计]
+    end
+
+    subgraph Specificity[&quot;特殊性&quot;]
+        S1[链特定优化]
+        S2[不同Gas策略]
+        S3[不同参数配置]
+    end
+
+    Core --> BNB
+    Core --> ETH
+    Core --> APT
+    Core --> Commonality
+    BNB --> Specificity
+    ETH --> Specificity
+    APT --> Specificity
+
+    style Core fill:#ffeb3b
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="52-链特定配置">5.2 链特定配置<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-链特定配置" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    subgraph Configurations[\&quot;链配置\&quot;]\n        BNB[BNB Chain&lt;br/>tickSpacing: 1/10/50/200]\n        ETH[Ethereum&lt;br/>tickSpacing: 1/10/50/200]\n        APT[Aptos&lt;br/>待定]\n    end\n\n    subgraph GasConfig[\&quot;Gas配置\&quot;]\n        GB[BNB: 优化低成本]\n        GE[Ethereum: 标准优化]\n        GA[Aptos: 极低成本]\n    end\n\n    Configurations --> GasConfig\n\n    style BNB fill:#ffeb3b\n    style ETH fill:#e3f2fd\n    style APT fill:#c8e6c9&quot;">graph LR
+    subgraph Configurations[&quot;链配置&quot;]
+        BNB[BNB Chain&lt;br/>tickSpacing: 1/10/50/200]
+        ETH[Ethereum&lt;br/>tickSpacing: 1/10/50/200]
+        APT[Aptos&lt;br/>待定]
+    end
+
+    subgraph GasConfig[&quot;Gas配置&quot;]
+        GB[BNB: 优化低成本]
+        GE[Ethereum: 标准优化]
+        GA[Aptos: 极低成本]
+    end
+
+    Configurations --> GasConfig
+
+    style BNB fill:#ffeb3b
+    style ETH fill:#e3f2fd
+    style APT fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="6-跨链流动性管理">6. 跨链流动性管理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-跨链流动性管理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="61-跨链流动性挑战">6.1 跨链流动性挑战<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-跨链流动性挑战" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph Challenges[\&quot;挑战\&quot;]\n        C1[流动性分散]\n        C2[价格不一致]\n        C3[套利复杂性]\n        C4[桥接风险]\n    end\n\n    subgraph Solutions[\&quot;解决方案\&quot;]\n        S1[流动性激励]\n        S2[价格预言机]\n        S3[套利机器人]\n        S4[安全桥接]\n    end\n\n    Challenges --> Solutions\n\n    style Solutions fill:#c8e6c9&quot;">graph TB
+    subgraph Challenges[&quot;挑战&quot;]
+        C1[流动性分散]
+        C2[价格不一致]
+        C3[套利复杂性]
+        C4[桥接风险]
+    end
+
+    subgraph Solutions[&quot;解决方案&quot;]
+        S1[流动性激励]
+        S2[价格预言机]
+        S3[套利机器人]
+        S4[安全桥接]
+    end
+
+    Challenges --> Solutions
+
+    style Solutions fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="62-跨链套利策略">6.2 跨链套利策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-跨链套利策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;sequenceDiagram\n    participant A as 套利者\n    participant B as BNB Chain V3\n    participant Bridge as 跨链桥\n    participant E as Ethereum V3\n\n    A->>B: 检测价差\n    B-->>A: 价格信息\n    A->>E: 检测价格\n    E-->>A: 价格信息\n    A->>A: 计算套利利润\n    A->>B: 执行Swap\n    A->>Bridge: 跨链转移\n    Bridge->>E: 接收资产\n    A->>E: 执行反向Swap\n    E-->>Bridge: 利润\n    Bridge-->>A: 返回利润&quot;">sequenceDiagram
+    participant A as 套利者
+    participant B as BNB Chain V3
+    participant Bridge as 跨链桥
+    participant E as Ethereum V3
+
+    A->>B: 检测价差
+    B-->>A: 价格信息
+    A->>E: 检测价格
+    E-->>A: 价格信息
+    A->>A: 计算套利利润
+    A->>B: 执行Swap
+    A->>Bridge: 跨链转移
+    Bridge->>E: 接收资产
+    A->>E: 执行反向Swap
+    E-->>Bridge: 利润
+    Bridge-->>A: 返回利润
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="63-跨链流动性激励">6.3 跨链流动性激励<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-跨链流动性激励" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((跨链激励策略))\n    CAKE奖励\n      多链CAKE\n      跨链桥接\n      统一奖励\n    费用分成\n      链特定费用\n      协议费用\n      激励分配\n    活跃度奖励\n      早期用户\n      高频交易\n      流动性提供\n    社区参与\n      治理投票\n      提案建议\n      生态贡献&quot;">mindmap
+  root((跨链激励策略))
+    CAKE奖励
+      多链CAKE
+      跨链桥接
+      统一奖励
+    费用分成
+      链特定费用
+      协议费用
+      激励分配
+    活跃度奖励
+      早期用户
+      高频交易
+      流动性提供
+    社区参与
+      治理投票
+      提案建议
+      生态贡献
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="7-多链部署的技术实现">7. 多链部署的技术实现<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-多链部署的技术实现" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="71-部署流程">7.1 部署流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#71-部署流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    A[准备阶段] --> B[代码审计]\n    B --> C[链上测试]\n    C --> D[参数配置]\n    D --> E[合约部署]\n    E --> F[初始流动性]\n    F --> G[验证测试]\n    G --> H[激励启动]\n    H --> I[监控调优]\n\n    style A fill:#ffeb3b\n    style I fill:#c8e6c9&quot;">flowchart TD
+    A[准备阶段] --> B[代码审计]
+    B --> C[链上测试]
+    C --> D[参数配置]
+    D --> E[合约部署]
+    E --> F[初始流动性]
+    F --> G[验证测试]
+    G --> H[激励启动]
+    H --> I[监控调优]
+
+    style A fill:#ffeb3b
+    style I fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="72-部署脚本示例">7.2 部署脚本示例<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#72-部署脚本示例" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// SPDX-License-Identifier: MIT</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">pragma</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;"> solidity</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ^0.8.0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;../PancakeV3Factory.sol&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">contract</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> DeployScript</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> deploy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        address</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> implementation</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        address</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> admin</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        bytes</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> calldata</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> initData</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">external</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 部署代理合约</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        TransparentUpgradeableProxy proxy </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            new</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> TransparentUpgradeableProxy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                implementation,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                admin,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                initData</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            );</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(proxy);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="73-多链配置管理">7.3 多链配置管理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#73-多链配置管理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="javascript" data-theme="github-light github-dark"><code data-language="javascript" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 示例：多链配置对象</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> chainConfigs</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    56</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: {  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// BNB Chain</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        factoryAddress: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;0x...&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        routerAddress: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;0x...&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        feeAmountTickSpacing: {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,    </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 0.01%</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 0.05%</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            2500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">50</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 0.25%</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            10000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">200</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // 1.00%</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    },</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: {  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// Ethereum</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        factoryAddress: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;0x...&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        routerAddress: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;0x...&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        feeAmountTickSpacing: {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            2500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">50</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            10000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">200</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">};</span></span></code></pre></figure>
+<hr/>
+<h2 id="8-未来多链规划">8. 未来多链规划<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-未来多链规划" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="81-计划部署的链">8.1 计划部署的链<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#81-计划部署的链" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    subgraph Planned[\&quot;计划部署\&quot;]\n        P1[Arbitrum&lt;br/>2024 Q2]\n        P2[Optimism&lt;br/>2024 Q3]\n        P3[Polygon&lt;br/>2024 Q4]\n        P4[Solana&lt;br/>探索中]\n        P5[Base&lt;br/>探索中]\n    end\n\n    subgraph Criteria[\&quot;选择标准\&quot;]\n        C1[用户规模]\n        C2[DeFi活跃度]\n        C3[技术可行性]\n        C4[生态互补性]\n    end\n\n    Planned --> Criteria\n\n    style Planned fill:#ffeb3b&quot;">graph LR
+    subgraph Planned[&quot;计划部署&quot;]
+        P1[Arbitrum&lt;br/>2024 Q2]
+        P2[Optimism&lt;br/>2024 Q3]
+        P3[Polygon&lt;br/>2024 Q4]
+        P4[Solana&lt;br/>探索中]
+        P5[Base&lt;br/>探索中]
+    end
+
+    subgraph Criteria[&quot;选择标准&quot;]
+        C1[用户规模]
+        C2[DeFi活跃度]
+        C3[技术可行性]
+        C4[生态互补性]
+    end
+
+    Planned --> Criteria
+
+    style Planned fill:#ffeb3b
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="82-多链发展策略">8.2 多链发展策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#82-多链发展策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((多链发展策略))\n    优先级排序\n      用户规模\n      DeFi生态\n      技术准备度\n    分阶段部署\n      主链先行\n      扩展跟进\n      持续优化\n    资源分配\n      开发资源\n      营销预算\n      社区建设\n    风险管理\n      安全审计\n      小步快跑\n      快速响应&quot;">mindmap
+  root((多链发展策略))
+    优先级排序
+      用户规模
+      DeFi生态
+      技术准备度
+    分阶段部署
+      主链先行
+      扩展跟进
+      持续优化
+    资源分配
+      开发资源
+      营销预算
+      社区建设
+    风险管理
+      安全审计
+      小步快跑
+      快速响应
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="9-多链部署的挑战与解决方案">9. 多链部署的挑战与解决方案<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-多链部署的挑战与解决方案" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="91-主要挑战">9.1 主要挑战<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#91-主要挑战" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>挑战</th><th>说明</th><th>解决方案</th></tr></thead><tbody><tr><td><strong>流动性分散</strong></td><td>多链导致流动性分散</td><td>跨链激励、桥接优化</td></tr><tr><td><strong>维护成本</strong></td><td>多链维护复杂度高</td><td>自动化工具、统一管理</td></tr><tr><td><strong>安全问题</strong></td><td>多链增加攻击面</td><td>多重审计、漏洞赏金</td></tr><tr><td><strong>用户体验</strong></td><td>跨链操作复杂</td><td>统一界面、简化流程</td></tr><tr><td><strong>成本控制</strong></td><td>多链部署成本高</td><td>智能合约优化、Gas策略</td></tr></tbody></table></div>
+<h3 id="92-最佳实践">9.2 最佳实践<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#92-最佳实践" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((多链最佳实践))\n    技术层面\n      核心逻辑统一\n      链特定优化\n      自动化部署\n      统一监控\n    运营层面\n      社区建设\n      用户教育\n      激励机制\n      反馈收集\n    安全层面\n      多重审计\n      漏洞赏金\n      应急响应\n      风险管理\n    产品层面\n      用户体验\n      跨链工具\n      文档完善\n      支持体系&quot;">mindmap
+  root((多链最佳实践))
+    技术层面
+      核心逻辑统一
+      链特定优化
+      自动化部署
+      统一监控
+    运营层面
+      社区建设
+      用户教育
+      激励机制
+      反馈收集
+    安全层面
+      多重审计
+      漏洞赏金
+      应急响应
+      风险管理
+    产品层面
+      用户体验
+      跨链工具
+      文档完善
+      支持体系
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="10-本章小结">10. 本章小结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-本章小结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="101-多链部署核心要点">10.1 多链部署核心要点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#101-多链部署核心要点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((多链部署要点))\n    BNB Chain\n      主阵地\n      高TVL\n      低成本\n    Ethereum\n      战略扩展\n      竞争激烈\n      差异化\n    Aptos\n      非EVM探索\n      技术创新\n      未来布局\n    跨链管理\n      流动性整合\n      套利策略\n      激励机制\n    未来规划\n      更多链\n      技术优化\n      生态扩张&quot;">mindmap
+  root((多链部署要点))
+    BNB Chain
+      主阵地
+      高TVL
+      低成本
+    Ethereum
+      战略扩展
+      竞争激烈
+      差异化
+    Aptos
+      非EVM探索
+      技术创新
+      未来布局
+    跨链管理
+      流动性整合
+      套利策略
+      激励机制
+    未来规划
+      更多链
+      技术优化
+      生态扩张
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="102-关键数据">10.2 关键数据<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#102-关键数据" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>指标</th><th>BNB Chain</th><th>Ethereum</th><th>Aptos</th></tr></thead><tbody><tr><td><strong>TVL</strong></td><td>~$500M</td><td>~$50M</td><td>~$5M</td></tr><tr><td><strong>日交易量</strong></td><td>~$500M</td><td>~$20M</td><td>~$1M</td></tr><tr><td><strong>池子数量</strong></td><td>500+</td><td>100+</td><td>20+</td></tr><tr><td><strong>活跃用户</strong></td><td>100K+</td><td>10K+</td><td>1K+</td></tr></tbody></table></div>
+<hr/>
+<h2 id="下一篇预告">下一篇预告<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#下一篇预告" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在下一篇文章中，我们将深入探讨<strong>集成开发指南</strong>，包括：</p>
+<ul>
+<li>PancakeSwap V3 SDK使用</li>
+<li>交易构建与执行</li>
+<li>最佳开发实践</li>
+<li>常见问题解决</li>
+</ul>
+<hr/>
+<h2 id="参考资料">参考资料<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参考资料" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><a href="https://docs.pancakeswap.finance/products/pancakeswap-exchange/v3" class="external">PancakeSwap V3 多链部署<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://docs.bnbchain.org/" class="external">BNB Chain 官方文档<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://ethereum.org/" class="external">Ethereum 官方文档<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://aptos.dev/" class="external">Aptos 官方文档<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-35" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#死磕pancakeswap-v3八多链部署与特性适配" data-for="死磕pancakeswap-v3八多链部署与特性适配">死磕PancakeSwap V3（八）：多链部署与特性适配</a></li><li class="depth-1"><a href="#系列导航" data-for="系列导航">系列导航</a></li><li class="depth-1"><a href="#1-多链部署概述" data-for="1-多链部署概述">1. 多链部署概述</a></li><li class="depth-2"><a href="#11-部署时间线" data-for="11-部署时间线">1.1 部署时间线</a></li><li class="depth-2"><a href="#12-已部署链概况" data-for="12-已部署链概况">1.2 已部署链概况</a></li><li class="depth-1"><a href="#2-bnb-chain部署详解" data-for="2-bnb-chain部署详解">2. BNB Chain部署详解</a></li><li class="depth-2"><a href="#21-bnb-chain优势" data-for="21-bnb-chain优势">2.1 BNB Chain优势</a></li><li class="depth-2"><a href="#22-bnb-chain配置参数" data-for="22-bnb-chain配置参数">2.2 BNB Chain配置参数</a></li><li class="depth-2"><a href="#23-bnb-chain上的热门池子" data-for="23-bnb-chain上的热门池子">2.3 BNB Chain上的热门池子</a></li><li class="depth-2"><a href="#24-bnb-chain生态整合" data-for="24-bnb-chain生态整合">2.4 BNB Chain生态整合</a></li><li class="depth-1"><a href="#3-ethereum部署详解" data-for="3-ethereum部署详解">3. Ethereum部署详解</a></li><li class="depth-2"><a href="#31-ethereum挑战与对策" data-for="31-ethereum挑战与对策">3.1 Ethereum挑战与对策</a></li><li class="depth-2"><a href="#32-ethereum优化策略" data-for="32-ethereum优化策略">3.2 Ethereum优化策略</a></li><li class="depth-2"><a href="#33-ethereum上的热门池子" data-for="33-ethereum上的热门池子">3.3 Ethereum上的热门池子</a></li><li class="depth-2"><a href="#34-ethereum差异化策略" data-for="34-ethereum差异化策略">3.4 Ethereum差异化策略</a></li><li class="depth-1"><a href="#4-aptos探索非evm链" data-for="4-aptos探索非evm链">4. Aptos探索（非EVM链）</a></li><li class="depth-2"><a href="#41-aptos部署的意义" data-for="41-aptos部署的意义">4.1 Aptos部署的意义</a></li><li class="depth-2"><a href="#42-move语言适配挑战" data-for="42-move语言适配挑战">4.2 Move语言适配挑战</a></li><li class="depth-2"><a href="#43-aptos特性适配" data-for="43-aptos特性适配">4.3 Aptos特性适配</a></li><li class="depth-1"><a href="#5-跨链部署架构" data-for="5-跨链部署架构">5. 跨链部署架构</a></li><li class="depth-2"><a href="#51-架构设计" data-for="51-架构设计">5.1 架构设计</a></li><li class="depth-2"><a href="#52-链特定配置" data-for="52-链特定配置">5.2 链特定配置</a></li><li class="depth-1"><a href="#6-跨链流动性管理" data-for="6-跨链流动性管理">6. 跨链流动性管理</a></li><li class="depth-2"><a href="#61-跨链流动性挑战" data-for="61-跨链流动性挑战">6.1 跨链流动性挑战</a></li><li class="depth-2"><a href="#62-跨链套利策略" data-for="62-跨链套利策略">6.2 跨链套利策略</a></li><li class="depth-2"><a href="#63-跨链流动性激励" data-for="63-跨链流动性激励">6.3 跨链流动性激励</a></li><li class="depth-1"><a href="#7-多链部署的技术实现" data-for="7-多链部署的技术实现">7. 多链部署的技术实现</a></li><li class="depth-2"><a href="#71-部署流程" data-for="71-部署流程">7.1 部署流程</a></li><li class="depth-2"><a href="#72-部署脚本示例" data-for="72-部署脚本示例">7.2 部署脚本示例</a></li><li class="depth-2"><a href="#73-多链配置管理" data-for="73-多链配置管理">7.3 多链配置管理</a></li><li class="depth-1"><a href="#8-未来多链规划" data-for="8-未来多链规划">8. 未来多链规划</a></li><li class="depth-2"><a href="#81-计划部署的链" data-for="81-计划部署的链">8.1 计划部署的链</a></li><li class="depth-2"><a href="#82-多链发展策略" data-for="82-多链发展策略">8.2 多链发展策略</a></li><li class="depth-1"><a href="#9-多链部署的挑战与解决方案" data-for="9-多链部署的挑战与解决方案">9. 多链部署的挑战与解决方案</a></li><li class="depth-2"><a href="#91-主要挑战" data-for="91-主要挑战">9.1 主要挑战</a></li><li class="depth-2"><a href="#92-最佳实践" data-for="92-最佳实践">9.2 最佳实践</a></li><li class="depth-1"><a href="#10-本章小结" data-for="10-本章小结">10. 本章小结</a></li><li class="depth-2"><a href="#101-多链部署核心要点" data-for="101-多链部署核心要点">10.1 多链部署核心要点</a></li><li class="depth-2"><a href="#102-关键数据" data-for="102-关键数据">10.2 关键数据</a></li><li class="depth-1"><a href="#下一篇预告" data-for="下一篇预告">下一篇预告</a></li><li class="depth-1"><a href="#参考资料" data-for="参考资料">参考资料</a></li><li class="overflow-end"></li></ul></div><div class="backlinks"><h3>反向链接</h3><ul id="list-2" class="overflow"><li><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/pancake/v3/README" class="internal">README</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../../postscript.js" type="module" data-persist="true"></script></html>

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>cometBFT源码分析</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="cometBFT源码分析"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="cometBFT源码分析"/><meta name="twitter:description" content="// start event bus // get State // start the machine enterNewRound startRoutines // wait for proposal // wait for prevote // wait for precommit // wait to finish commit, propose in next height ensureNewBlock(newBlockCh, height) // finalizeCommit // state 负责什么工作 监听了哪些事件 voteCh := subscribeUnBuffered(..."/><meta property="og:description" content="// start event bus // get State // start the machine enterNewRound startRoutines // wait for proposal // wait for prevote // wait for precommit // wait to finish commit, propose in next height ensureNewBlock(newBlockCh, height) // finalizeCommit // state 负责什么工作 监听了哪些事件 voteCh := subscribeUnBuffered(..."/><meta property="og:image:alt" content="// start event bus // get State // start the machine enterNewRound startRoutines // wait for proposal // wait for prevote // wait for precommit // wait to finish commit, propose in next height ensureNewBlock(newBlockCh, height) // finalizeCommit // state 负责什么工作 监听了哪些事件 voteCh := subscribeUnBuffered(..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/cometBFT/cometBFT源码分析"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/cometBFT/cometBFT源码分析"/><link rel="icon" href="../../../../../static/icon.png"/><meta name="description" content="// start event bus // get State // start the machine enterNewRound startRoutines // wait for proposal // wait for prevote // wait for precommit // wait to finish commit, propose in next height ensureNewBlock(newBlockCh, height) // finalizeCommit // state 负责什么工作 监听了哪些事件 voteCh := subscribeUnBuffered(..."/><meta name="generator" content="Quartz"/><link href="../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/cometBFT/cometBFT源码分析"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-407"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-407" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/">Public_Chain_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/">Public_Chain_Research</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/">cosmos</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/cosmos/cometBFT/">cometBFT</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>cometBFT源码分析</a></div></nav><h1 class="article-title">cometBFT源码分析</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.459Z">2026年1月12日</time><span>18分钟阅读</span></p><ul class="tags"><li><a href="../../../../../tags/疑问" class="internal tag-link">疑问</a></li></ul></div></div><article class="popover-hint"><p>// start event bus</p>
+<p>// get State</p>
+<p>// start the machine</p>
+<ul>
+<li>enterNewRound</li>
+<li>startRoutines</li>
+</ul>
+<p>// wait for proposal</p>
+<p>// wait for prevote</p>
+<p>// wait for precommit</p>
+<p>// wait to finish commit, propose in next height</p>
+<p>ensureNewBlock(newBlockCh, height)</p>
+<p>// finalizeCommit</p>
+<p>//</p>
+<ol>
+<li>state 负责什么工作</li>
+<li>监听了哪些事件
+<ul>
+<li>voteCh := subscribeUnBuffered(cs.eventBus, types.EventQueryVote)</li>
+<li>propCh := subscribe(cs.eventBus, types.EventQueryCompleteProposal)</li>
+<li>newRoundCh := subscribe(cs.eventBus, types.EventQueryNewRound)</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><a href="https://liukay.com/posts/4334" class="external">https://liukay.com/posts/4334<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><a href="https://arxiv.org/pdf/1807.04938.pdf" class="external">https://arxiv.org/pdf/1807.04938.pdf<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+</blockquote>
+<h2 id="服务启动进入第一轮共识">服务启动，进入第一轮共识<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#服务启动进入第一轮共识" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">cs </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">State</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">OnStart</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">loadWalFile</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.timeoutTicker.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  loop</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ??</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.evsw.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">checkDoubleSigningRisk</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(cs.Height)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  go</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">receiveRoutine</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">scheduleRound0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">GetRoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()) </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 他这个思路是往timeoutTicker发送消息，由receiveRoutine来处理，在新高度开启新round</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h2 id="共识消息处理">共识消息处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#共识消息处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>receiveRoutine</p>
+</blockquote>
+<h3 id="处理交易">处理交易<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#处理交易" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="GO" data-theme="github-light github-dark"><code data-language="GO" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>实际这一连串的代码都是从tendermint 共识启动发出的，也就是说他的共识启动是往timeouttiker中发送超时信息，从而重置timeoutTicker计时器，然后再次触发timer.C来往cs.timeoutTicker.Chan()写入数据，从而触发handleTimeout的真正处理逻辑</span></span></code></pre></figure>
+<p>Handlemsg 和handleTimeOut</p>
+<p>handleMsg:</p>
+<ul>
+<li>peerMsgQueue</li>
+<li>cs.internalMsgQueue:</li>
+</ul>
+<p>handleTimeout:从tockchan获取的各种超时信息：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="SHELL" data-theme="github-light github-dark"><code data-language="SHELL" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>RoundStepNewHeight     = RoundStepType(0x01) // Wait til CommitTime + timeoutCommit</span></span>
+<span data-line><span>	RoundStepNewRound      = RoundStepType(0x02) // Setup new round and go to RoundStepPropose</span></span>
+<span data-line><span>	RoundStepPropose       = RoundStepType(0x03) // Did propose, gossip proposal</span></span>
+<span data-line><span>	RoundStepPrevote       = RoundStepType(0x04) // Did prevote, gossip prevotes</span></span>
+<span data-line><span>	RoundStepPrevoteWait   = RoundStepType(0x05) // Did receive any +2/3 prevotes, start timeout</span></span>
+<span data-line><span>	RoundStepPrecommit     = RoundStepType(0x06) // Did precommit, gossip precommits</span></span>
+<span data-line><span>	RoundStepPrecommitWait = RoundStepType(0x07) // Did receive any +2/3 precommits, start timeout</span></span>
+<span data-line><span>	RoundStepCommit        = RoundStepType(0x08) // Entered commit state machine</span></span></code></pre></figure>
+<h2 id="流程">流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Func (cs *State) enterNewRound(height int64, round int32)</p>
+<p>​	cs.eventBus.PublishEventNewRound(cs.NewRoundEvent()) ??? 发布出去的newround别人怎么处理的</p>
+<p>​	cs.enterPropose(height, round)</p>
+<p>enterPropose</p>
+<ul>
+<li>
+<p>cs.scheduleTimeout(cs.config.Propose(round), height, round, cstypes.RoundStepPropose) 这里会开始一个超时计时器，如果在 Propose 阶段无法及时收到区块提案和所有区块部件，则节点会进入到 Prevote 阶段，以保证共识算法的正常运行</p>
+</li>
+<li>
+<p>cs.decideProposal(height, round)</p>
+</li>
+</ul>
+<p>decideProposal <span>→</span> defaultDecideProposal</p>
+<ul>
+<li>
+<p>cs.createProposalBlock(context.TODO()): 从mempool的state/txs创建一个新的提案块。 （具体如何create 看下面的）</p>
+</li>
+<li>
+<p>blockParts, err = block.MakePartSet(types.BlockPartSizeBytes)：分解区块为一个个的64Kb的数据 (这个重点理解，运用到了merkle proof)</p>
+</li>
+<li>
+<p>构造proposal:</p>
+<ul>
+<li>
+<p>NewProposal</p>
+</li>
+<li>
+<p>cs.privValidator.SignProposal</p>
+</li>
+<li>
+<p>发送proposal和区块部件（他实际是切割了区块，降低网络延迟，提高网络传输效率）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">cs </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">State</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">sendInternalMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">mi</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> msgInfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	select</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	case</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> cs.internalMsgQueue </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mi:</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	default</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">		// NOTE: using the go-routine means our votes can</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">		// be processed out of order.</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">		// TODO: use CList here for strict determinism and</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">		// attempt push to internalMsgQueue in receiveRoutine</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		cs.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;internal msg queue is full; using a go-routine&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		go</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() { cs.internalMsgQueue </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mi }()</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">这段代码如果不对internalMsgQueue进行限制，则可以进行DDOS攻击，会导致下面default开启大量协程，</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">tendermint只是进行了1000条消息的设置</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Tendermint 会对节点的行为进行监控和限制，如限制每个节点发送 mi 消息的速率，防止节点恶意发送大量消息。</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Tendermint 还具有抗拒绝服务（DoS）攻击的机制，在检测到某个节点发送大量无效消息时，会将该节点列入黑名单，不再接收其消息</span></span></code></pre></figure>
+</li>
+<li>
+<p>接着就直接handlemsg了</p>
+<ul>
+<li>保存proposal和组装block，主要看下组装block(BlockPartMessage)：
+<ul>
+<li>cs.addProposalBlockPart (这一部分可能enterPrevote 或者	tryFinalizeCommit)
+<ul>
+<li>cs.eventBus.PublishEventCompleteProposal(cs.CompleteProposalEvent()) 发布事件</li>
+</ul>
+</li>
+<li>
+<h2 id="handlecompleteproposal-这里面需要细看我只讲直接进入到enterprevote阶段">handleCompleteProposal （这里面需要细看，我只讲直接进入到enterPrevote阶段）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#handlecompleteproposal-这里面需要细看我只讲直接进入到enterprevote阶段" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>​</p>
+<p>cs.createProposalBlock(context.TODO())</p>
+<ul>
+<li>
+<h2 id="csblockexeccreateproposalblockctx-csheight-csstate-lastextcommit-proposeraddr">cs.blockExec.CreateProposalBlock(ctx, cs.Height, cs.state, lastExtCommit, proposerAddr)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#csblockexeccreateproposalblockctx-csheight-csstate-lastextcommit-proposeraddr" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+</li>
+</ul>
+<p><a href="../../../../.././../../../../tags/疑问" class="tag-link internal alias" data-slug="tags/疑问">疑问</a></p>
+<ol>
+<li>为什么有自定义的函数作为参数传入</li>
+</ol>
+<p><a href="http://yangzhe.me/2022/08/13/tendermint-bft/" class="external">http://yangzhe.me/2022/08/13/tendermint-bft/<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<h2 id="关键结构">关键结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#关键结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="reactor">reactor<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#reactor" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">type</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Reactor</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	p2p</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">BaseReactor</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // BaseService + p2p.Switch</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	conS </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">State</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">   // 见下state</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	mtx      </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cmtsync</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RWMutex</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	waitSync </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">bool</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	eventBus </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">types</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventBus</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	rs       </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	Metrics </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Metrics</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="state">state<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#state" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">type</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> State</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	service</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">BaseService</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// config details</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	config        </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ConsensusConfig</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	privValidator </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">types</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">PrivValidator</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // for signing votes</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// store blocks and commits</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	blockStore </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">sm</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">BlockStore</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// create and execute blocks</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	blockExec </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">sm</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">BlockExecutor</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// notify us if txs are available</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	txNotifier </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">txNotifier</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// add evidence to the pool</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// when it's detected</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	evpool </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">evidencePool</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// internal state</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	mtx </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cmtsync</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RWMutex</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">	cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	state </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">sm</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">State</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // State until height-1.</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// privValidator pubkey, memoized for the duration of one block</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// to avoid extra requests to HSM</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	privValidatorPubKey </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">crypto</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">PubKey</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// state changes may be triggered by: msgs from peers,</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// msgs from ourself, or by timeouts</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	peerMsgQueue     </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">chan</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> msgInfo</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	internalMsgQueue </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">chan</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> msgInfo</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	timeoutTicker    </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">TimeoutTicker</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  </span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// information about about added votes and block parts are written on this channel</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// so statistics can be computed by reactor</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	statsMsgQueue </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">chan</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> msgInfo</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// we use eventBus to trigger msg broadcasts in the reactor,</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// and to notify external subscribers, eg. through a websocket</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	eventBus </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">types</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventBus</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">   // //使用eventBus来触发反应器中的消息广播，并通知外部订阅者，例如通过websocket</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// a Write-Ahead Log ensures we can recover from any kind of crash</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// and helps us avoid signing conflicting votes</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	wal          </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">WAL</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	replayMode   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">bool</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // so we don't log signing errors during replay</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	doWALCatchup </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">bool</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // determines if we even try to do the catchup</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// for tests where we want to limit the number of transitions the state makes</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	nSteps </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">int</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// some functions can be overwritten for testing</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	decideProposal </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">height</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> int64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">round</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> int32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	doPrevote      </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">height</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> int64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">round</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> int32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	setProposal    </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">proposal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">types</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Proposal</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">error</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// closed when we finish shutting down</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	done </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">chan</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{}</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// synchronous pubsub between consensus state and reactor.</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// state only emits EventNewRoundStep and EventVote</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	evsw </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cmtevents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventSwitch</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> // 共识状态和反应器之间的同步pubsub。状态仅发出EventNewRoundStep和EventVote</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="eventswitch">EventSwitch<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#eventswitch" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>cmtevents.EventSwitch 是一个事件总线，用于在不同的模块之间传递事件。EventSwitch 的设计思想是将事件的发送者和接收者解耦，从而实现模块间的松耦合。</p>
+<p>具体来说，每个模块都可以将自己感兴趣的事件类型注册到 EventSwitch 中。当某个模块触发了一个事件时，EventSwitch 会将该事件发送给所有已注册的模块。这样，不同的模块就可以在不了解彼此具体实现的情况下进行协作。</p>
+<p>在 Tendermint 中，EventSwitch 被广泛用于不同模块之间的交互。例如，在共识模块和反应器之间，EventSwitch 被用于同步共识状态和反应器。具体来说，共识状态会触发两种类型的事件：EventNewRoundStep 和 EventVote。这些事件会被发送到 EventSwitch 中，并被订阅了这些事件类型的反应器模块接收。反应器模块会根据这些事件执行相应的操作，例如更新状态或发送消息。</p>
+<h2 id="节点启动流程">节点启动流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#节点启动流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>从NewRunNodeCmd开始</p>
+<h2 id="eventbus启动流程">eventbus启动流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#eventbus启动流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>eventbus 是cometBFT节点内部的消息总线，其启动最终是启动了pubsub.</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="GO" data-theme="github-light github-dark"><code data-language="GO" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>func (s *Server) loop(state state) {</span></span>
+<span data-line><span>loop:</span></span>
+<span data-line><span>	for cmd := range s.cmds {</span></span>
+<span data-line><span>		switch cmd.op {</span></span>
+<span data-line><span>		case unsub:</span></span>
+<span data-line><span>			if cmd.query != nil {</span></span>
+<span data-line><span>				state.remove(cmd.clientID, cmd.query.String(), ErrUnsubscribed)</span></span>
+<span data-line><span>			} else {</span></span>
+<span data-line><span>				state.removeClient(cmd.clientID, ErrUnsubscribed)</span></span>
+<span data-line><span>			}</span></span>
+<span data-line><span>		case shutdown:</span></span>
+<span data-line><span>			state.removeAll(nil)</span></span>
+<span data-line><span>			break loop</span></span>
+<span data-line><span>		case sub:</span></span>
+<span data-line><span>			state.add(cmd.clientID, cmd.query, cmd.subscription)</span></span>
+<span data-line><span>		case pub:</span></span>
+<span data-line><span>			if err := state.send(cmd.msg, cmd.events); err != nil {</span></span>
+<span data-line><span>				s.Logger.Error(&quot;Error querying for events&quot;, &quot;err&quot;, err)</span></span>
+<span data-line><span>			}</span></span>
+<span data-line><span>		}</span></span>
+<span data-line><span>	}</span></span>
+<span data-line><span>}</span></span></code></pre></figure>
+<p>这段代码实现了一个循环，用于处理来自 <code>cmds</code> 通道的命令。具体来说，循环会不断地从 <code>cmds</code> 通道中接收命令，然后根据命令类型进行相应的处理。</p>
+<p>在代码中，<code>state</code> 参数代表当前的状态，即已经订阅的客户端和事件查询。<code>cmds</code> 通道中的命令包括四种类型：</p>
+<ul>
+<li><code>unsub</code>：取消订阅命令，用于取消指定客户端或查询的订阅。</li>
+<li><code>shutdown</code>：关闭命令，用于关闭消息服务器并清空当前状态。</li>
+<li><code>sub</code>：订阅命令，用于添加新的订阅。</li>
+<li><code>pub</code>：发布命令，用于向订阅者发送消息。</li>
+</ul>
+<p>当接收到 <code>unsub</code> 命令时，会根据命令中的参数从当前状态中移除相应的订阅。如果命令中指定了查询条件，则移除与该查询条件相匹配的订阅；否则，移除指定客户端的所有订阅。</p>
+<p>当接收到 <code>shutdown</code> 命令时，会将当前状态中的所有订阅都移除，并退出循环。</p>
+<p>当接收到 <code>sub</code> 命令时，会根据命令中的参数添加新的订阅。</p>
+<p>当接收到 <code>pub</code> 命令时，会将消息和相关的事件发送给所有匹配的订阅者。如果发送消息时出现错误，则会记录日志。</p>
+<h2 id="consensusreactor启动流程">consensusReactor启动流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#consensusreactor启动流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>从NewRunNodeCmd开始，一直到reactor的onstart启动：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">conR </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Reactor</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">OnStart</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">	// start routine that computes peer statistics for evaluating peer quality</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	go</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">peerStatsRoutine</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">subscribeToBroadcastEvents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	go</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">updateRoundStateRoutine</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> !</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">WaitSync</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.conS.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nil</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<ul>
+<li>启动计算peer统计信息以评估peer质量的协程</li>
+<li>订阅新round step ，并使用state上定义的内部pubsub进行投票，以便在接收时将其广播给peer。</li>
+<li>定期更新共识状态的RoundState</li>
+<li>如若没有完成状态同步，则要启动共识状态</li>
+</ul>
+<p>订阅的细节：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">conR </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Reactor</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">subscribeToBroadcastEvents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> subscriber</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;consensus-reactor&quot;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.conS.evsw.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">AddListenerForEvent</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(subscriber, types.EventNewRoundStep,</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">data</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> cmtevents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventData</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">broadcastNewRoundStepMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(data.(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		}); err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nil</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		conR.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Error adding listener for events&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;err&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, err)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.conS.evsw.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">AddListenerForEvent</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(subscriber, types.EventValidBlock,</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">data</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> cmtevents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventData</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">broadcastNewValidBlockMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(data.(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		}); err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nil</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		conR.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Error adding listener for events&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;err&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, err)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.conS.evsw.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">AddListenerForEvent</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(subscriber, types.EventVote,</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">data</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> cmtevents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventData</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">broadcastHasVoteMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(data.(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">types</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Vote</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		}); err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nil</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		conR.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Error adding listener for events&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;err&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, err)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<p>可以看到consensus reactor订阅了三种类型的事件，EventNewRoundStep、EventValidBlock、EventVote， 当共识状态发布这些事件时候，eventswitch会将事件广播给订阅了这些事件的对象</p>
+<h2 id="timeouttiker的启动">timeoutTiker的启动<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#timeouttiker的启动" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">t </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">timeoutTicker</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">OnStart</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	go</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> t.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">timeoutRoutine</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nil</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">t </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">timeoutTicker</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">timeoutRoutine</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	t.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Starting timeout routine&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	var</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">timeoutInfo</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		select</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		case</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">t.tickChan:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			t.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Received tick&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;old_ti&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;new_ti&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, newti)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// ignore tickers for old height/round/step</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">			if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti.Height </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti.Height {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">				continue</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti.Height </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti.Height {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">				if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti.Round </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti.Round {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">					continue</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">				} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">else</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti.Round </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti.Round {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">					if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti.Step </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti.Step </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ti.Step {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">						continue</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">					}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">				}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			}</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// stop the last timer</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			t.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">stopTimer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// update timeoutInfo and reset timer</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// NOTE time.Timer allows duration to be non-positive</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			ti </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> newti</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			t.timer.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Reset</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(ti.Duration)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			t.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Scheduled timeout&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;dur&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Duration, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;height&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Height, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;round&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Round, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;step&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Step)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		case</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">t.timer.C:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			t.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Info</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Timed out&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;dur&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Duration, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;height&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Height, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;round&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Round, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;step&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ti.Step)</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// go routine here guarantees timeoutRoutine doesn't block.</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// Determinism comes from playback in the receiveRoutine.</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			// We can eliminate it by merging the timeoutRoutine into receiveRoutine</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			//  and managing the timeouts ourselves with a millisecond ticker</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">			go</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">toi</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> timeoutInfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { t.tockChan </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> toi }(ti)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		case</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">t.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Quit</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">():</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">			return</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<ul>
+<li>tickChan ：接收各种超时信息，然后重置定时器</li>
+<li>timer.C: 根据tickChan ，将tickChan传过来的超时信息送到tockChan 进行处理</li>
+<li>在receiveRoutine里，会有case一直监听tockChan，来处理超时消息</li>
+</ul>
+<h2 id="完整的共识流程阶段">完整的共识流程阶段<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#完整的共识流程阶段" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="共识过程的启动">共识过程的启动<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#共识过程的启动" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>也是从节点启动命令开始，一直调用到state的onstart方法：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">cs </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">State</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">OnStart</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">loadWalFile</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.timeoutTicker.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  loop</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ????</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.evsw.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">checkDoubleSigningRisk</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(cs.Height)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  go</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">receiveRoutine</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">scheduleRound0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(cs.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">GetRoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()) </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 他这个思路是往timeoutTicker发送消息，由receiveRoutine来处理，在新高度开启新round</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<ul>
+<li>处理状态转换消息 ： cs.receiveRoutine(0)</li>
+<li>开启第一轮共识： cs.scheduleRound0(cs.GetRoundState())</li>
+</ul>
+<p>首先还是从开启第一轮共识开始：</p>
+<h3 id="开启第一轮共识">开启第一轮共识<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#开启第一轮共识" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>①：首先发送timeoutInfo{duration, height, round, step}到tickchan , 然后重置定时器，将超时信息发往tockChan</p>
+<p>②：tockchan会通过handleTImeout来处理消息，进入到enterNewRound</p>
+<p>③：进入到enterprose， 如果是proposer， cs.decideProposal(height, round)进入组块流程</p>
+<ul>
+<li>
+<p>block, err = cs.createProposalBlock(context.TODO())</p>
+</li>
+<li>
+<p>block.MakePartSet(types.BlockPartSizeBytes) 切割区块</p>
+</li>
+<li>
+<p>cs.sendInternalMessage(msgInfo{&amp;ProposalMessage{proposal}, &quot;&quot;})  将proposal和blockparts发送到内部消息队列里</p>
+</li>
+<li>
+<p>cs.sendInternalMessage(msgInfo{&amp;BlockPartMessage{cs.Height, cs.Round, part}, &quot;&quot;})</p>
+</li>
+<li>
+<p>到此会把这两部分消息发给内部共识状态的 receiveroutine来处理</p>
+</li>
+<li>
+<p>外部的话需要再次回到enterPropose， 在defer中通过eventBus 通知外部调用者，比如通过websocket订阅了事件的，然后通过eventswitch来通知内部订阅了NewRoundStep事件的组件（这里指consensus reactor）， 通过FireEvent 来触发监听器回调他注册的处理函数</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">broadcastNewRoundStepMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(data.(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> subscriber</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;consensus-reactor&quot;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">	if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> conR.conS.evsw.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">AddListenerForEvent</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(subscriber, types.EventNewRoundStep,</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">		func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">data</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> cmtevents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">EventData</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">			conR.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">broadcastNewRoundStepMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(data.(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		}); err </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nil</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		conR.Logger.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Error</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Error adding listener for events&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;err&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, err)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	}</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">func</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">conR </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Reactor</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">broadcastNewRoundStepMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">rs</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">cstypes</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">RoundState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	nrsMsg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> makeRoundStepMessage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(rs)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	conR.Switch.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Broadcast</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">p2p</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Envelope</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		ChannelID: StateChannel,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">		Message:   nrsMsg,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">	})</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+</li>
+</ul>
+<p>④：上面提到的组块流程如下，回到cs.createProposalBlock</p>
+<ul>
+<li>
+<p>获取可验证的恶意行为</p>
+</li>
+<li>
+<p>从mempool中获取最大maxBytes 的交易（都是字节切片）</p>
+</li>
+<li>
+<p>他会请求APP执行PrepareProposal （app层可以修改删除事务，这是cometBFT 后加的），理由：</p>
+</li>
+<li>
+<p>// Ref: <a href="https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-060-abci-1.0.md" class="external">https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-060-abci-1.0.md<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>// Ref: <a href="https://github.com/cometbft/cometbft/blob/main/spec/abci/abci%2B%2B_basic_concepts.md" class="external">https://github.com/cometbft/cometbft/blob/main/spec/abci/abci%2B%2B_basic_concepts.md<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+</li>
+<li>
+<p>构造区块，基本就完成了</p>
+</li>
+</ul>
+<p>⑤：通过P2P广播出去的消息，在哪里接收，这部分得看p2p如何处理消息</p>
+<p>⑥：由我们从p2p发出去的共识消息，会经过其他节点的p2p模块转发到consensus reactor 的func (conR *Reactor) Receive(e p2p.Envelope) 来进行处理， 作为回调函数处理p2p消息，应该有一个peer的循环，收到相关消息，会调用注册的reactor的回调函数</p>
+<ul>
+<li>上面的proposal消息 和blockpart消息会进入到DataChannel， 关于状态转换的消息会进入到StateChannel，先看下datachannel中的消息</li>
+<li>datachannel中的消息会进入到peerMsgQueue 进行处理，会设置propoal,和添加完整块，会根据当前状态，决定进入enterPrevote 还是enterPrecommit还是tryFinalizeCommit</li>
+<li>statechannel中的roundstep会更新peerstate</li>
+</ul>
+<p>⑦：接着正常步骤，进入到Prevote</p>
+<ul>
+<li>步骤跟上面一致, 进入到addnote处理，会执行enterprecommit处理</li>
+</ul>
+<p>⑧：进入entercommit</p>
+<p>⑨：进入到finalizecommit</p>
+<ul>
+<li>持久化区块数据</li>
+<li>调用 baseapp的 FinalizeBlock （执行begin blcok , txs ,endblock）返回了apphash</li>
+<li>更新内存池</li>
+<li>cs.scheduleRound0(&amp;cs.RoundState) 继续新round</li>
+</ul>
+<h2 id="技术细节">技术细节<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#技术细节" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ol>
+<li>eventswitch 事件总线的设计</li>
+<li>block parts 如何通过merkle proof 来证明</li>
+<li></li>
+</ol>
+<h3 id="enternewround">enterNewRound<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#enternewround" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>更新validators （来源）</li>
+<li>更新Proposer （算法细节待了解）</li>
+<li>更新RoundStep Height <span>→</span> RoundStepNewRound</li>
+<li>Eventbus 发布事件</li>
+<li>enterPropose</li>
+</ul>
+<h3 id="enterpropose">enterPropose<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#enterpropose" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>决定proposal block</li>
+<li>从evpool获取作恶行为数据</li>
+<li>从mempool 获取交易数据</li>
+<li>通过现有的高度，txs, proposeraddr等数据构造block</li>
+<li>请求APP执行PrepareProposal,由应用程序选择交易，之前tendermint是没有这一步的，设计原理参考：
+<ul>
+<li><a href="https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-060-abci-1.0.md" class="external">https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-060-abci-1.0.md<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/cometbft/cometbft/blob/main/spec/abci/abci%2B%2B_basic_concepts.md" class="external">https://github.com/cometbft/cometbft/blob/main/spec/abci/abci%2B%2B_basic_concepts.md<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul>
+</li>
+<li>最后再重新构造一下block</li>
+<li>将构造的块进行切割，并计算merkle 树 （TODO）</li>
+<li>构造proposal 并签名，这个proposal并不是区块，只是区块的hash,以及高度，当前round，区块分割的信息</li>
+<li>将proposal和分割的blockparts 发到内部消息队列进行处理 （异步消息处理），直接返回</li>
+<li>更新RoundStepNewRound <span>→</span> RoundStepPropose</li>
+<li>FireEvent (EventNewRoundStep),reactor监听此事件并通过p2p 发送broadcastNewRoundStepMessage消息</li>
+</ul>
+<h3 id="enterprevote">enterprevote<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#enterprevote" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>进入到这个阶段，是获取到了2/3票，cs.isProposalComplete（TODO）</li>
+<li>执行预投票
+<ul>
+<li>从共识角度验证提案块，区块无效则投nil票</li>
+<li>调用app 来执行提案块</li>
+<li>有效则签署投票，并将投票信息发布到内部消息队列中</li>
+</ul>
+</li>
+<li>更新RoundStepPropose <span>→</span> RoundStepPrevote</li>
+<li>FireEvent(eventVote), broadcastHasVoteMessage</li>
+</ul>
+<h3 id="enterprecommit">enterPrecommit<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#enterprecommit" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>更新RoundStepPrevote <span>→</span> RoundStepPrecommit</li>
+</ul>
+<h2 id="entercommit">enterCommit<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#entercommit" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>更新RoundStepPrecommit <span>→</span> RoundStepCommit</li>
+<li>FireEven（EventValidBlock）</li>
+<li>finalizeCommit
+<ul>
+<li>校验block</li>
+<li>存储块到block store</li>
+<li>applyblock
+<ul>
+<li>buildLastCommitInfo</li>
+<li>blockExec.proxyApp.FinalizeBlock（执行startblock,txs, endblock）, 会返回apphash和更新的validator，以及txresult</li>
+<li>之后会调用app 提交更新完的kv state store</li>
+<li>最后block store 会保存app层返回的数据</li>
+</ul>
+</li>
+<li>开启新round scheduleRound0</li>
+</ul>
+</li>
+</ul>
+<h3 id="分别介绍上述几个消息">分别介绍上述几个消息<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#分别介绍上述几个消息" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="proposal">proposal<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#proposal" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<h4 id="blockparts">blockparts<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#blockparts" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<h4 id="vote">vote<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#vote" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<h3 id="如何验证validator">如何验证validator<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#如何验证validator" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-190" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#服务启动进入第一轮共识" data-for="服务启动进入第一轮共识">服务启动，进入第一轮共识</a></li><li class="depth-0"><a href="#共识消息处理" data-for="共识消息处理">共识消息处理</a></li><li class="depth-1"><a href="#处理交易" data-for="处理交易">处理交易</a></li><li class="depth-0"><a href="#流程" data-for="流程">流程</a></li><li class="depth-0"><a href="#handlecompleteproposal-这里面需要细看我只讲直接进入到enterprevote阶段" data-for="handlecompleteproposal-这里面需要细看我只讲直接进入到enterprevote阶段">handleCompleteProposal （这里面需要细看，我只讲直接进入到enterPrevote阶段）</a></li><li class="depth-0"><a href="#csblockexeccreateproposalblockctx-csheight-csstate-lastextcommit-proposeraddr" data-for="csblockexeccreateproposalblockctx-csheight-csstate-lastextcommit-proposeraddr">cs.blockExec.CreateProposalBlock(ctx, cs.Height, cs.state, lastExtCommit, proposerAddr)</a></li><li class="depth-0"><a href="#关键结构" data-for="关键结构">关键结构</a></li><li class="depth-1"><a href="#reactor" data-for="reactor">reactor</a></li><li class="depth-1"><a href="#state" data-for="state">state</a></li><li class="depth-1"><a href="#eventswitch" data-for="eventswitch">EventSwitch</a></li><li class="depth-0"><a href="#节点启动流程" data-for="节点启动流程">节点启动流程</a></li><li class="depth-0"><a href="#eventbus启动流程" data-for="eventbus启动流程">eventbus启动流程</a></li><li class="depth-0"><a href="#consensusreactor启动流程" data-for="consensusreactor启动流程">consensusReactor启动流程</a></li><li class="depth-0"><a href="#timeouttiker的启动" data-for="timeouttiker的启动">timeoutTiker的启动</a></li><li class="depth-0"><a href="#完整的共识流程阶段" data-for="完整的共识流程阶段">完整的共识流程阶段</a></li><li class="depth-1"><a href="#共识过程的启动" data-for="共识过程的启动">共识过程的启动</a></li><li class="depth-1"><a href="#开启第一轮共识" data-for="开启第一轮共识">开启第一轮共识</a></li><li class="depth-0"><a href="#技术细节" data-for="技术细节">技术细节</a></li><li class="depth-1"><a href="#enternewround" data-for="enternewround">enterNewRound</a></li><li class="depth-1"><a href="#enterpropose" data-for="enterpropose">enterPropose</a></li><li class="depth-1"><a href="#enterprevote" data-for="enterprevote">enterprevote</a></li><li class="depth-1"><a href="#enterprecommit" data-for="enterprecommit">enterPrecommit</a></li><li class="depth-0"><a href="#entercommit" data-for="entercommit">enterCommit</a></li><li class="depth-1"><a href="#分别介绍上述几个消息" data-for="分别介绍上述几个消息">分别介绍上述几个消息</a></li><li class="depth-1"><a href="#如何验证validator" data-for="如何验证validator">如何验证validator</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../postscript.js" type="module" data-persist="true"></script></html>

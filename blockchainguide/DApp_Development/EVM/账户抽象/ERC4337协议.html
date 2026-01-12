@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>ERC4337协议</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="ERC4337协议"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="ERC4337协议"/><meta name="twitter:description" content="参考资料 github.com/4337Mafia/awesome-account-abstraction eips.ethereum.org/EIPS/eip-4337 ERC4337协议 ERC 4337协议 角色 术语描述user发送userOperationsender发送userOperation的账户合约bundler一个节点(构建区块的)，可以处理userOperations。不是很理解，是参与共识构造区块还是？entryPoint用于执行 UserOperations 包的单例合约。Bundlers/客户端将支持的entryPoint列入白名单。Paymaster同意为了交易支..."/><meta property="og:description" content="参考资料 github.com/4337Mafia/awesome-account-abstraction eips.ethereum.org/EIPS/eip-4337 ERC4337协议 ERC 4337协议 角色 术语描述user发送userOperationsender发送userOperation的账户合约bundler一个节点(构建区块的)，可以处理userOperations。不是很理解，是参与共识构造区块还是？entryPoint用于执行 UserOperations 包的单例合约。Bundlers/客户端将支持的entryPoint列入白名单。Paymaster同意为了交易支..."/><meta property="og:image:alt" content="参考资料 github.com/4337Mafia/awesome-account-abstraction eips.ethereum.org/EIPS/eip-4337 ERC4337协议 ERC 4337协议 角色 术语描述user发送userOperationsender发送userOperation的账户合约bundler一个节点(构建区块的)，可以处理userOperations。不是很理解，是参与共识构造区块还是？entryPoint用于执行 UserOperations 包的单例合约。Bundlers/客户端将支持的entryPoint列入白名单。Paymaster同意为了交易支..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/EVM/账户抽象/ERC4337协议"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/EVM/账户抽象/ERC4337协议"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="参考资料 github.com/4337Mafia/awesome-account-abstraction eips.ethereum.org/EIPS/eip-4337 ERC4337协议 ERC 4337协议 角色 术语描述user发送userOperationsender发送userOperation的账户合约bundler一个节点(构建区块的)，可以处理userOperations。不是很理解，是参与共识构造区块还是？entryPoint用于执行 UserOperations 包的单例合约。Bundlers/客户端将支持的entryPoint列入白名单。Paymaster同意为了交易支..."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/DApp_Development/EVM/账户抽象/ERC4337协议"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-36"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-36" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/DApp_Development/">DApp_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/DApp_Development/EVM/">EVM</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../blockchainguide/DApp_Development/EVM/账户抽象/">账户抽象</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>ERC4337协议</a></div></nav><h1 class="article-title">ERC4337协议</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.417Z">2026年1月12日</time><span>16分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="参考资料">参考资料<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参考资料" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<ul>
+<li><a href="https://github.com/4337Mafia/awesome-account-abstraction?tab=readme-ov-file" class="external">https://github.com/4337Mafia/awesome-account-abstraction?tab=readme-ov-file<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://eips.ethereum.org/EIPS/eip-4337" class="external">https://eips.ethereum.org/EIPS/eip-4337<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul>
+<h1 id="erc4337协议">ERC4337协议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#erc4337协议" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="erc-4337协议">ERC 4337协议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#erc-4337协议" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="角色">角色<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#角色" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>术语</th><th>描述</th></tr></thead><tbody><tr><td><strong>user</strong></td><td>发送userOperation</td></tr><tr><td><strong>sender</strong></td><td>发送userOperation的账户合约</td></tr><tr><td><strong>bundler</strong></td><td>一个节点(构建区块的)，可以处理userOperations。不是很理解，是参与共识构造区块还是？</td></tr><tr><td><strong>entryPoint</strong></td><td>用于执行 UserOperations 包的单例合约。Bundlers/客户端将支持的entryPoint列入白名单。</td></tr><tr><td><strong>Paymaster</strong></td><td>同意为了交易支付的合约。</td></tr><tr><td><strong>Aggregator</strong></td><td>用于验证聚合签名。</td></tr></tbody></table></div>
+<h3 id="useroperation">userOperation<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#useroperation" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>为了改变以太坊底层共识，使用userOperation用来抽象用户的操作</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>sender</td><td>address</td><td>发起操作的账户</td></tr><tr><td>nonce</td><td>uint256</td><td>防止重放</td></tr><tr><td>factory</td><td>address</td><td>账户工厂，仅用于新建账户</td></tr><tr><td>factoryData</td><td>bytes</td><td>账户工厂所需的数据，仅当存在账户工厂时）</td></tr><tr><td>callData</td><td>bytes</td><td>传递给sender在主要执行调用期间的数据</td></tr><tr><td>callGasLimit</td><td>uint256</td><td>为主执行调用分配的气体量</td></tr><tr><td>verificationGasLimit</td><td>uint256</td><td>为验证步骤分配的气体量</td></tr><tr><td>preVerificationGas</td><td>uint256</td><td>支付给bunder的额外气体费用</td></tr><tr><td>maxFeePerGas</td><td>uint256</td><td>每单位气体的最大费用（类似于EIP-1559中的max_fee_per_gas）</td></tr><tr><td>maxPriorityFeePerGas</td><td>uint256</td><td>每单位气体的最大优先费用（类似于EIP-1559中的max_priority_fee_per_gas）</td></tr><tr><td>paymaster</td><td>address</td><td>付费代理合约的地址，（或为空，如果账户自己支付费用）</td></tr><tr><td>paymasterVerificationGasLimit</td><td>uint256</td><td>为付费代理验证代码分配的气体量</td></tr><tr><td>paymasterPostOpGasLimit</td><td>uint256</td><td>为付费代理后操作代码分配的气体量</td></tr><tr><td>paymasterData</td><td>bytes</td><td>付费代理的数据（仅当存在付费代理时）</td></tr><tr><td>signature</td><td>bytes</td><td>传递到账户中以验证授权的数据</td></tr></tbody></table></div>
+</li>
+</ul>
+<p>用户将UserOperation对象发送到专用的用户操作内存池。bundlers监听用户操作内存池，并创建<strong>bundle</strong>交易。bundle交易将多个UserOperation对象打包成一个对预先发布的全局入口点合约的handleOps调用.</p>
+<p>为了防止重放攻击，签名应该依赖于chainid和EntryPoint地址。</p>
+<hr/>
+<h3 id="entrypoint"><strong>EntryPoint</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#entrypoint" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>sender</td><td>address</td><td></td></tr><tr><td>nonce</td><td>uint256</td><td></td></tr><tr><td>initCode</td><td>bytes</td><td>工厂地址和factoryData的连接</td></tr><tr><td>callData</td><td>bytes</td><td></td></tr><tr><td>accountGasLimits</td><td>bytes32</td><td></td></tr><tr><td>preVerificationGas</td><td>uint256</td><td></td></tr><tr><td>gasFees</td><td>bytes32</td><td></td></tr><tr><td>paymasterAndData</td><td>bytes</td><td></td></tr><tr><td>signature</td><td>bytes</td><td></td></tr></tbody></table></div>
+<p>核心接口如下：</p>
+<ul>
+<li>
+<p><code>handleOps</code> 函数：处理由用户操作组成的数组，并指定交易受益人。</p>
+<pre><code>functionhandleOps(PackedUserOperation[] calldata ops, address payable beneficiary);
+</code></pre>
+</li>
+<li>
+<p><code>handleAggregatedOps</code> 函数：处理由聚合器分组的用户操作数组，并指定交易受益人。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> handleAggregatedOps</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    UserOpsPerAggregator</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">[] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">calldata</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> opsPerAggregator</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    address</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> payable</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> beneficiary</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span></code></pre></figure>
+</li>
+</ul>
+<p>其中，<code>UserOpsPerAggregator</code> 结构体定义如下：</p>
+<pre><code>struct UserOpsPerAggregator {
+    PackedUserOperation[] userOps; // 用户操作数组
+    IAggregator aggregator;       // 聚合器合约接口
+    bytes signature;              // 聚合操作的签名
+}
+</code></pre>
+<hr/>
+<h3 id="账户合约接口">账户合约接口<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#账户合约接口" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">interface</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> IAccount</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">  function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> validateUserOp</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">      (</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">PackedUserOperation</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> calldata</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> userOp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">bytes32</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> userOpHash</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">uint256</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> missingAccountFunds</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">      external</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> validationData</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<ul>
+<li>一个账户需要实现的核心接口是<code>IAccount</code>，它主要负责验证用户操作（<code>UserOperation</code>）的有效性，并与入口点（EntryPoint）交互以确保安全执行。关键点如下：</li>
+<li><strong>核心函数</strong>：<code>validateUserOp</code> 接受压缩的用户操作、用户操作哈希（不包含签名）、以及账户资金缺口作为参数，返回验证数据。此数据打包了授权者地址、有效截至时间和有效起始时间。</li>
+<li><strong>验证要求</strong>：
+<ul>
+<li>账户必须验证调用者是信任的入口点。</li>
+<li>如果不支持签名聚合，账户必须验证签名是否为用户操作哈希的有效签名；签名不符时应返回错误码<code>SIG_VALIDATION_FAILED</code>而非直接回滚。</li>
+<li>账户至少需向入口点支付“missingAccountFunds”以补足资金，可根据需要超额支付以备将来交易，并能通过<code>withdrawTo</code>取回多余金额。</li>
+</ul>
+</li>
+<li><strong>时间戳与授权者</strong>：
+<ul>
+<li>返回值中的“authorizer”字段用来标记签名状态（0表示有效签名，1表示签名失败，其他为授权者合约地址）。</li>
+<li>“validUntil”和“validAfter”分别定义了用户操作的有效期上限和下限。</li>
+</ul>
+</li>
+<li><strong>签名聚合支持</strong>： 支持签名聚合的账户应在<code>validateUserOp</code>的返回值中提供其签名聚合器地址，并可选择忽略用户操作中的签名字段。</li>
+</ul>
+<p>此外，账户还可以选择实现<code>IAccountExecute</code>接口，包含<code>executeUserOp</code>方法。此方法由入口点调用以执行用户操作，替代直接在账户上执行<code>callData</code>，提供了更高层次的抽象和控制。</p>
+<hr/>
+<h3 id="nonce机制">nonce机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#nonce机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在以太坊协议中，交易序号（nonce）作为一个递增的序列值，起到防止交易重放和确定交易区块内顺序的作用，同时也保证了交易哈希的独特性，避免相同发送者和相同nonce的交易被重复纳入链中。</p>
+<p>然而，单一的顺序nonce限制了发送者在交易排序和重放保护方面实施自定义逻辑的能力。</p>
+<p>为解决这一问题，提出了一种新的Nonce机制，该机制在UserOperation中使用一个uint256类型的nonce值，但将其视为两个部分：</p>
+<ul>
+<li>192位的“密钥”（key）</li>
+<li>64位的“序列”（sequence）</li>
+</ul>
+<p>这两个值在EntryPoint合约中链上表示，并在EntryPoint接口中定义了如下方法来暴露这些值：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">functiongetNonce</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sender, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint192</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> key)</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">externalviewreturns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> nonce);</span></span></code></pre></figure>
+<p>对于每个“密钥”，其对应的“序列”会在每个UserOperation被EntryPoint验证并顺序单调递增。与此同时，用户可以随时引入具有任意初始值的新“密钥”。</p>
+<p>这种机制在协议层面保持了UserOperation哈希唯一性的保证，同时允许钱包通过操作192位的“密钥”字段来实现所需的任何自定义逻辑，且这一设计适配了32字节的词长度限制，提高了灵活性和安全性。</p>
+<hr/>
+<h3 id="entrypoint要求与流程"><strong>entrypoint要求与流程</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#entrypoint要求与流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在处理和验证Nonce的过程中，客户端在准备UserOperation时，可通过视图调用EntryPoint合约上的特定方法来确定nonce字段的有效值。Bundler（打包者）在验证UserOperation时，也需要先调用getNonce方法以确保交易的nonce字段有效。特别地，若Bundler打算在内存池中接纳同一发送者的多笔UserOperation，它应当追踪这些操作已记录的key和sequence对。</p>
+<p>在使用模式上，可以通过不同的策略来适应不同的需求场景，如维持经典的递增Nonce机制，或为特定管理操作定义独立的Nonce-key以区分普通与管理事务。</p>
+<p>EntryPoint合约的功能要求包括处理两种类型的操作：无需签名聚合器的handleOps和能处理包含多个聚合器操作的handleAggregatedOps。对于handleOps和handleAggregatedOps，其处理流程包括两个主要阶段：验证循环和执行循环。</p>
+<ul>
+<li><strong>验证循环</strong>：创建不存在的账户，基于验证和调用气体限制计算最大可能费用，确保账户在EntryPoint中的存款足以覆盖最大可能成本，并调用账户的validateUserOp方法来验证操作及其签名，支付必要费用。任何验证失败都将导致至少跳过该操作，甚至完全回滚。</li>
+<li><strong>执行循环</strong>：根据UserOperation的calldata调用账户，如果calldata以IAccountExecute.executeUserOp方法签名开始，则需相应地构建并调用calldata。操作完成后，根据实际消耗的气体退还账户的押金，并对退还的气体费用施加一定百分比的惩罚（UNUSED_GAS_PENALTY_PERCENT），以防止过度预留气体空间而影响其他UserOperation的包含。</li>
+</ul>
+<p>Bundler在将UserOperation加入内存池之前，应使用模拟验证（simulateValidation）功能来本地验证签名正确性和费用支付情况，确保操作的有效性。未能通过验证的UserOperation应被丢弃，不予加入内存池。</p>
+<p><img src="https://p.ipic.vip/4myo4h.png" alt="image-20240724131028788"/></p>
+<p>EntryPoint 合约接收 handleOps(userOps[]) 调用，开始处理一系列用户操作。这个设计允许批量处理多个用户操作，提高效率。</p>
+<p>在验证阶段，EntryPoint 首先调用 Factory 的 create(initCode) 方法来创建新的 Account。这种方式允许按需创建账户，增加了灵活性。接着，EntryPoint 获取 account 信息，为后续操作做准备。</p>
+<p>EntryPoint 然后调用 Account 的 validateUserOp 方法。这一步骤让账户有机会验证操作的有效性，例如检查签名。验证通过后，Account 向 EntryPoint 存入保证金。这个保证金机制确保了账户有足够的资金支付gas费用。</p>
+<p>EntryPoint 随后扣除 Account 的保证金，这是为了预付可能的gas费用。整个过程对 Account2 重复，体现了系统处理多个账户操作的能力。</p>
+<p>在执行阶段，EntryPoint 调用 Account 的 exec 方法来执行实际操作。这种设计将操作的执行委托给账户合约，增加了系统的灵活性。操作执行后，EntryPoint 退还 Account1 剩余的保证金，体现了精确的费用计算和退款机制。</p>
+<p>同样的过程也应用于 Account2，展示了系统能够公平地处理多个账户的操作。</p>
+<p>最后，EntryPoint 调用 compensate(beneficiary) 方法，可能是向打包者支付费用。这一步确保了为系统提供服务的参与者得到适当的补偿。</p>
+<p>这整个流程体现了账户抽象（Account Abstraction）的核心理念：将复杂的验证和执行逻辑从以太坊核心层移至用户定义的智能合约中。它允许更灵活的账户行为，同时保持了安全性和效率。通过分离验证和执行阶段，系统可以在执行昂贵操作之前拒绝无效的操作，从而节省gas并防止潜在的攻击。保证金机制确保了费用的预付，避免了资源浪费，而最终的补偿步骤则激励了网络参与者的持续贡献。</p>
+<hr/>
+<h3 id="paymasters-扩展">paymasters 扩展<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#paymasters-扩展" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>扩展了入口点逻辑，以支持可以为其他用户赞助交易的支付。此功能可用于允许应用程序开发人员为其用户补贴费用，允许用户使用[ERC-20]代币和许多其他用例支付费用。当UserOp中的paymasterAndData字段不为空时，入口点会为该UserOperation实现不同的业务流程</p>
+</blockquote>
+<p><img src="https://p.ipic.vip/p7fuus.png" alt="image-20240724132842668"/></p>
+<p>验证阶段流程：</p>
+<ol>
+<li>EntryPoint 接收 handleOps(userOps[])</li>
+<li>调用 Account.validateUserOp()</li>
+<li>调用 Paymaster.validatePaymasterUserOp()</li>
+<li>EntryPoint 扣除 Paymaster 存款</li>
+</ol>
+<p>执行阶段流程</p>
+<ol start="5">
+<li>调用 Account.exec() 执行实际操作</li>
+<li>调用 Paymaster.postOp() 进行后续处理</li>
+<li>EntryPoint 退还 Paymaster 剩余存款</li>
+</ol>
+<p>通过 Paymaster 机制，它提供了灵活的费用支付方式，同时保证了操作的有效性、安全性和经济激励的平衡。</p>
+<hr/>
+<h3 id="使用签名聚合器">使用签名聚合器<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#使用签名聚合器" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>签名聚合器提供了一套接口，允许更高效地处理和验证多笔交易的签名。以下是该接口的定义</p>
+</blockquote>
+<p>【IAggregator 接口】</p>
+<ul>
+<li><code>validateUserOpSignature</code>: 验证单个UserOperation的签名，并返回一个用于打包的替代签名（通常是空的或特定格式的签名），以便于后续的交易捆绑。</li>
+<li><code>aggregateSignatures</code>: 聚合一组UserOperation的签名到单一签名值，提高交易效率。</li>
+<li><code>validateSignatures</code>: 验证聚合签名是否与数组中所有UserOperations匹配，确保签名的有效性。此方法在链上由<code>handleOps()</code>调用。</li>
+</ul>
+<p>【账户与聚合器的互动】</p>
+<p>当账户采用签名聚合时，它会在调用<code>validateUserOp</code>时返回聚合器的地址。在模拟验证（<code>simulateValidation</code>）阶段，此聚合器信息作为<code>aggregatorInfo</code>结构的一部分返回给Bundler（打包者），以便进行进一步的验证和处理。</p>
+<p>【Bundler 的操作流程】</p>
+<ol>
+<li><strong>聚合器接受与验证</strong>：Bundler首先需要确认聚合器的有效性，包括检查其是否已抵押（staked）且未被限制或禁用。</li>
+<li><strong>签名验证</strong>：为了接受UserOperation，Bundler需调用聚合器的<code>validateUserOpSignature</code>方法验证签名，并获得一个替代签名，该签名将在打包过程中使用。接着，Bundler需再次调用账户的<code>validateUserOp</code>方法，确保使用返回的替代签名也能得到相同的结果，以验证签名的正确性。</li>
+<li><strong>签名聚合</strong>：Bundler可利用<code>aggregateSignatures</code>方法将多个UserOperation的签名聚合成单一签名，简化交易处理流程。</li>
+<li><strong>最终验证</strong>：<code>validateSignatures</code>方法在链上确保所有聚合的签名与提交的UserOperations匹配，任何不匹配的情况都会导致回滚，确保交易安全性。</li>
+</ol>
+<p>签名聚合器通过提供一套接口，实现了对多笔交易签名的高效聚合与验证，增强了交易处理的效率与安全性。Bundler在整合UserOperations时，需遵循特定的步骤来验证聚合器的有效性、验证单个交易签名、聚合签名，并最终确保所有签名的有效性，以顺利执行交易捆绑和上链。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-5" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#参考资料" data-for="参考资料">参考资料</a></li><li class="depth-0"><a href="#erc4337协议" data-for="erc4337协议">ERC4337协议</a></li><li class="depth-1"><a href="#erc-4337协议" data-for="erc-4337协议">ERC 4337协议</a></li><li class="depth-2"><a href="#角色" data-for="角色">角色</a></li><li class="depth-2"><a href="#useroperation" data-for="useroperation">userOperation</a></li><li class="depth-2"><a href="#entrypoint" data-for="entrypoint">EntryPoint</a></li><li class="depth-2"><a href="#账户合约接口" data-for="账户合约接口">账户合约接口</a></li><li class="depth-2"><a href="#nonce机制" data-for="nonce机制">nonce机制</a></li><li class="depth-2"><a href="#entrypoint要求与流程" data-for="entrypoint要求与流程">entrypoint要求与流程</a></li><li class="depth-2"><a href="#paymasters-扩展" data-for="paymasters-扩展">paymasters 扩展</a></li><li class="depth-2"><a href="#使用签名聚合器" data-for="使用签名聚合器">使用签名聚合器</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>

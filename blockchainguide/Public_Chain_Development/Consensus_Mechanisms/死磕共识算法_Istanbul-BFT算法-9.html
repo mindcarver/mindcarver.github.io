@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>死磕共识算法_Istanbul BFT算法-9</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="死磕共识算法_Istanbul BFT算法-9"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="死磕共识算法_Istanbul BFT算法-9"/><meta name="twitter:description" content="死磕共识算法|Istanbul BFT算法 配合以下代码进行阅读：github.com/blockchainGuide/ 写文不易，上面给个star，有什么问题可以指出，便于大家交流学习。 引言 Istanbul BFT作为BFT类算法的一种已经有过在以太坊上的实践。虽然Istanbul目前还存在一些潜在的问题，但其算法思想和实现还是值得学习和借鉴的。 源代码：github.com/jpmorganchase/quorum/tree/master/consensus/istanbul 术语 Validator：块的验证者 Proposer：块验证者中被选择用来出块的 Round: 共识的轮数..."/><meta property="og:description" content="死磕共识算法|Istanbul BFT算法 配合以下代码进行阅读：github.com/blockchainGuide/ 写文不易，上面给个star，有什么问题可以指出，便于大家交流学习。 引言 Istanbul BFT作为BFT类算法的一种已经有过在以太坊上的实践。虽然Istanbul目前还存在一些潜在的问题，但其算法思想和实现还是值得学习和借鉴的。 源代码：github.com/jpmorganchase/quorum/tree/master/consensus/istanbul 术语 Validator：块的验证者 Proposer：块验证者中被选择用来出块的 Round: 共识的轮数..."/><meta property="og:image:alt" content="死磕共识算法|Istanbul BFT算法 配合以下代码进行阅读：github.com/blockchainGuide/ 写文不易，上面给个star，有什么问题可以指出，便于大家交流学习。 引言 Istanbul BFT作为BFT类算法的一种已经有过在以太坊上的实践。虽然Istanbul目前还存在一些潜在的问题，但其算法思想和实现还是值得学习和借鉴的。 源代码：github.com/jpmorganchase/quorum/tree/master/consensus/istanbul 术语 Validator：块的验证者 Proposer：块验证者中被选择用来出块的 Round: 共识的轮数..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Consensus_Mechanisms/死磕共识算法_Istanbul-BFT算法-9"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Consensus_Mechanisms/死磕共识算法_Istanbul-BFT算法-9"/><link rel="icon" href="../../../static/icon.png"/><meta name="description" content="死磕共识算法|Istanbul BFT算法 配合以下代码进行阅读：github.com/blockchainGuide/ 写文不易，上面给个star，有什么问题可以指出，便于大家交流学习。 引言 Istanbul BFT作为BFT类算法的一种已经有过在以太坊上的实践。虽然Istanbul目前还存在一些潜在的问题，但其算法思想和实现还是值得学习和借鉴的。 源代码：github.com/jpmorganchase/quorum/tree/master/consensus/istanbul 术语 Validator：块的验证者 Proposer：块验证者中被选择用来出块的 Round: 共识的轮数..."/><meta name="generator" content="Quartz"/><link href="../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/Public_Chain_Development/Consensus_Mechanisms/死磕共识算法_Istanbul-BFT算法-9"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-288"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-288" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../blockchainguide/Public_Chain_Development/">Public_Chain_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../blockchainguide/Public_Chain_Development/Consensus_Mechanisms/">Consensus_Mechanisms</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>死磕共识算法_Istanbul BFT算法 9</a></div></nav><h1 class="article-title">死磕共识算法_Istanbul BFT算法-9</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.439Z">2026年1月12日</time><span>24分钟阅读</span></p></div></div><article class="popover-hint"><blockquote>
+<p>死磕共识算法|Istanbul BFT算法</p>
+<p>配合以下代码进行阅读：<a href="https://github.com/blockchainGuide/" class="external">https://github.com/blockchainGuide/<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>写文不易，上面给个star，有什么问题可以指出，便于大家交流学习。</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnximfy066j30oo0gs0vk.jpg" alt="931c0c9307f4692d69da24b7fe6e0bf3"/></p>
+<h1 id="引言">引言<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#引言" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p><a href="https://github.com/ethereum/EIPs/issues/650" class="external">Istanbul BFT<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>作为BFT类算法的一种已经有过在以太坊上的实践。虽然Istanbul目前还存在一些<a href="https://blog.csdn.net/dianyangshu0904/article/details/102195413#%E6%BD%9C%E5%9C%A8%E9%97%AE%E9%A2%98" class="external">潜在的问题<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>，但其算法思想和实现还是值得学习和借鉴的。</p>
+<blockquote>
+<p>源代码：<a href="https://github.com/jpmorganchase/quorum/tree/master/consensus/istanbul" class="external">https://github.com/jpmorganchase/quorum/tree/master/consensus/istanbul<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+</blockquote>
+<h1 id="术语">术语<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#术语" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<ul>
+<li><strong>Validator</strong>：块的验证者</li>
+<li><strong>Proposer</strong>：块验证者中被选择用来出块的</li>
+<li><strong>Round</strong>: 共识的轮数。一轮中 Proposer 开始提出一个一个出块建议，然后以提交区块结束。</li>
+<li><strong>Proposal</strong>：新的块生成提议</li>
+<li><strong>Sequence</strong>：提议的序号。当前序列号大于先前的；块高就是此提议的序列号。</li>
+<li><strong>Backlog</strong>：存储未来的共识消息</li>
+<li><strong>Round state</strong>: 特定sequence和轮次的共识消息，包括 pre-prepare 消息, prepare 消息, and commit 消息.</li>
+<li><strong>Consensus proof</strong>：用来证明块已经通过共识处理的块签名</li>
+<li><strong>Snapshot</strong>：上一个时期的验证者投票状态</li>
+</ul>
+<h3 id="ibft共识细节">IBFT共识细节<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#ibft共识细节" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Proposer 必须在每个 round中连续不断的 生成 block prorosal。</p>
+<p>istanbul BFT 包括 3 个阶段的共识：PRE-PREPARE，PREPARE，COMMIT。</p>
+<p>容错机制： N = 3F +1 ；N表示验证节点，F表示错误节点。</p>
+<p>在每轮之前将会以循环的方式选择一个 validator 作为 proposer. 接着 proposer将会提出一个新的 block proposal 并且广播通过 pre-prepare 消息。一旦接受到 pre-prepare消息 ，validators将会进入到 pre-prepared 阶段并且广播 prepare  消息。这个步骤是为了确保 validators 运行在相同的 sequence 和相同的 round 中。当接收到2F+1 的Prepare消息时，validators 进入到 prepared并且广播 commit 消息。此步骤是通知其它节点接受建议的块并将块插入链。 最后，validator等待2F + 1 COMMIT消息进入COMMITTED状态，然后将块插入链。</p>
+<p>注意：<strong>Istanbul中 的块是最终的，没有分叉，任何有效的块必须位于主链的某个位置</strong>。</p>
+<p>为了防止故障节点从主链生成完全不同的链，每个验证器将2F + 1个接收到的COMMIT签名附加到标头中的extraData字段，然后将其插入链中， 因此，块是可自我验证的，并且也可以支持轻客户端。但是，动态extraData会导致块哈希计算出现问题。由于来自不同验证器的相同块可以具有不同的COMMIT签名集，因此同一块也可以具有不同的块散列。 为了解决这个问题，我们通过排除COMMIT签名部分来计算块哈希。 因此，我们仍然可以保持块/块哈希一致性，并将共识证明放在块头中。</p>
+<h4 id="共识状态">共识状态<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#共识状态" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>Istanbul BFT是一种状态机复制算法。 每个验证器都维护一个状态机副本，以达到块一致性。</p>
+<p>一共有以下几种状态：</p>
+<ul>
+<li><code>NEW ROUND</code>: Proposer发送新的 block proposal。 Validator等待PRE-PREPARE消息。</li>
+<li><code>PRE-PREPARED</code>:验证器已收到PRE-PREPARE消息并广播PREPARE消息。 然后它等待2F + 1 个PREFARE或COMMIT消息。</li>
+<li><code>PREPARED</code>: 验证器已收到2F + 1个PREPARE消息并广播COMMIT消息。 然后它等待2F + 1 COMMIT消息。</li>
+<li><code>COMMITTED</code>:验证器已收到2F + 1个COMMIT消息，并能够将建议的块插入区块链。</li>
+<li><code>FINAL COMMITTED</code>:新块已成功插入区块链，validator 已准备好进入下一轮。</li>
+<li><code>ROUND CHANGE</code>:验证器正在等待同一个建议的轮数上的2F + 1个ROUND CHANGE消息。</li>
+</ul>
+<h4 id="状态转换">状态转换<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#状态转换" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p><img src="http://ww1.sinaimg.cn/large/006tNc79gy1g64qqy79jqj30z60najwf.jpg" alt="image-20190819094215511"/></p>
+<ul>
+<li><code>NEW ROUND</code> <span>→</span> <code>PRE-PREPARED</code>:
+<ul>
+<li><strong>Proposer</strong> 从txpool 中收集交易</li>
+<li><strong>Proposer</strong>生成块提议并将其广播给验证者。 然后它进入PRE-PREPARED状态。</li>
+<li>每个validator在收到具有以下条件的PRE-PREPARE消息后进入PRE-PREPARED：
+<ul>
+<li>块提案来自有效的proposer。</li>
+<li>块头有效</li>
+<li>block proposal的sequence和round匹配validator的状态</li>
+</ul>
+</li>
+<li><strong>Validator</strong>广播<code>PREPARE</code>消息给其他validators</li>
+</ul>
+</li>
+<li><code>PRE-PREPARED</code> <span>→</span> <code>PREPARED</code>:
+<ul>
+<li>Validator接收2F + 1个有效的PREPARE消息以进入PREPARED状态。 有效消息符合以下条件：
+<ul>
+<li>sequence 和 round匹配</li>
+<li>block hash匹配</li>
+<li>消息来自于已知 validators</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>COMMITTED</code> <span>→</span> <code>FINAL COMMITTED</code>:
+<ul>
+<li>validator 将 2F+1 个提交的签名放到 extraData中并且尝试将区块上链</li>
+<li>插入成功后，Validator进入FINAL COMMITTED状态。</li>
+</ul>
+</li>
+<li><code>FINAL COMMITTED</code> <span>→</span> <code>NEW ROUND</code>:
+<ul>
+<li>验证器选择一个新的提议器并启动一个新的round timer 。</li>
+</ul>
+</li>
+</ul>
+<h4 id="round-change-flow">Round change flow<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#round-change-flow" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>3 个条件将会触发 ROUND CHANGE
+<ul>
+<li>Round change timer 过期</li>
+<li>无效 <code>PREPREPARE</code> 消息</li>
+<li>块插入失败</li>
+</ul>
+</li>
+<li>当验证器注意到上述条件之一适用时，它会广播ROUND CHANGE消息以及建议的 round number，并等待来自其他验证器的ROUND CHANGE消息。 建议的round number 根据以下条件选择：
+<ul>
+<li>如果验证器已从其peers接收到ROUND CHANGE消息，则它将选择具有F + 1个ROUND CHANGE消息的最大 round number。</li>
+<li>否则，它会选择1 +当前的round number作为建议的轮数。</li>
+</ul>
+</li>
+<li>每当验证器在同一个建议的轮数上收到F + 1个ROUND CHANGE消息时，它就会将收到的消息与它自己的一个进行比较。 如果接收的数量较大，验证器将再次使用收到的号码广播ROUND CHANGE消息。</li>
+<li>在相同的建议round number上接收到2F + 1个ROUND CHANGE消息后，验证器退出round change loop，计算新的提议者，然后进入NEW ROUND状态。</li>
+<li>验证器跳出round change loop的另一个条件是它通过对等同步接收验证的块。</li>
+</ul>
+<h4 id="proposer-选择策略">Proposer 选择策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#proposer-选择策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>目前我们支持两种策略：<strong>round robin</strong> 和 <strong>sticky proposer</strong>.。</p>
+<ul>
+<li>Round robin:在循环设置中，提议者将在每个块和round change中进行更改</li>
+<li>Sticky proposer: 在 sticky proposer中, proposal只有在发生一轮变更时才会改变。</li>
+</ul>
+<h4 id="validator-列表投票">Validator 列表投票<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#validator-列表投票" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>使用与Clique类似的验证器投票机制，并复制Clique EIP的大部分内容。 每个epoch交易都会重置验证器投票，这意味着如果授权或取消授权投票仍在进行中，则投票过程将被终止。</p>
+<p>对于所有交易块：</p>
+<ul>
+<li>Proposer可以投一票来建议更改验证人名单。</li>
+<li>每个目标受益人的最新提案仅保留一个验证人。</li>
+<li>随着链条的进展，投票将被实时统计（允许同时提议）。</li>
+<li>达到多数共识的proposals ,VALIDATOR_LIMIT立即生效。</li>
+<li>无效的提案不会因客户端实现简单而受到惩罚。</li>
+<li>一项生效的提案需要放弃该提案的所有未决投票（赞成和反对），并以 clean state 开始</li>
+</ul>
+<h4 id="未来的消息和backlog">未来的消息和backlog<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#未来的消息和backlog" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>在异步网络环境中，可以接收将来无法在当前状态下处理的消息。 例如，验证器可以在NEW ROUND上接收COMMIT消息。 我们将此类消息称为“未来消息”。 当验证程序收到将来的消息时，它会将消息放入其待办事项中，并尽可能在稍后尝试处理。</p>
+<h4 id="优化">优化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#优化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>为了加速共识过程，在接收PREFARE消息的2F + 1之前接收到2F + 1 COMMIT消息的验证器将跳转到COMMITTED状态，这样就不必等待进一步的PREPARE消息。</p>
+<h4 id="常量">常量<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常量" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>我们定义以下常量：</p>
+<ul>
+<li><code>EPOCH_LENGTH</code>:检查点和重置待处理投票之后的块数。
+<ul>
+<li>建议30000使testnet保持类似于主要网络ethash时代。</li>
+</ul>
+</li>
+<li><code>REQUEST_TIMEOUT</code>: 在以毫秒为单位进行轮次更改之前，每个达成一致的超时。</li>
+<li><code>BLOCK_PERIOD</code>: 两个连续块之间的最小时间戳差异（秒）。</li>
+<li><code>PROPOSER_POLICY</code>:提议者选择策略，默认为round robin.。</li>
+<li><code>ISTANBUL_DIGEST</code>:固定的 magic number， 0x63746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365用于Istanbul块识别的块头中的mixDigest。</li>
+<li><code>DEFAULT_DIFFICULTY</code>: 默认块难度，设置为0x0000000000000001。</li>
+<li><code>EXTRA_VANITY</code>: 固定数量的额外数据前缀字节预留给提议者。
+<ul>
+<li>建议保留当前额外数据容量和/或使用的32个字节。</li>
+</ul>
+</li>
+<li><code>NONCE_AUTH</code>: magic nonce number 0xffffffffffffffff投票添加验证器。</li>
+<li><code>NONCE_DROP</code>:magic nonce number 0x0000000000000000 投票移除验证器</li>
+<li><code>UNCLE_HASH</code>:总是Keccak256（RLP（[]））作为叔叔在PoW之外没有意义。</li>
+<li><code>PREPREPARE_MSG_CODE</code>: 固定编号0. PREPREPARE消息的消息代码。</li>
+<li><code>COMMIT_MSG_CODE</code>: 固定编号1. COMMIT消息的消息代码。</li>
+<li><code>ROUND_CHANGE_MSG_CODE</code>:固定号码2. ROUND CHANGE消息的消息代码。</li>
+</ul>
+<p>我们还定义了以下每块常量：</p>
+<ul>
+<li><code>BLOCK_NUMBER</code>: 链中的块高度，其中生成块的高度为0。</li>
+<li><code>N</code>: 授权验证人数。</li>
+<li><code>F</code>:允许的错误验证器数量。</li>
+<li><code>VALIDATOR_INDEX</code>:当前授权验证器的排序列表中的块验证器的索引。</li>
+<li><code>VALIDATOR_LIMIT</code>: 传递授权或取消授权提议的验证者数量。
+<ul>
+<li>必须是最低限额（N / 2）+ 1才能对链条达成多数共识。</li>
+</ul>
+</li>
+</ul>
+<h4 id="块头">块头<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#块头" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>我们没有为伊斯坦布尔BFT发明新的块头。 相反，我们跟随Clique重新调整ethash标头字段，如下所示：</p>
+<ul>
+<li>
+<p><code>beneficiary</code>: 建议修改验证器列表的地址。</p>
+<ul>
+<li>应该通常用零填充，仅在投票时修改。</li>
+<li>尽管如此，允许使用任意值（即使是无意义的值，例如投票给非验证者），以避免投票机制实施中的额外复杂性。</li>
+</ul>
+</li>
+<li>
+<p><code>nonce</code>:关于受益人领域定义的帐户的提议者提案。</p>
+<ul>
+<li>应该是NONCE_DROP建议取消授权受益人作为现有验证人。</li>
+<li>应该是NONCE_AUTH建议授权受益人作为新的验证人。</li>
+<li>必须填充零，NONCE_DROP或NONCE_AUTH</li>
+</ul>
+</li>
+<li>
+<p><code>mixHash</code>: 固定 magic number 0x63746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365 用于伊斯坦布尔区块识别</p>
+</li>
+<li>
+<p><code>ommersHash</code>:必须是UNCLE_HASH，因为在PoW之外，叔叔没有意义。</p>
+</li>
+<li>
+<p><code>timestamp</code>:必须至少是父时间戳+ BLOCK_PERIOD</p>
+</li>
+<li>
+<p><code>difficulty</code>:必须填写0x0000000000000001。</p>
+</li>
+<li>
+<p><code>extraData</code>: 签名者和RLP编码的伊斯坦布尔额外数据的组合字段，其中伊斯坦布尔额外数据包含验证器列表，proposer seal和 commit seal。 伊斯坦布尔的额外数据定义如下：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="go" data-theme="github-light github-dark"><code data-language="go" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> type</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> IstanbulExtra</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 	Validators    []</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">common</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Address</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> 	//Validator addresses</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 	Seal          []</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">byte</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			//Proposer seal 65 bytes</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 	CommittedSeal [][]</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">byte</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">			//Committed seal, 65 * len(Validators) bytes</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> }</span></span></code></pre></figure>
+<p>因此extraData将采用EXTRA_VANITY |的形式 ISTANBUL_EXTRA其中| 表示用于分隔vanity和伊斯坦布尔额外数据的固定索引（不是分隔符的实际字符）。</p>
+<ul>
+<li>第一个EXTRA_VANITY字节（固定）可以包含任意提议者vanity数据。</li>
+<li>ISTANBUL_EXTRA字节是从RLP（IstanbulExtra）计算的RLP编码的伊斯坦布尔额外数据，其中RLP（）是RLP编码功能，而IstanbulExtra是伊斯坦布尔额外数据。
+<ul>
+<li><code>Validators</code>: 验证器列表，必须按升序排序。</li>
+<li><code>Seal</code>: 提议者的header seal 签名。</li>
+<li><code>CommittedSeal</code>:提交的签名列表作为共识证明</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="block-hash-proposer-seal-and-committed-seals">Block hash, proposer seal, and committed seals<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#block-hash-proposer-seal-and-committed-seals" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>由于以下原因，Istanbul块哈希计算与ethash块哈希计算不同：</p>
+<ol>
+<li>提议者需要将提议者密封在extraData中以证明该块由所选提议者签名。</li>
+<li>验证者需要将2F + 1个已提交的密封作为extraData中的共识证明，以证明该块已经达成共识。</li>
+</ol>
+<p>计算仍然类似于ethash块哈希计算，但我们需要处理extraData。 我们按如下方式计算字段：</p>
+<h5 id="计算提议者seal">计算提议者seal<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#计算提议者seal" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h5>
+<p>在提议者密封计算时，committed的密封仍然是未知的，因此我们计算密封与那些未知的密封空。 计算如下：</p>
+<ul>
+<li><code>Proposer seal</code>: <code>SignECDSA(Keccak256(RLP(Header)), PrivateKey)</code></li>
+<li><code>PrivateKey</code>: Proposer’s的私钥</li>
+<li><code>Header</code>: 和ethash 的header一样，只不过extradata不一样</li>
+<li><code>extraData</code>: <code>vanity | RLP(IstanbulExtra)</code>, 在IstanbulExtra<code>, </code>CommittedSeal<code>and </code>Seal` 是空数组.</li>
+</ul>
+<h5 id="计算块哈希">计算块哈希<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#计算块哈希" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h5>
+<p>在计算块哈希时，我们需要排除已提交的密封，因为该数据在不同的验证器之间是动态的。 因此，我们在计算哈希时使CommittedSeal为空数组。 计算如下：</p>
+<ul>
+<li><code>Header</code>: 和ethash 的header一样，只不过extradata不一样</li>
+<li><code>extraData</code>: <code>vanity | RLP(IstanbulExtra)</code>, 在IstanbulExtra<code>, </code>CommittedSeal<code>and </code>Seal` 是空数组.</li>
+</ul>
+<h5 id="共识证明">共识证明<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#共识证明" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h5>
+<p>在将块插入区块链之前，每个验证器需要从其他验证器收集2F + 1个已提交的密封以构成共识证明。 一旦它收到足够的提交密封，它将填充IstanbulExtra中的CommittedSeal，重新计算extraData，然后将块插入区块链。 请注意，由于已提交的密封可能因不同的来源而不同，因此我们会在计算块哈希时排除该部分，如上一节所述。</p>
+<p>Committed seal calculation:</p>
+<p>committed seal由每个签名哈希的验证器以及其私钥的COMMIT_MSG_CODE消息代码计算。 计算如下：</p>
+<ul>
+<li><code>Committed seal</code>: <code>SignECDSA(Keccak256(CONCAT(Hash, COMMIT_MSG_CODE)), PrivateKey)</code>.</li>
+<li><code>CONCAT(Hash, COMMIT_MSG_CODE)</code>: 连接 block hash and <code>COMMIT_MSG_CODE</code> bytes.</li>
+<li><code>PrivateKey</code>: 签署验证者的私钥。</li>
+</ul>
+<h3 id="块锁定机制">块锁定机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#块锁定机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>引入锁定机制以解决安全问题。 通常，当提议者用块B锁定在某个高度H时，它只能为高度H提出B.另一方面，当验证器被锁定时，它只能在B上投票选择高度H.</p>
+<h4 id="lock">Lock<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#lock" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>锁定锁（B，H）包含一个块及其高度，这意味着它的所有验证器当前被锁定在某个块B和高度H.在下面，我们还使用+表示多于和 - 表示小于。 例如，+ 2/3验证器表示超过三分之二的验证器，而-1/3验证器表示不到三分之一的验证器。</p>
+<h4 id="lock-and-unlock">Lock and unlock<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#lock-and-unlock" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>Lock:验证器在高度为“H”的块“B”上接收到“2F + 1”“PREPARE”消息时被锁定。</li>
+<li>Unlock: 验证器在高度“H”处解锁，并在未能将块“B”插入块链时阻止“B”。</li>
+</ul>
+<h4 id="protocol-23-validators-are-locked-with-lockbh">Protocol (<code>+2/3</code> validators are locked with <code>Lock(B,H)</code>)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#protocol-23-validators-are-locked-with-lockbh" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>
+<p><code>PRE-PREPARE</code>:</p>
+<ul>
+<li>
+<p><strong>Proposer</strong>:</p>
+<ul>
+<li>
+<p>情况1，提议者被锁定：在B上广播PRE-PREPARE，并进入PREPARED状态。</p>
+</li>
+<li>
+<p>情况2，提议者未被锁定：在块B’上广播PRE-PREPARE。</p>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Validator</strong>:</p>
+<ul>
+<li>情况1，在现有块上接收PRE-PREPARE：忽略。
+<ul>
+<li>注意：它最终会导致轮次更改，并且提议者将通过同步获得旧块。</li>
+</ul>
+</li>
+<li>情况2，验证器被锁定：
+<ul>
+<li>案例2.1，在B上收到PRE-PREPARE：在B上广播PREPARE</li>
+<li>案例2.2，在B’上接收PRE-PREPARE：广播ROUND CHANGE。</li>
+</ul>
+</li>
+<li>情况3，验证器未锁定：
+<ul>
+<li>情况3.1，在B上接收PRE-PREPARE：在B上广播PREPARE</li>
+<li>案例3.2，在B’上接收PRE-PREPARE：在B’上广播PREPARE。
+<ul>
+<li>注意：由于+2/3被锁定在B并且这将导致全面更改，因此此共识轮将最终进行全面更改。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><code>PREPARE</code>:</p>
+<ul>
+<li>案例1，验证器被锁定：
+<ul>
+<li>情况1.1，在B上接收PREPARE：在B上广播COMMIT，并进入PREPARED状态。
+<ul>
+<li>注意：这不应该发生，它应该跳过这一步并在PRE-PREPARE阶段输入PREPARED。</li>
+</ul>
+</li>
+<li>案例1.2，在B’上收到PREPARE：忽略。
+<ul>
+<li>注意：B’上不应该有+1/3 PREPARE，因为+2/3被锁定在B.因此B’上的共识轮将导致轮次更改。 验证器不能直接在此广播ROUND CHANGE，因为此PREPARE消息可能来自故障节点。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>情况2，验证器未锁定：
+<ul>
+<li>情况2.1，在B上收到PREPARE：在B上等待2F + 1 PREPARE消息
+<ul>
+<li>注意：在接收2F + 1 PREPARE消息之前，它很可能会收到2F + 1 COMMIT消息，因为有+2/3验证器被锁定在B.在这种情况下，它将直接跳转到COMMITTED状态。</li>
+</ul>
+</li>
+<li>情况2.2，在B’上收到PREPARE：在B’上等待2F + 1 PREPARE消息。
+<ul>
+<li>Note: This consensus will eventually get into round change since <code>+2/3</code> validators are locked on <code>B</code> and which would lead to round change.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><code>COMMIT</code>:</p>
+<ul>
+<li>验证者必须被锁定：
+<ul>
+<li>情况1，在B上收到COMMIT：等待2F + 1 COMMIT消息。</li>
+<li>案例2，B’收到COMMIT：不应该发生。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="锁定情况下">锁定情况下<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#锁定情况下" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>Round change:
+<ul>
+<li>Case 1, <code>+2/3</code> are locked:
+<ul>
+<li>如果提议者被锁定，则建议B.</li>
+<li>否则它会提出B’，但这将导致另一轮变革。</li>
+<li>结论：最终B将由诚实的验证者承诺。</li>
+</ul>
+</li>
+<li>Case 2, <code>+1/3 ~ 2/3</code> are locked:
+<ul>
+<li>如果提议者被锁定，则建议B.</li>
+<li>否则它会提出B’。 但是，由于+1 / 3被锁定在B，因此没有验证器可以在B’上接收2F + 1 PREPARE，这意味着没有验证器可以锁定在B’。 此外，那些+1 / 3锁定验证器将不会响应B’并最终导致全面更改。</li>
+<li>结论：最终B将由诚实的验证者承诺。</li>
+</ul>
+</li>
+<li>Case 3, <code>-1/3</code> are locked:
+<ul>
+<li>如果提议被锁定，则建议B.</li>
+<li>否则它会提出B’。 如果+2/3在B’上达成共识，那些锁定的-1/3将通过同步获得B’并移动到下一个高度。 否则，将会有另一轮变更。</li>
+<li>结论：它可以是B或其他块B’最终提交。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>插入失败导致的round change：
+<ul>
+<li>它将属于上述一轮变更案例之一。
+<ul>
+<li>如果块实际上是坏的（不能插入区块链），最终+2/3验证器将在H处解锁块B并尝试建议新的块B’。</li>
+<li>如果块是好的（可以插入区块链），那么它仍然是上述圆形更改案例之一。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>-1/3验证器成功插入块，但其他验证器成功触发循环更改，这意味着+1 / 3仍锁定在锁定（B，H）
+<ul>
+<li>案例1，提议者已插入B：提议者将在H’提出B’，但+1 / 3被锁定在B，因此B’将不会通过共识，这最终将导致轮次更改。 其他验证器将对B执行共识或通过同步获得B.</li>
+<li>案例2，提议者未插入B：
+<ul>
+<li>案例2.1，提议者被锁定：提议者提出B.</li>
+<li>案例2.2，提议者未被锁定：提议者将在H处提出B’。其余与上述案例1相同。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>+1/3验证器成功插入块，-2 / 3试图在H处触发圆形更改
+<ul>
+<li>案例1，提议者已插入B：提议者将在H’提出B’，但在+1/3通过同步获得B之前不会通过共识。</li>
+<li>案例2，提议者未插入B：
+<ul>
+<li>案例2.1，提议者被锁定：提议者提出B.</li>
+<li>案例2.2，提议者未被锁定：提议者在H处提出B’。其余与上述案例1相同。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>+2/3验证器成功插入块，-1 / 3试图在H处触发圆形更改
+<ul>
+<li>案例1，提议者已插入B：提议者将在H’提出B’，这可能会导致成功的共识。 然后那些-1/3需要通过同步获得B.</li>
+<li>案例2，提议者未插入B：
+<ul>
+<li>案例2.1，提议者被锁定：提议者提出B.</li>
+<li>案例2.2，提议者没有被锁定：提议者在H处建议B’。因为+2/3已经在H处有B，所以这一轮将导致轮次改变。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="存在的问题">存在的问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#存在的问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<ul>
+<li><a href="https://github.com/jpmorganchase/quorum/issues/305" class="external">Fail-Stop failures<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://arxiv.org/pdf/1901.07160.pdf" class="external">这篇文章详细分析了IBFT<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li>没有激励机制</li>
+</ul>
+<p>传统上，验证者需要紧密连接才能达到稳定的共识结果，这意味着所有验证者需要彼此直接连接; 但是，在实际的网络环境中，很难实现稳定和恒定的p2p连接。 为了解决这个问题，伊斯坦布尔BFT实施了八卦网络来克服这种限制。 在八卦网络环境中，所有验证器只需要弱连接，这意味着当它们直接连接或者它们之间连接有一个或多个验证器时，任何两个验证器都会被连接。 共识消息将在验证器之间中继。</p>
+<hr/>
+<h1 id="参考">参考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p><a href="https://github.com/blockchainGuide" class="external">https://github.com/blockchainGuide<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> （文章合集最终修订版，会因为文章内容勘误不断更新，建议关注）</p>
+<p><a href="https://arxiv.org/pdf/1901.07160.pdf" class="external">https://arxiv.org/pdf/1901.07160.pdf<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> （IBFT论文）</p>
+<p><a href="https://github.com/ethereum/EIPs/issues/650" class="external">https://github.com/ethereum/EIPs/issues/650<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><a href="https://github.com/ConsenSys/quorum/issues/305" class="external">https://github.com/ConsenSys/quorum/issues/305<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><a href="https://docs.goquorum.consensys.net/en/stable/Concepts/Consensus/IBFT/" class="external">https://docs.goquorum.consensys.net/en/stable/Concepts/Consensus/IBFT/<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> （quorum的官方的文档）</p>
+</blockquote></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-108" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#引言" data-for="引言">引言</a></li><li class="depth-0"><a href="#术语" data-for="术语">术语</a></li><li class="depth-2"><a href="#ibft共识细节" data-for="ibft共识细节">IBFT共识细节</a></li><li class="depth-2"><a href="#block-hash-proposer-seal-and-committed-seals" data-for="block-hash-proposer-seal-and-committed-seals">Block hash, proposer seal, and committed seals</a></li><li class="depth-2"><a href="#块锁定机制" data-for="块锁定机制">块锁定机制</a></li><li class="depth-0"><a href="#存在的问题" data-for="存在的问题">存在的问题</a></li><li class="depth-0"><a href="#参考" data-for="参考">参考</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../postscript.js" type="module" data-persist="true"></script></html>

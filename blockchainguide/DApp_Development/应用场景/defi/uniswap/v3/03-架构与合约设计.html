@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>03-架构与合约设计</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="03-架构与合约设计"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="03-架构与合约设计"/><meta name="twitter:description" content="死磕Uniswap V3（三）：架构与合约设计 本文是「死磕Uniswap V3」系列的第三篇，深入剖析V3的合约架构和核心数据结构设计。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta property="og:description" content="死磕Uniswap V3（三）：架构与合约设计 本文是「死磕Uniswap V3」系列的第三篇，深入剖析V3的合约架构和核心数据结构设计。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta property="og:image:alt" content="死磕Uniswap V3（三）：架构与合约设计 本文是「死磕Uniswap V3」系列的第三篇，深入剖析V3的合约架构和核心数据结构设计。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/03-架构与合约设计"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/03-架构与合约设计"/><link rel="icon" href="../../../../../../static/icon.png"/><meta name="description" content="死磕Uniswap V3（三）：架构与合约设计 本文是「死磕Uniswap V3」系列的第三篇，深入剖析V3的合约架构和核心数据结构设计。 系列导航 序号标题核心内容01概述与集中流动性AMM演进、集中流动性原理02Tick机制与价格数学Tick设计、价格转换算法03架构与合约设计Factory、Pool合约结构04交换机制深度解析swap函数、价格发现05流动性管理与头寸Position、mint/burn06费用系统与预言机费用分配、TWAP07MEV与套利策略JIT、三明治攻击 1."/><meta name="generator" content="Quartz"/><link href="../../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/03-架构与合约设计"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-201"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-201" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/">DApp_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/">应用场景</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/">defi</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/uniswap/">uniswap</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../../blockchainguide/DApp_Development/应用场景/defi/uniswap/v3/">v3</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>03 架构与合约设计</a></div></nav><h1 class="article-title">03-架构与合约设计</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.423Z">2026年1月12日</time><span>17分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="死磕uniswap-v3三架构与合约设计">死磕Uniswap V3（三）：架构与合约设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#死磕uniswap-v3三架构与合约设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p>本文是「死磕Uniswap V3」系列的第三篇，深入剖析V3的合约架构和核心数据结构设计。</p>
+</blockquote>
+<h2 id="系列导航">系列导航<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#系列导航" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>序号</th><th>标题</th><th>核心内容</th></tr></thead><tbody><tr><td>01</td><td>概述与集中流动性</td><td>AMM演进、集中流动性原理</td></tr><tr><td>02</td><td>Tick机制与价格数学</td><td>Tick设计、价格转换算法</td></tr><tr><td><strong>03</strong></td><td><strong>架构与合约设计</strong></td><td><strong>Factory、Pool合约结构</strong></td></tr><tr><td>04</td><td>交换机制深度解析</td><td>swap函数、价格发现</td></tr><tr><td>05</td><td>流动性管理与头寸</td><td>Position、mint/burn</td></tr><tr><td>06</td><td>费用系统与预言机</td><td>费用分配、TWAP</td></tr><tr><td>07</td><td>MEV与套利策略</td><td>JIT、三明治攻击</td></tr></tbody></table></div>
+<hr/>
+<h2 id="1-整体架构概览">1. 整体架构概览<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-整体架构概览" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="11-合约层次结构">1.1 合约层次结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-合约层次结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Uniswap V3采用了模块化的架构设计，将功能划分为多个层次：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TB\n    subgraph UserLayer[\&quot;用户层\&quot;]\n        U1[交易者]\n        U2[流动性提供者]\n    end\n\n    subgraph PeripheryContracts[\&quot;外围合约 Periphery Contracts\&quot;]\n        R[SwapRouter]\n        PM[NonfungiblePositionManager]\n        Q[Quoter]\n    end\n\n    subgraph CoreContracts[\&quot;核心合约 Core Contracts\&quot;]\n        F[UniswapV3Factory]\n        P1[Pool A]\n        P2[Pool B]\n        P3[Pool C]\n    end\n\n    subgraph Libraries[\&quot;库合约 Libraries\&quot;]\n        TM[TickMath]\n        SM[SwapMath]\n        POS[Position]\n        TK[Tick]\n        TB[TickBitmap]\n        OR[Oracle]\n    end\n\n    U1 --> R\n    U2 --> PM\n    R --> P1 &amp; P2 &amp; P3\n    PM --> P1 &amp; P2 &amp; P3\n    F -->|创建| P1 &amp; P2 &amp; P3\n    P1 &amp; P2 &amp; P3 --> TM &amp; SM &amp; POS &amp; TK &amp; TB &amp; OR\n\n    style CoreContracts fill:#e3f2fd\n    style Libraries fill:#e8f5e9&quot;">flowchart TB
+    subgraph UserLayer[&quot;用户层&quot;]
+        U1[交易者]
+        U2[流动性提供者]
+    end
+
+    subgraph PeripheryContracts[&quot;外围合约 Periphery Contracts&quot;]
+        R[SwapRouter]
+        PM[NonfungiblePositionManager]
+        Q[Quoter]
+    end
+
+    subgraph CoreContracts[&quot;核心合约 Core Contracts&quot;]
+        F[UniswapV3Factory]
+        P1[Pool A]
+        P2[Pool B]
+        P3[Pool C]
+    end
+
+    subgraph Libraries[&quot;库合约 Libraries&quot;]
+        TM[TickMath]
+        SM[SwapMath]
+        POS[Position]
+        TK[Tick]
+        TB[TickBitmap]
+        OR[Oracle]
+    end
+
+    U1 --> R
+    U2 --> PM
+    R --> P1 &amp; P2 &amp; P3
+    PM --> P1 &amp; P2 &amp; P3
+    F -->|创建| P1 &amp; P2 &amp; P3
+    P1 &amp; P2 &amp; P3 --> TM &amp; SM &amp; POS &amp; TK &amp; TB &amp; OR
+
+    style CoreContracts fill:#e3f2fd
+    style Libraries fill:#e8f5e9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="12-核心设计原则">1.2 核心设计原则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-核心设计原则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((V3架构设计))\n    模块化\n      接口分离\n      库复用\n      单一职责\n    Gas优化\n      存储槽打包\n      位运算优化\n      内联库函数\n    安全性\n      重入保护\n      余额验证\n      权限控制\n    可扩展性\n      工厂模式\n      多费率支持\n      预言机扩容&quot;">mindmap
+  root((V3架构设计))
+    模块化
+      接口分离
+      库复用
+      单一职责
+    Gas优化
+      存储槽打包
+      位运算优化
+      内联库函数
+    安全性
+      重入保护
+      余额验证
+      权限控制
+    可扩展性
+      工厂模式
+      多费率支持
+      预言机扩容
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="2-factory合约单例工厂模式">2. Factory合约：单例工厂模式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-factory合约单例工厂模式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="21-工厂合约的职责">2.1 工厂合约的职责<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-工厂合约的职责" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Factory合约是整个协议的入口点，负责池子的创建和参数管理：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    subgraph FactoryDuties[\&quot;Factory职责\&quot;]\n        C1[创建Pool]\n        C2[管理费率]\n        C3[设置协议费]\n        C4[所有权管理]\n    end\n\n    subgraph KeyMappings[\&quot;关键映射\&quot;]\n        M1[\&quot;getPool[token0][token1][fee]\&quot;]\n        M2[\&quot;feeAmountTickSpacing[fee]\&quot;]\n    end\n\n    C1 --> M1\n    C2 --> M2\n\n    style FactoryDuties fill:#fff3e0&quot;">flowchart LR
+    subgraph FactoryDuties[&quot;Factory职责&quot;]
+        C1[创建Pool]
+        C2[管理费率]
+        C3[设置协议费]
+        C4[所有权管理]
+    end
+
+    subgraph KeyMappings[&quot;关键映射&quot;]
+        M1[&quot;getPool[token0][token1][fee]&quot;]
+        M2[&quot;feeAmountTickSpacing[fee]&quot;]
+    end
+
+    C1 --> M1
+    C2 --> M2
+
+    style FactoryDuties fill:#fff3e0
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="22-核心数据结构">2.2 核心数据结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-核心数据结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">contract</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> UniswapV3Factory</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> is</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> IUniswapV3Factory</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">UniswapV3PoolDeployer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">NoDelegateCall</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    address</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> owner;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 三层嵌套映射：确保每个代币对+费率只有一个池子</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint24</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> getPool;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 费率与Tick间距的绑定关系</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint24</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeAmountTickSpacing;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    constructor</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        owner </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> msg.sender</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        emit</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> OwnerChanged</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">msg.sender</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 预设标准费率等级</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        feeAmountTickSpacing[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;    </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 0.05% fee</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        feeAmountTickSpacing[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">3000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 60</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 0.30% fee</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        feeAmountTickSpacing[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">10000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 200</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 1.00% fee</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="23-地址排序机制">2.3 地址排序机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#23-地址排序机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>代币地址排序是确保池子唯一性的关键设计：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph InputTokens[\&quot;输入\&quot;]\n        A[tokenA]\n        B[tokenB]\n    end\n\n    subgraph SortingLogic[\&quot;排序逻辑\&quot;]\n        CMP{tokenA &lt; tokenB?}\n        R1[\&quot;token0 = tokenA&lt;br/>token1 = tokenB\&quot;]\n        R2[\&quot;token0 = tokenB&lt;br/>token1 = tokenA\&quot;]\n    end\n\n    subgraph ResultPool[\&quot;结果\&quot;]\n        POOL[\&quot;唯一池子地址&lt;br/>getPool[token0][token1][fee]\&quot;]\n    end\n\n    A &amp; B --> CMP\n    CMP -->|是| R1\n    CMP -->|否| R2\n    R1 &amp; R2 --> POOL\n\n    style SortingLogic fill:#e8f5e9&quot;">flowchart TD
+    subgraph InputTokens[&quot;输入&quot;]
+        A[tokenA]
+        B[tokenB]
+    end
+
+    subgraph SortingLogic[&quot;排序逻辑&quot;]
+        CMP{tokenA &lt; tokenB?}
+        R1[&quot;token0 = tokenA&lt;br/>token1 = tokenB&quot;]
+        R2[&quot;token0 = tokenB&lt;br/>token1 = tokenA&quot;]
+    end
+
+    subgraph ResultPool[&quot;结果&quot;]
+        POOL[&quot;唯一池子地址&lt;br/>getPool[token0][token1][fee]&quot;]
+    end
+
+    A &amp; B --> CMP
+    CMP -->|是| R1
+    CMP -->|否| R2
+    R1 &amp; R2 --> POOL
+
+    style SortingLogic fill:#e8f5e9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>地址排序的实现</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> createPool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    address</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> tokenA</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    address</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> tokenB</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> fee</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">external</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> noDelegateCall</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> pool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tokenA </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokenB);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 关键：地址排序确保唯一性</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> token0, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> token1) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokenA </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokenB</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        ?</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (tokenA, tokenB)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        :</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (tokenB, tokenA);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(token0 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">));</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickSpacing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeAmountTickSpacing[fee];</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(tickSpacing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(getPool[token0][token1][fee] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">));</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    pool </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> deploy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">this</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">), token0, token1, fee, tickSpacing);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 双向映射优化查询</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    getPool[token0][token1][fee] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pool;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    getPool[token1][token0][fee] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pool;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    emit</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> PoolCreated</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(token0, token1, fee, tickSpacing, pool);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<p><strong>设计优势</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>特性</th><th>说明</th></tr></thead><tbody><tr><td>唯一性保证</td><td>相同代币对在特定费率下只能有一个池子</td></tr><tr><td>查询优化</td><td>无论查询顺序如何都能找到正确池子</td></tr><tr><td>存储效率</td><td>避免重复存储相同的池子</td></tr><tr><td>前端友好</td><td>简化前端的池子查找逻辑</td></tr></tbody></table></div>
+<hr/>
+<h2 id="3-pool合约状态管理精髓">3. Pool合约：状态管理精髓<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-pool合约状态管理精髓" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="31-接口的模块化组合">3.1 接口的模块化组合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-接口的模块化组合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>V3将Pool接口拆分为多个子接口，体现了接口隔离原则：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TB\n    subgraph IUniswapV3Pool\n        direction TB\n        I1[IUniswapV3PoolImmutables]\n        I2[IUniswapV3PoolState]\n        I3[IUniswapV3PoolDerivedState]\n        I4[IUniswapV3PoolActions]\n        I5[IUniswapV3PoolOwnerActions]\n        I6[IUniswapV3PoolEvents]\n    end\n\n    subgraph ResponsibilityDesc[\&quot;职责说明\&quot;]\n        D1[\&quot;不可变属性&lt;br/>factory, token0, token1, fee\&quot;]\n        D2[\&quot;状态变量&lt;br/>slot0, liquidity, ticks\&quot;]\n        D3[\&quot;派生状态&lt;br/>observe, snapshotCumulatives\&quot;]\n        D4[\&quot;用户操作&lt;br/>swap, mint, burn, collect\&quot;]\n        D5[\&quot;管理操作&lt;br/>setFeeProtocol, collectProtocol\&quot;]\n        D6[\&quot;事件定义&lt;br/>Swap, Mint, Burn, Flash\&quot;]\n    end\n\n    I1 --- D1\n    I2 --- D2\n    I3 --- D3\n    I4 --- D4\n    I5 --- D5\n    I6 --- D6\n\n    style IUniswapV3Pool fill:#e3f2fd&quot;">flowchart TB
+    subgraph IUniswapV3Pool
+        direction TB
+        I1[IUniswapV3PoolImmutables]
+        I2[IUniswapV3PoolState]
+        I3[IUniswapV3PoolDerivedState]
+        I4[IUniswapV3PoolActions]
+        I5[IUniswapV3PoolOwnerActions]
+        I6[IUniswapV3PoolEvents]
+    end
+
+    subgraph ResponsibilityDesc[&quot;职责说明&quot;]
+        D1[&quot;不可变属性&lt;br/>factory, token0, token1, fee&quot;]
+        D2[&quot;状态变量&lt;br/>slot0, liquidity, ticks&quot;]
+        D3[&quot;派生状态&lt;br/>observe, snapshotCumulatives&quot;]
+        D4[&quot;用户操作&lt;br/>swap, mint, burn, collect&quot;]
+        D5[&quot;管理操作&lt;br/>setFeeProtocol, collectProtocol&quot;]
+        D6[&quot;事件定义&lt;br/>Swap, Mint, Burn, Flash&quot;]
+    end
+
+    I1 --- D1
+    I2 --- D2
+    I3 --- D3
+    I4 --- D4
+    I5 --- D5
+    I6 --- D6
+
+    style IUniswapV3Pool fill:#e3f2fd
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 接口的模块化组合</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">interface</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> IUniswapV3Pool</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> is</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    IUniswapV3PoolImmutables</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,    // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">不可变属性</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    IUniswapV3PoolState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,         // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">状态变量</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    IUniswapV3PoolDerivedState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,  // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">派生状态</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    IUniswapV3PoolActions</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,       // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">用户操作</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    IUniswapV3PoolOwnerActions</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,  // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">管理员操作</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    IUniswapV3PoolEvents</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">         // </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">事件定义</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 空接口，纯组合</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="32-slot0极致的存储优化">3.2 Slot0：极致的存储优化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-slot0极致的存储优化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Slot0是V3最精妙的存储优化设计，将多个状态变量打包到单个存储槽中：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph \&quot;Slot0 结构 (32字节存储槽)\&quot;\n        direction LR\n        S1[\&quot;sqrtPriceX96&lt;br/>20字节&lt;br/>(uint160)\&quot;]\n        S2[\&quot;tick&lt;br/>3字节&lt;br/>(int24)\&quot;]\n        S3[\&quot;observationIndex&lt;br/>2字节&lt;br/>(uint16)\&quot;]\n        S4[\&quot;observationCardinality&lt;br/>2字节&lt;br/>(uint16)\&quot;]\n        S5[\&quot;observationCardinalityNext&lt;br/>2字节&lt;br/>(uint16)\&quot;]\n        S6[\&quot;feeProtocol&lt;br/>1字节&lt;br/>(uint8)\&quot;]\n        S7[\&quot;unlocked&lt;br/>1字节&lt;br/>(bool)\&quot;]\n    end\n\n    subgraph Total[\&quot;总计\&quot;]\n        T[\&quot;20+3+2+2+2+1+1 = 31字节&lt;br/>完美契合32字节存储槽\&quot;]\n    end\n\n    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7\n    S7 --> T\n\n    style T fill:#c8e6c9&quot;">graph TB
+    subgraph &quot;Slot0 结构 (32字节存储槽)&quot;
+        direction LR
+        S1[&quot;sqrtPriceX96&lt;br/>20字节&lt;br/>(uint160)&quot;]
+        S2[&quot;tick&lt;br/>3字节&lt;br/>(int24)&quot;]
+        S3[&quot;observationIndex&lt;br/>2字节&lt;br/>(uint16)&quot;]
+        S4[&quot;observationCardinality&lt;br/>2字节&lt;br/>(uint16)&quot;]
+        S5[&quot;observationCardinalityNext&lt;br/>2字节&lt;br/>(uint16)&quot;]
+        S6[&quot;feeProtocol&lt;br/>1字节&lt;br/>(uint8)&quot;]
+        S7[&quot;unlocked&lt;br/>1字节&lt;br/>(bool)&quot;]
+    end
+
+    subgraph Total[&quot;总计&quot;]
+        T[&quot;20+3+2+2+2+1+1 = 31字节&lt;br/>完美契合32字节存储槽&quot;]
+    end
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+    S7 --> T
+
+    style T fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">struct</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Slot0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 当前价格√P (Q64.96格式)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint160</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sqrtPriceX96;              </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 20字节</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 当前tick</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tick;                        </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 3字节</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 预言机观察者数组当前索引</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> observationIndex;           </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 2字节</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 预言机数组当前容量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> observationCardinality;     </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 2字节</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 预言机数组目标容量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> observationCardinalityNext; </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 2字节</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 协议费率 (4位token0 + 4位token1)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeProtocol;                 </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 1字节</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 重入保护锁</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> unlocked;                     </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 1字节</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 总计：31字节，完美契合32字节存储槽</span></span></code></pre></figure>
+<p><strong>Gas优化效果</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>操作</th><th>传统设计</th><th>Slot0设计</th><th>节省</th></tr></thead><tbody><tr><td>读取价格+tick</td><td>4200 gas</td><td>2100 gas</td><td>50%</td></tr><tr><td>更新价格+tick</td><td>10000+ gas</td><td>5000 gas</td><td>50%+</td></tr><tr><td>swap单次读取</td><td>多次SLOAD</td><td>单次SLOAD</td><td>显著</td></tr></tbody></table></div>
+<h3 id="33-pool合约完整状态">3.3 Pool合约完整状态<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-pool合约完整状态" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">contract</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> UniswapV3Pool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 核心状态变量</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    Slot0 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> slot0;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 全局费用增长累积器</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthGlobal0X128;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthGlobal1X128;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 协议费用累积</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    struct</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> ProtocolFees</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> token0;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> token1;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ProtocolFees </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> protocolFees;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 当前有效流动性</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint128</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> liquidity;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 核心数据结构映射</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Tick.Info) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ticks;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int16</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickBitmap;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">bytes32</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Position.Info) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> positions;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 预言机观察者数组（固定大小）</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    Oracle.Observation[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">65535</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> override</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> observations;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TB\n    subgraph PoolStateVars[\&quot;Pool状态变量\&quot;]\n        direction TB\n        S0[Slot0&lt;br/>打包状态]\n        FG[feeGrowthGlobal&lt;br/>费用累积器]\n        PF[protocolFees&lt;br/>协议费用]\n        LQ[liquidity&lt;br/>当前流动性]\n    end\n\n    subgraph MappingStructure[\&quot;映射结构\&quot;]\n        TK[\&quot;ticks&lt;br/>mapping(int24 => Tick.Info)\&quot;]\n        TB[\&quot;tickBitmap&lt;br/>mapping(int16 => uint256)\&quot;]\n        PS[\&quot;positions&lt;br/>mapping(bytes32 => Position.Info)\&quot;]\n    end\n\n    subgraph ArrayStructure[\&quot;数组结构\&quot;]\n        OB[\&quot;observations[65535]&lt;br/>固定大小预言机数组\&quot;]\n    end\n\n    S0 --> TK &amp; TB\n    LQ --> PS\n    S0 --> OB\n\n    style PoolStateVars fill:#e3f2fd\n    style MappingStructure fill:#fff3e0&quot;">flowchart TB
+    subgraph PoolStateVars[&quot;Pool状态变量&quot;]
+        direction TB
+        S0[Slot0&lt;br/>打包状态]
+        FG[feeGrowthGlobal&lt;br/>费用累积器]
+        PF[protocolFees&lt;br/>协议费用]
+        LQ[liquidity&lt;br/>当前流动性]
+    end
+
+    subgraph MappingStructure[&quot;映射结构&quot;]
+        TK[&quot;ticks&lt;br/>mapping(int24 => Tick.Info)&quot;]
+        TB[&quot;tickBitmap&lt;br/>mapping(int16 => uint256)&quot;]
+        PS[&quot;positions&lt;br/>mapping(bytes32 => Position.Info)&quot;]
+    end
+
+    subgraph ArrayStructure[&quot;数组结构&quot;]
+        OB[&quot;observations[65535]&lt;br/>固定大小预言机数组&quot;]
+    end
+
+    S0 --> TK &amp; TB
+    LQ --> PS
+    S0 --> OB
+
+    style PoolStateVars fill:#e3f2fd
+    style MappingStructure fill:#fff3e0
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<hr/>
+<h2 id="4-library模式代码复用与gas优化">4. Library模式：代码复用与Gas优化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-library模式代码复用与gas优化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="41-核心库概览">4.1 核心库概览<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#41-核心库概览" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>V3大量使用library实现代码复用和gas优化：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    subgraph MathLibs[\&quot;数学库\&quot;]\n        TM[TickMath&lt;br/>Tick↔价格转换]\n        SM[SwapMath&lt;br/>交换计算]\n        SPM[SqrtPriceMath&lt;br/>价格变化计算]\n        FM[FullMath&lt;br/>高精度乘除]\n    end\n\n    subgraph DataStructLibs[\&quot;数据结构库\&quot;]\n        TK[Tick&lt;br/>Tick信息管理]\n        PS[Position&lt;br/>头寸管理]\n        TB[TickBitmap&lt;br/>位图操作]\n        OR[Oracle&lt;br/>预言机管理]\n    end\n\n    subgraph UtilLibs[\&quot;工具库\&quot;]\n        LM[LiquidityMath&lt;br/>流动性计算]\n        BM[BitMath&lt;br/>位运算]\n        TH[TransferHelper&lt;br/>安全转账]\n    end\n\n    P[Pool合约] --> MathLibs &amp; DataStructLibs &amp; UtilLibs\n\n    style MathLibs fill:#e8f5e9\n    style DataStructLibs fill:#fff3e0\n    style UtilLibs fill:#fce4ec&quot;">flowchart LR
+    subgraph MathLibs[&quot;数学库&quot;]
+        TM[TickMath&lt;br/>Tick↔价格转换]
+        SM[SwapMath&lt;br/>交换计算]
+        SPM[SqrtPriceMath&lt;br/>价格变化计算]
+        FM[FullMath&lt;br/>高精度乘除]
+    end
+
+    subgraph DataStructLibs[&quot;数据结构库&quot;]
+        TK[Tick&lt;br/>Tick信息管理]
+        PS[Position&lt;br/>头寸管理]
+        TB[TickBitmap&lt;br/>位图操作]
+        OR[Oracle&lt;br/>预言机管理]
+    end
+
+    subgraph UtilLibs[&quot;工具库&quot;]
+        LM[LiquidityMath&lt;br/>流动性计算]
+        BM[BitMath&lt;br/>位运算]
+        TH[TransferHelper&lt;br/>安全转账]
+    end
+
+    P[Pool合约] --> MathLibs &amp; DataStructLibs &amp; UtilLibs
+
+    style MathLibs fill:#e8f5e9
+    style DataStructLibs fill:#fff3e0
+    style UtilLibs fill:#fce4ec
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="42-tickmath库">4.2 TickMath库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#42-tickmath库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">library</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> TickMath</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    int24</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> constant</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MIN_TICK </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">887272</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    int24</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> constant</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MAX_TICK </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">MIN_TICK;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint160</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> constant</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MIN_SQRT_RATIO </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 4295128739</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint160</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> constant</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MAX_SQRT_RATIO </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        1461446703485210103287273052203988822378723970342</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // Tick → √Price 转换</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> getSqrtRatioAtTick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtPriceX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // √Price → Tick 转换</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> getTickAtSqrtRatio</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtPriceX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="43-swapmath库">4.3 SwapMath库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#43-swapmath库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>SwapMath处理交换过程中的核心数学计算：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">library</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> SwapMath</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    /// </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">@notice</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> 计算单步交换的结果</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> computeSwapStep</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtRatioCurrentX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,    </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 当前价格</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtRatioTargetX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,     </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 目标价格</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> liquidity</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,              </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 当前流动性</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        int256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> amountRemaining</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,         </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 剩余数量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint24</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> feePips</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">                  // 费率</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> pure</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint160</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> sqrtRatioNextX96</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,       </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 新价格</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> amountIn</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,               </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 输入数量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> amountOut</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,              </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 输出数量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> feeAmount</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">               // 费用</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    );</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="44-position库">4.4 Position库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#44-position库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">library</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    struct</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Info</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 流动性数量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> liquidity;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 上次更新时的内部费用增长率</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthInside0LastX128;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthInside1LastX128;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 待领取的费用</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed0;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed1;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    /// </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">@notice</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> 获取头寸</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> get</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">        mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">bytes32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> => </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">Info</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">storage</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">        address</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> owner</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">        int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tickLower</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">        int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tickUpper</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> view</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">Position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Info</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> storage</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        position </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> self[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">keccak256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">abi</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">encodePacked</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(owner, tickLower, tickUpper))];</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    /// </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">@notice</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> 更新头寸</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> update</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        Info</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> storage</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        int128</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> liquidityDelta</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> feeGrowthInside0X128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> feeGrowthInside1X128</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<p><strong>Library设计优势</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>优势</th><th>说明</th></tr></thead><tbody><tr><td>代码复用</td><td>同样的数学逻辑被多个合约使用</td></tr><tr><td>Gas优化</td><td>库函数在编译时内联，避免外部调用开销</td></tr><tr><td>安全性</td><td>核心数学逻辑集中维护，降低错误风险</td></tr><tr><td>模块化</td><td>功能分离便于测试和审计</td></tr><tr><td>升级性</td><td>可通过代理模式实现逻辑升级</td></tr></tbody></table></div>
+<hr/>
+<h2 id="5-核心数据结构设计">5. 核心数据结构设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-核心数据结构设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="51-tick数据结构">5.1 Tick数据结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-tick数据结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Tick.Info存储了每个初始化tick的完整信息：</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TB\n    subgraph \&quot;Tick.Info 结构\&quot;\n        L1[\&quot;liquidityGross&lt;br/>uint128&lt;br/>此tick的总流动性\&quot;]\n        L2[\&quot;liquidityNet&lt;br/>int128&lt;br/>跨越时的流动性变化\&quot;]\n        F1[\&quot;feeGrowthOutside0X128&lt;br/>uint256\&quot;]\n        F2[\&quot;feeGrowthOutside1X128&lt;br/>uint256\&quot;]\n        T1[\&quot;tickCumulativeOutside&lt;br/>int56\&quot;]\n        S1[\&quot;secondsPerLiquidityOutsideX128&lt;br/>uint160\&quot;]\n        S2[\&quot;secondsOutside&lt;br/>uint32\&quot;]\n        I[\&quot;initialized&lt;br/>bool\&quot;]\n    end\n\n    subgraph UsageCategory[\&quot;用途分类\&quot;]\n        Liquidity[\&quot;流动性管理\&quot;]\n        Fee[\&quot;费用追踪\&quot;]\n        Oracle[\&quot;预言机数据\&quot;]\n        Status[\&quot;状态标记\&quot;]\n    end\n\n    L1 &amp; L2 --> Liquidity\n    F1 &amp; F2 --> Fee\n    T1 &amp; S1 &amp; S2 --> Oracle\n    I --> Status\n\n    style UsageCategory fill:#e8f5e9&quot;">graph TB
+    subgraph &quot;Tick.Info 结构&quot;
+        L1[&quot;liquidityGross&lt;br/>uint128&lt;br/>此tick的总流动性&quot;]
+        L2[&quot;liquidityNet&lt;br/>int128&lt;br/>跨越时的流动性变化&quot;]
+        F1[&quot;feeGrowthOutside0X128&lt;br/>uint256&quot;]
+        F2[&quot;feeGrowthOutside1X128&lt;br/>uint256&quot;]
+        T1[&quot;tickCumulativeOutside&lt;br/>int56&quot;]
+        S1[&quot;secondsPerLiquidityOutsideX128&lt;br/>uint160&quot;]
+        S2[&quot;secondsOutside&lt;br/>uint32&quot;]
+        I[&quot;initialized&lt;br/>bool&quot;]
+    end
+
+    subgraph UsageCategory[&quot;用途分类&quot;]
+        Liquidity[&quot;流动性管理&quot;]
+        Fee[&quot;费用追踪&quot;]
+        Oracle[&quot;预言机数据&quot;]
+        Status[&quot;状态标记&quot;]
+    end
+
+    L1 &amp; L2 --> Liquidity
+    F1 &amp; F2 --> Fee
+    T1 &amp; S1 &amp; S2 --> Oracle
+    I --> Status
+
+    style UsageCategory fill:#e8f5e9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">library</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    struct</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Info</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 此tick的总流动性（用于限制单tick最大流动性）</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> liquidityGross;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 从左向右跨越此tick时的流动性变化</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 正值：增加流动性；负值：减少流动性</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        int128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> liquidityNet;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // tick外部的费用增长（用于计算区间内费用）</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthOutside0X128;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthOutside1X128;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // tick外部的累积tick值（预言机用）</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        int56</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickCumulativeOutside;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // tick外部的每流动性秒数（预言机用）</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint160</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> secondsPerLiquidityOutsideX128;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // tick外部的累积秒数</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        uint32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> secondsOutside;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        // 是否已初始化</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> initialized;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="52-liquiditynet的精妙设计">5.2 liquidityNet的精妙设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-liquiditynet的精妙设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart LR\n    subgraph PriceMovement[\&quot;价格从左向右移动\&quot;]\n        T1[\&quot;Tick A&lt;br/>liquidityNet = +100\&quot;]\n        T2[\&quot;Tick B&lt;br/>liquidityNet = -50\&quot;]\n        T3[\&quot;Tick C&lt;br/>liquidityNet = -50\&quot;]\n    end\n\n    subgraph LiquidityChange[\&quot;流动性变化\&quot;]\n        L1[\&quot;L = 0\&quot;]\n        L2[\&quot;L = 100\&quot;]\n        L3[\&quot;L = 50\&quot;]\n        L4[\&quot;L = 0\&quot;]\n    end\n\n    L1 -->|\&quot;跨越A&lt;br/>+100\&quot;| L2\n    L2 -->|\&quot;跨越B&lt;br/>-50\&quot;| L3\n    L3 -->|\&quot;跨越C&lt;br/>-50\&quot;| L4\n\n    T1 -.-> L2\n    T2 -.-> L3\n    T3 -.-> L4&quot;">flowchart LR
+    subgraph PriceMovement[&quot;价格从左向右移动&quot;]
+        T1[&quot;Tick A&lt;br/>liquidityNet = +100&quot;]
+        T2[&quot;Tick B&lt;br/>liquidityNet = -50&quot;]
+        T3[&quot;Tick C&lt;br/>liquidityNet = -50&quot;]
+    end
+
+    subgraph LiquidityChange[&quot;流动性变化&quot;]
+        L1[&quot;L = 0&quot;]
+        L2[&quot;L = 100&quot;]
+        L3[&quot;L = 50&quot;]
+        L4[&quot;L = 0&quot;]
+    end
+
+    L1 -->|&quot;跨越A&lt;br/>+100&quot;| L2
+    L2 -->|&quot;跨越B&lt;br/>-50&quot;| L3
+    L3 -->|&quot;跨越C&lt;br/>-50&quot;| L4
+
+    T1 -.-> L2
+    T2 -.-> L3
+    T3 -.-> L4
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>liquidityNet符号约定</strong>：</p>
+<ul>
+<li><strong>正值</strong>：从左向右跨越时<strong>增加</strong>流动性（进入某个LP的区间下界）</li>
+<li><strong>负值</strong>：从左向右跨越时<strong>减少</strong>流动性（离开某个LP的区间上界）</li>
+</ul>
+<h3 id="53-tick跨越的翻转技巧">5.3 Tick跨越的”翻转”技巧<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#53-tick跨越的翻转技巧" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> cross</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    mapping</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> => </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">Tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Info</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">storage</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    int24</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tick</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    uint256</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> feeGrowthGlobal0X128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    uint256</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> feeGrowthGlobal1X128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    uint160</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> secondsPerLiquidityCumulativeX128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    int56</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> tickCumulative</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    uint32</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> time</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> returns</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int128</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> liquidityNet</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    Tick.Info </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">storage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> self[tick];</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // &quot;翻转&quot;技巧：将outside值变为新的outside值</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    info.feeGrowthOutside0X128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthGlobal0X128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info.feeGrowthOutside0X128;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    info.feeGrowthOutside1X128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthGlobal1X128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info.feeGrowthOutside1X128;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    info.secondsPerLiquidityOutsideX128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        secondsPerLiquidityCumulativeX128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info.secondsPerLiquidityOutsideX128;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    info.tickCumulativeOutside </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tickCumulative </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info.tickCumulativeOutside;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    info.secondsOutside </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> time </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info.secondsOutside;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    liquidityNet </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> info.liquidityNet;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TB\n    subgraph BeforeCross[\&quot;跨越前\&quot;]\n        B1[\&quot;outside = 累积到tick左侧的值\&quot;]\n        B2[\&quot;inside = global - outside\&quot;]\n    end\n\n    subgraph CrossOperation[\&quot;跨越操作\&quot;]\n        OP[\&quot;outside_new = global - outside_old\&quot;]\n    end\n\n    subgraph AfterCross[\&quot;跨越后\&quot;]\n        A1[\&quot;outside = 累积到tick右侧的值\&quot;]\n        A2[\&quot;inside = global - outside\&quot;]\n    end\n\n    B1 --> OP --> A1\n\n    style CrossOperation fill:#fff3e0&quot;">flowchart TB
+    subgraph BeforeCross[&quot;跨越前&quot;]
+        B1[&quot;outside = 累积到tick左侧的值&quot;]
+        B2[&quot;inside = global - outside&quot;]
+    end
+
+    subgraph CrossOperation[&quot;跨越操作&quot;]
+        OP[&quot;outside_new = global - outside_old&quot;]
+    end
+
+    subgraph AfterCross[&quot;跨越后&quot;]
+        A1[&quot;outside = 累积到tick右侧的值&quot;]
+        A2[&quot;inside = global - outside&quot;]
+    end
+
+    B1 --> OP --> A1
+
+    style CrossOperation fill:#fff3e0
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<p><strong>数学原理</strong>：当价格跨越tick时，“外部”和”内部”的概念发生翻转。通过简单的减法操作，原来的outside值就变成了新的outside值。</p>
+<h3 id="54-position数据结构">5.4 Position数据结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#54-position数据结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">struct</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> Position</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.Info {</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 此位置的流动性数量</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> liquidity;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 上次更新时的内部费用增长率</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthInside0LastX128;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthInside1LastX128;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 累积的未领取费用</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed0;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed1;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="55-费用计算机制">5.5 费用计算机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#55-费用计算机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph FeeGrowthConcept[\&quot;费用增长率概念\&quot;]\n        G[\&quot;全局费用增长率&lt;br/>feeGrowthGlobalX128\&quot;]\n        I[\&quot;内部费用增长率&lt;br/>feeGrowthInsideX128\&quot;]\n        L[\&quot;上次记录的内部费用增长率&lt;br/>feeGrowthInsideLastX128\&quot;]\n    end\n\n    subgraph CalculationFormula[\&quot;计算公式\&quot;]\n        F[\&quot;应得费用 = &lt;br/>(当前内部增长率 - 上次内部增长率) × 流动性\&quot;]\n    end\n\n    G --> I\n    I &amp; L --> F\n\n    style CalculationFormula fill:#c8e6c9&quot;">flowchart TD
+    subgraph FeeGrowthConcept[&quot;费用增长率概念&quot;]
+        G[&quot;全局费用增长率&lt;br/>feeGrowthGlobalX128&quot;]
+        I[&quot;内部费用增长率&lt;br/>feeGrowthInsideX128&quot;]
+        L[&quot;上次记录的内部费用增长率&lt;br/>feeGrowthInsideLastX128&quot;]
+    end
+
+    subgraph CalculationFormula[&quot;计算公式&quot;]
+        F[&quot;应得费用 = &lt;br/>(当前内部增长率 - 上次内部增长率) × 流动性&quot;]
+    end
+
+    G --> I
+    I &amp; L --> F
+
+    style CalculationFormula fill:#c8e6c9
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> update</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    Info</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> storage</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    int128</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> liquidityDelta</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> feeGrowthInside0X128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint256</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"> feeGrowthInside1X128</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">internal</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    Info </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">memory</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> _self </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> self;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 计算自上次更新以来的费用增长</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed0 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        FullMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">mulDiv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            feeGrowthInside0X128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> _self.feeGrowthInside0LastX128,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            _self.liquidity,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            FixedPoint128.Q128</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        )</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    );</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed1 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> uint128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        FullMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">mulDiv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            feeGrowthInside1X128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> _self.feeGrowthInside1LastX128,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            _self.liquidity,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            FixedPoint128.Q128</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        )</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    );</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 更新流动性</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (liquidityDelta </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        self.liquidity </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> LiquidityMath.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">addDelta</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(_self.liquidity, liquidityDelta);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 更新费用增长记录点</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    self.feeGrowthInside0LastX128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthInside0X128;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    self.feeGrowthInside1LastX128 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> feeGrowthInside1X128;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 累积欠付费用</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (tokensOwed0 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ||</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed1 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        self.tokensOwed0 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed0;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        self.tokensOwed1 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> tokensOwed1;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<p><strong>费用计算设计优势</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>特性</th><th>说明</th></tr></thead><tbody><tr><td>O(1)复杂度</td><td>无论时间间隔多长，计算复杂度都是常数</td></tr><tr><td>精确累积</td><td>避免复合计算中的精度损失</td></tr><tr><td>存储高效</td><td>只存储差值而非绝对值</td></tr><tr><td>自动更新</td><td>每次流动性变化时自动更新费用</td></tr></tbody></table></div>
+<hr/>
+<h2 id="6-安全机制设计">6. 安全机制设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-安全机制设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="61-重入保护">6.1 重入保护<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-重入保护" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">modifier</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> lock</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(slot0.unlocked, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">'LOK'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    slot0.unlocked </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> false</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    _</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    slot0.unlocked </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;sequenceDiagram\n    participant User as 用户\n    participant Pool as Pool合约\n    participant External as 外部合约\n\n    User->>Pool: swap()\n    Pool->>Pool: require(unlocked)\n    Pool->>Pool: unlocked = false\n    Pool->>External: callback\n    External-->>Pool: 尝试重入\n    Pool-->>External: revert('LOK')\n    Pool->>Pool: unlocked = true\n    Pool-->>User: 返回结果&quot;">sequenceDiagram
+    participant User as 用户
+    participant Pool as Pool合约
+    participant External as 外部合约
+
+    User->>Pool: swap()
+    Pool->>Pool: require(unlocked)
+    Pool->>Pool: unlocked = false
+    Pool->>External: callback
+    External-->>Pool: 尝试重入
+    Pool-->>External: revert('LOK')
+    Pool->>Pool: unlocked = true
+    Pool-->>User: 返回结果
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="62-nodelegatecall保护">6.2 NoDelegateCall保护<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-nodelegatecall保护" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">abstract</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> contract</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> NoDelegateCall</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    address</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> private</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> immutable</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> original;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    constructor</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        original </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">this</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    modifier</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> noDelegateCall</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">address</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">this</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> original);</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        _</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<h3 id="63-回调验证机制">6.3 回调验证机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-回调验证机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;flowchart TD\n    subgraph SwapCallbackFlow[\&quot;swap回调流程\&quot;]\n        S1[记录balance0Before]\n        S2[调用callback]\n        S3[验证balance0变化]\n        S4{balance增加足够?}\n        S5[交易成功]\n        S6[revert IIA]\n    end\n\n    S1 --> S2 --> S3 --> S4\n    S4 -->|是| S5\n    S4 -->|否| S6\n\n    style S6 fill:#ffcdd2&quot;">flowchart TD
+    subgraph SwapCallbackFlow[&quot;swap回调流程&quot;]
+        S1[记录balance0Before]
+        S2[调用callback]
+        S3[验证balance0变化]
+        S4{balance增加足够?}
+        S5[交易成功]
+        S6[revert IIA]
+    end
+
+    S1 --> S2 --> S3 --> S4
+    S4 -->|是| S5
+    S4 -->|否| S6
+
+    style S6 fill:#ffcdd2
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="solidity" data-theme="github-light github-dark"><code data-language="solidity" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 在swap函数中</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> balance0Before </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> balance0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">();</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">IUniswapV3SwapCallback</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">msg.sender</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">uniswapV3SwapCallback</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(amount0, amount1, data);</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">require</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(balance0Before.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">add</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">uint256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(amount0)) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> balance0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">'IIA'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">);</span></span></code></pre></figure>
+<hr/>
+<h2 id="7-本章小结">7. 本章小结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-本章小结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="71-架构设计要点">7.1 架构设计要点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#71-架构设计要点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;mindmap\n  root((V3架构精髓))\n    工厂模式\n      统一池子管理\n      地址排序确保唯一\n      费率参数化\n    存储优化\n      Slot0打包设计\n      节省50% Gas\n      单次SLOAD读取\n    Library模式\n      代码复用\n      编译时内联\n      集中维护\n    数据结构\n      Tick的liquidityNet\n      翻转技巧\n      费用增长率\n    安全机制\n      重入保护\n      余额验证\n      权限控制&quot;">mindmap
+  root((V3架构精髓))
+    工厂模式
+      统一池子管理
+      地址排序确保唯一
+      费率参数化
+    存储优化
+      Slot0打包设计
+      节省50% Gas
+      单次SLOAD读取
+    Library模式
+      代码复用
+      编译时内联
+      集中维护
+    数据结构
+      Tick的liquidityNet
+      翻转技巧
+      费用增长率
+    安全机制
+      重入保护
+      余额验证
+      权限控制
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="72-关键设计模式总结">7.2 关键设计模式总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#72-关键设计模式总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>模式</th><th>应用场景</th><th>效果</th></tr></thead><tbody><tr><td>单例工厂</td><td>Pool创建</td><td>统一管理，确保唯一性</td></tr><tr><td>接口隔离</td><td>IUniswapV3Pool</td><td>职责分离，易于维护</td></tr><tr><td>存储槽打包</td><td>Slot0</td><td>50%+ Gas节省</td></tr><tr><td>库内联</td><td>所有Library</td><td>消除外部调用开销</td></tr><tr><td>增量累积</td><td>费用计算</td><td>O(1)时间复杂度</td></tr></tbody></table></div>
+<hr/>
+<h2 id="下一篇预告">下一篇预告<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#下一篇预告" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在下一篇文章中，我们将深入探讨<strong>交换机制深度解析</strong>，包括：</p>
+<ul>
+<li>swap函数的完整执行流程</li>
+<li>跨Tick交换的实现细节</li>
+<li>价格发现机制</li>
+<li>滑点控制与保护</li>
+</ul>
+<hr/>
+<h2 id="参考资料">参考资料<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参考资料" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><a href="https://github.com/Uniswap/v3-core/blob/main/contracts/UniswapV3Factory.sol" class="external">Uniswap V3 Core - UniswapV3Factory.sol<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/Uniswap/v3-core/blob/main/contracts/UniswapV3Pool.sol" class="external">Uniswap V3 Core - UniswapV3Pool.sol<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/Uniswap/v3-core/tree/main/contracts/libraries" class="external">Uniswap V3 Core - Libraries<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-56" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#死磕uniswap-v3三架构与合约设计" data-for="死磕uniswap-v3三架构与合约设计">死磕Uniswap V3（三）：架构与合约设计</a></li><li class="depth-1"><a href="#系列导航" data-for="系列导航">系列导航</a></li><li class="depth-1"><a href="#1-整体架构概览" data-for="1-整体架构概览">1. 整体架构概览</a></li><li class="depth-2"><a href="#11-合约层次结构" data-for="11-合约层次结构">1.1 合约层次结构</a></li><li class="depth-2"><a href="#12-核心设计原则" data-for="12-核心设计原则">1.2 核心设计原则</a></li><li class="depth-1"><a href="#2-factory合约单例工厂模式" data-for="2-factory合约单例工厂模式">2. Factory合约：单例工厂模式</a></li><li class="depth-2"><a href="#21-工厂合约的职责" data-for="21-工厂合约的职责">2.1 工厂合约的职责</a></li><li class="depth-2"><a href="#22-核心数据结构" data-for="22-核心数据结构">2.2 核心数据结构</a></li><li class="depth-2"><a href="#23-地址排序机制" data-for="23-地址排序机制">2.3 地址排序机制</a></li><li class="depth-1"><a href="#3-pool合约状态管理精髓" data-for="3-pool合约状态管理精髓">3. Pool合约：状态管理精髓</a></li><li class="depth-2"><a href="#31-接口的模块化组合" data-for="31-接口的模块化组合">3.1 接口的模块化组合</a></li><li class="depth-2"><a href="#32-slot0极致的存储优化" data-for="32-slot0极致的存储优化">3.2 Slot0：极致的存储优化</a></li><li class="depth-2"><a href="#33-pool合约完整状态" data-for="33-pool合约完整状态">3.3 Pool合约完整状态</a></li><li class="depth-1"><a href="#4-library模式代码复用与gas优化" data-for="4-library模式代码复用与gas优化">4. Library模式：代码复用与Gas优化</a></li><li class="depth-2"><a href="#41-核心库概览" data-for="41-核心库概览">4.1 核心库概览</a></li><li class="depth-2"><a href="#42-tickmath库" data-for="42-tickmath库">4.2 TickMath库</a></li><li class="depth-2"><a href="#43-swapmath库" data-for="43-swapmath库">4.3 SwapMath库</a></li><li class="depth-2"><a href="#44-position库" data-for="44-position库">4.4 Position库</a></li><li class="depth-1"><a href="#5-核心数据结构设计" data-for="5-核心数据结构设计">5. 核心数据结构设计</a></li><li class="depth-2"><a href="#51-tick数据结构" data-for="51-tick数据结构">5.1 Tick数据结构</a></li><li class="depth-2"><a href="#52-liquiditynet的精妙设计" data-for="52-liquiditynet的精妙设计">5.2 liquidityNet的精妙设计</a></li><li class="depth-2"><a href="#53-tick跨越的翻转技巧" data-for="53-tick跨越的翻转技巧">5.3 Tick跨越的”翻转”技巧</a></li><li class="depth-2"><a href="#54-position数据结构" data-for="54-position数据结构">5.4 Position数据结构</a></li><li class="depth-2"><a href="#55-费用计算机制" data-for="55-费用计算机制">5.5 费用计算机制</a></li><li class="depth-1"><a href="#6-安全机制设计" data-for="6-安全机制设计">6. 安全机制设计</a></li><li class="depth-2"><a href="#61-重入保护" data-for="61-重入保护">6.1 重入保护</a></li><li class="depth-2"><a href="#62-nodelegatecall保护" data-for="62-nodelegatecall保护">6.2 NoDelegateCall保护</a></li><li class="depth-2"><a href="#63-回调验证机制" data-for="63-回调验证机制">6.3 回调验证机制</a></li><li class="depth-1"><a href="#7-本章小结" data-for="7-本章小结">7. 本章小结</a></li><li class="depth-2"><a href="#71-架构设计要点" data-for="71-架构设计要点">7.1 架构设计要点</a></li><li class="depth-2"><a href="#72-关键设计模式总结" data-for="72-关键设计模式总结">7.2 关键设计模式总结</a></li><li class="depth-1"><a href="#下一篇预告" data-for="下一篇预告">下一篇预告</a></li><li class="depth-1"><a href="#参考资料" data-for="参考资料">参考资料</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../../postscript.js" type="module" data-persist="true"></script></html>

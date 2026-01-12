@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>以太坊clique算法</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="以太坊clique算法"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="以太坊clique算法"/><meta name="twitter:description" content="以太坊clique算法 代码分支：github.com/ethereum/go-ethereum/tree/v1.9.9 clique 以太坊的官方共识算法是ethash算法，这在前文已经有了详细的分析： 它是基于POW的共识机制的，矿工需要通过计算nonce值，会消耗大量算力来匹配target值。 如果在联盟链或者私链的方案里，继续使用ethash就会浪费算力，POW也没有存在的意义。所以以太坊有了另一种共识方案：基于POA的clique。 POA, Proof of Authority。权力证明，不同于POW的工作量证明，POA是能够直接确定几个节点具备出块的权力，这几个节点出的块会被全..."/><meta property="og:description" content="以太坊clique算法 代码分支：github.com/ethereum/go-ethereum/tree/v1.9.9 clique 以太坊的官方共识算法是ethash算法，这在前文已经有了详细的分析： 它是基于POW的共识机制的，矿工需要通过计算nonce值，会消耗大量算力来匹配target值。 如果在联盟链或者私链的方案里，继续使用ethash就会浪费算力，POW也没有存在的意义。所以以太坊有了另一种共识方案：基于POA的clique。 POA, Proof of Authority。权力证明，不同于POW的工作量证明，POA是能够直接确定几个节点具备出块的权力，这几个节点出的块会被全..."/><meta property="og:image:alt" content="以太坊clique算法 代码分支：github.com/ethereum/go-ethereum/tree/v1.9.9 clique 以太坊的官方共识算法是ethash算法，这在前文已经有了详细的分析： 它是基于POW的共识机制的，矿工需要通过计算nonce值，会消耗大量算力来匹配target值。 如果在联盟链或者私链的方案里，继续使用ethash就会浪费算力，POW也没有存在的意义。所以以太坊有了另一种共识方案：基于POA的clique。 POA, Proof of Authority。权力证明，不同于POW的工作量证明，POA是能够直接确定几个节点具备出块的权力，这几个节点出的块会被全..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Public_Chain_Research/Ethereum/以太坊源码分析/以太坊clique算法"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/Public_Chain_Development/Public_Chain_Research/Ethereum/以太坊源码分析/以太坊clique算法"/><link rel="icon" href="../../../../../static/icon.png"/><meta name="description" content="以太坊clique算法 代码分支：github.com/ethereum/go-ethereum/tree/v1.9.9 clique 以太坊的官方共识算法是ethash算法，这在前文已经有了详细的分析： 它是基于POW的共识机制的，矿工需要通过计算nonce值，会消耗大量算力来匹配target值。 如果在联盟链或者私链的方案里，继续使用ethash就会浪费算力，POW也没有存在的意义。所以以太坊有了另一种共识方案：基于POA的clique。 POA, Proof of Authority。权力证明，不同于POW的工作量证明，POA是能够直接确定几个节点具备出块的权力，这几个节点出的块会被全..."/><meta name="generator" content="Quartz"/><link href="../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/Public_Chain_Development/Public_Chain_Research/Ethereum/以太坊源码分析/以太坊clique算法"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-372"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-372" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/">Public_Chain_Development</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/">Public_Chain_Research</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/Ethereum/">Ethereum</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Public_Chain_Development/Public_Chain_Research/Ethereum/以太坊源码分析/">以太坊源码分析</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>以太坊clique算法</a></div></nav><h1 class="article-title">以太坊clique算法</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.455Z">2026年1月12日</time><span>34分钟阅读</span></p></div></div><article class="popover-hint"><blockquote>
+<p>以太坊clique算法</p>
+<p>代码分支：<a href="https://github.com/ethereum/go-ethereum/tree/v1.9.9" class="external">https://github.com/ethereum/go-ethereum/tree/v1.9.9<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gomsueveelj31ao0t6wor.jpg" alt="bca914bd89fa6439facc5a61b6e6d0a1"/></p>
+<h2 id="clique">clique<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#clique" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>以太坊的官方共识算法是ethash算法，这在前文已经有了详细的分析：</p>
+<blockquote>
+<p>它是基于POW的共识机制的，矿工需要通过计算nonce值，会消耗大量算力来匹配target值。</p>
+</blockquote>
+<p>如果在联盟链或者私链的方案里，继续使用ethash就会浪费算力，POW也没有存在的意义。所以以太坊有了另一种共识方案：基于POA的clique。</p>
+<blockquote>
+<p>POA, Proof of Authority。权力证明，不同于POW的工作量证明，POA是能够直接确定几个节点具备出块的权力，这几个节点出的块会被全网其他节点验证为有效块。</p>
+</blockquote>
+<p><a href="https://github.com/evsward/blog/blob/master/posts/%E4%BB%A5%E5%A4%AA%E5%9D%8A-%E7%A7%81%E6%9C%89%E9%93%BE%E6%90%AD%E5%BB%BA%E5%88%9D%E6%AD%A5%E5%AE%9E%E8%B7%B5.md" class="external">建立私链<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>通过这篇文章的操作可以建立一个私有链，观察这个流程可以看到，通过puppeth工具建立创世块时，会提示你选择哪种共识方式，有ethash和clique两个选项，说到这里我们就明白了为什么文章中默认要选择clique。</p>
+<h2 id="源码分析">源码分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#源码分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>讲过了基本概念，下面我们深入以太坊源码来仔细分析clique算法的具体实现。</p>
+<p>入口仍然选择<a href="http://www.cnblogs.com/Evsward/p/miner.html#uncles%E5%8F%94%E5%9D%97%E7%9A%84%E6%A6%82%E5%BF%B5" class="external">seal方法<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>，这里与前文分析ethash算法的入口是保持一致的，因为他们是Seal的不同实现。</p>
+<pre><code>// 我们的注释可以对比着来看，clique的seal函数的目的是：尝试通过本地签名认证（权力签名与认证，找到有权力的结点）来创建一个已密封的区块。
+func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, stop &lt;-chan struct{}) (*types.Block, error) {
+	header := block.Header()
+
+	number := header.Number.Uint64()
+	if number == 0 {// 不允许密封创世块
+		return nil, errUnknownBlock
+	}
+	// 跳转到下方Clique对象的分析。不支持0-period的链，同时拒绝密封空块，没有奖励但是能够旋转密封
+	if c.config.Period == 0 &amp;&amp; len(block.Transactions()) == 0 {
+		return nil, errWaitTransactions
+	}
+	// 在整个密封区块的过程中，不要持有signer签名者字段。
+	c.lock.RLock() // 上锁获取config中的签名者和签名方法。
+	signer, signFn := c.signer, c.signFn
+	c.lock.RUnlock()
+
+	snap, err := c.snapshot(chain, number-1, header.ParentHash, nil)// snapshot函数见下方分析
+    // 校验处理：如果我们未经授权去签名了一个区块
+	if err != nil {
+		return nil, err
+	}
+	if _, authorized := snap.Signers[signer]; !authorized {
+		return nil, errUnauthorized
+	}
+	// 如果我们是【最近签名者】的一员，则等待下一个区块，// 见下方[底层机制三](http://www.cnblogs.com/Evsward/p/clique.html#%E4%B8%89%E8%AE%A4%E8%AF%81%E7%BB%93%E7%82%B9%E7%9A%84%E5%87%BA%E5%9D%97%E6%9C%BA%E4%BC%9A%E5%9D%87%E7%AD%89)
+	for seen, recent := range snap.Recents {
+		if recent == signer {
+			// Signer当前签名者在【最近签名者】中，如果当前区块没有剔除他的话只能继续等待。
+			if limit := uint64(len(snap.Signers)/2 + 1); number &lt; limit || seen > number-limit {
+				log.Info(&quot;Signed recently, must wait for others&quot;)
+				&lt;-stop
+				return nil, nil
+			}
+		}
+	}
+	// 通过以上校验，到了这里说明协议已经允许我们来签名这个区块，等待此工作完成
+	delay := time.Unix(header.Time.Int64(), 0).Sub(time.Now())
+	if header.Difficulty.Cmp(diffNoTurn) == 0 {
+		// 这不是我们的轮次来签名，delay
+		wiggle := time.Duration(len(snap.Signers)/2+1) * wiggleTime // wiggleTime = 500 * time.Millisecond // 随机推延，从而允许并发签名（针对每个签名者）
+		delay += time.Duration(rand.Int63n(int64(wiggle)))
+
+		log.Trace(&quot;Out-of-turn signing requested&quot;, &quot;wiggle&quot;, common.PrettyDuration(wiggle))
+	}
+	log.Trace(&quot;Waiting for slot to sign and propagate&quot;, &quot;delay&quot;, common.PrettyDuration(delay))
+
+	select {
+	case &lt;-stop:
+		return nil, nil
+	case &lt;-time.After(delay):
+	}
+	// 核心工作：开始签名
+	sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())// signFn函数见下方
+	if err != nil {
+		return nil, err
+	}
+	copy(header.Extra[len(header.Extra)-extraSeal:], sighash)//将签名结果替换区块头的Extra字段（专门支持记录额外信息的）
+
+	return block.WithSeal(header), nil //通过区块头重新组装一个区块
+}
+</code></pre>
+<p>Clique对象的分析</p>
+<pre><code>// Clique是POA共识引擎，计划在Ropsten攻击以后，用来支持以太坊私测试链testnet（也可以自己搭建联盟链或者私有链）
+type Clique struct {
+	config *params.CliqueConfig // 共识引擎配置参数，见下方CliqueConfig源码介绍
+	db     ethdb.Database       // 数据库，用来存储以及获取快照检查点
+
+	recents    *lru.ARCCache // 最近区块的快照，用来加速快照重组
+	signatures *lru.ARCCache // 最近区块的签名，用来加速挖矿
+
+	proposals map[common.Address]bool // 目前我们正在推动的提案清单，存的是地址和布尔值的键值对映射
+
+	signer common.Address // 签名者的以太坊地址
+	signFn SignerFn       // 签名方法，用来授权哈希
+	lock   sync.RWMutex   // 锁，保护签名字段
+}
+</code></pre>
+<p>CliqueConfig源码分析</p>
+<pre><code>// CliqueConfig是POA挖矿的共识引擎的配置字段。
+type CliqueConfig struct {
+	Period uint64 `json:&quot;period&quot;` // 在区块之间执行的秒数(可以理解为距离上一块出块后的流逝时间秒数)
+	Epoch  uint64 `json:&quot;epoch&quot;`  // Epoch['iːpɒk]长度，重置投票和检查点
+}
+</code></pre>
+<p>snapshot函数分析</p>
+<pre><code>// snapshot函数可通过给定点获取认证快照
+func (c *Clique) snapshot(chain consensus.ChainReader, number uint64, hash common.Hash, parents []*types.Header) (*Snapshot, error) {
+	// 在内存或磁盘上搜索一个快照以检查检查点。
+	var (
+		headers []*types.Header// 区块头
+		snap    *Snapshot// 快照对象，见下方
+	)
+	for snap == nil {
+		// 如果找到一个内存里的快照，使用以下方案：
+		if s, ok := c.recents.Get(hash); ok {
+			snap = s.(*Snapshot)
+			break
+		}
+		// 如果一个在磁盘检查点的快照被找到，使用以下方案：
+		if number%checkpointInterval == 0 {// checkpointInterval = 1024 // 区块号，在数据库中保存投票快照的区块。
+			if s, err := loadSnapshot(c.config, c.signatures, c.db, hash); err == nil {// loadSnapshot函数见下方
+				log.Trace(&quot;Loaded voting snapshot form disk&quot;, &quot;number&quot;, number, &quot;hash&quot;, hash)
+				snap = s
+				break
+			}
+		}
+		// 如果我们在创世块，则做一个快照
+		if number == 0 {
+			genesis := chain.GetHeaderByNumber(0)
+			if err := c.VerifyHeader(chain, genesis, false); err != nil {
+				return nil, err
+			}
+			signers := make([]common.Address, (len(genesis.Extra)-extraVanity-extraSeal)/common.AddressLength)
+			for i := 0; i &lt; len(signers); i++ {
+				copy(signers[i][:], genesis.Extra[extraVanity+i*common.AddressLength:])
+			}
+			snap = newSnapshot(c.config, c.signatures, 0, genesis.Hash(), signers)// 创建一个新的快照的函数，见下方
+			if err := snap.store(c.db); err != nil {
+				return nil, err
+			}
+			log.Trace(&quot;Stored genesis voting snapshot to disk&quot;)
+			break
+		}
+		// 没有针对这个区块头的快照，则收集区块头并向后移动
+		var header *types.Header
+		if len(parents) > 0 {
+			// 如果我们有明确的父类，从这里强制挑拣出来。
+			header = parents[len(parents)-1]
+			if header.Hash() != hash || header.Number.Uint64() != number {
+				return nil, consensus.ErrUnknownAncestor
+			}
+			parents = parents[:len(parents)-1]
+		} else {
+			// 如果没有明确父类（或者没有更多的），则转到数据库
+			header = chain.GetHeader(hash, number)
+			if header == nil {
+				return nil, consensus.ErrUnknownAncestor
+			}
+		}
+		headers = append(headers, header)
+		number, hash = number-1, header.ParentHash
+	}
+	// 找到了先前的快照，那么将所有pending的区块头都放在它的上面。
+	for i := 0; i &lt; len(headers)/2; i++ {
+		headers[i], headers[len(headers)-1-i] = headers[len(headers)-1-i], headers[i]
+	}
+	snap, err := snap.apply(headers)//通过区块头生成一个新的snapshot对象
+	if err != nil {
+		return nil, err
+	}
+	c.recents.Add(snap.Hash, snap)//将当前快照区块的hash存到recents中。
+
+	// 如果我们生成了一个新的检查点快照，保存到磁盘上。
+	if snap.Number%checkpointInterval == 0 &amp;&amp; len(headers) > 0 {
+		if err = snap.store(c.db); err != nil {
+			return nil, err
+		}
+		log.Trace(&quot;Stored voting snapshot to disk&quot;, &quot;number&quot;, snap.Number, &quot;hash&quot;, snap.Hash)
+	}
+	return snap, err
+}
+</code></pre>
+<p>Snapshot对象源码分析：</p>
+<pre><code>// Snapshot对象是在给定点的一个认证投票的状态
+type Snapshot struct {
+	config   *params.CliqueConfig // 配置参数
+	sigcache *lru.ARCCache        // 签名缓存，最近的区块签名加速恢复。
+
+	Number  uint64                      `json:&quot;number&quot;`  // 快照建立的区块号
+	Hash    common.Hash                 `json:&quot;hash&quot;`    // 快照建立的区块哈希
+	Signers map[common.Address]struct{} `json:&quot;signers&quot;` // 当下认证签名者的集合
+	Recents map[uint64]common.Address   `json:&quot;recents&quot;` // 最近签名区块地址的集合
+	Votes   []*Vote                     `json:&quot;votes&quot;`   // 按时间顺序排列的投票名单。
+	Tally   map[common.Address]Tally    `json:&quot;tally&quot;`   // 当前的投票结果，避免重新计算。
+}
+</code></pre>
+<p>loadSnapshot函数源码分析：</p>
+<pre><code>// loadSnapshot函数用来从数据库中加载一个现存的快照，参数列表中很多都是Snapshot对象的关键字段属性。
+func loadSnapshot(config *params.CliqueConfig, sigcache *lru.ARCCache, db ethdb.Database, hash common.Hash) (*Snapshot, error) {
+	blob, err := db.Get(append([]byte(&quot;clique-&quot;), hash[:]...))// ethdb使用的是leveldb，对外开放接口Dababase见下方
+	if err != nil {
+		return nil, err
+	}
+	snap := new(Snapshot)
+	if err := json.Unmarshal(blob, snap); err != nil {
+		return nil, err
+	}
+	snap.config = config
+	snap.sigcache = sigcache
+
+	return snap, nil
+}
+</code></pre>
+<p>ethdb数据库对外开放接口：</p>
+<pre><code>// Database接口包裹了所有的数据库相关操作，所有的方法都是线程安全的。
+type Database interface {
+	Putter
+	Get(key []byte) ([]byte, error)//通过某key获取值
+	Has(key []byte) (bool, error)//某key是否包含有效值
+	Delete(key []byte) error
+	Close()
+	NewBatch() Batch
+}
+</code></pre>
+<p>newSnapshot函数源码：</p>
+<pre><code>// newSnapshot函数创建了一个新的快照，通过给出的特定的启动参数。这个方法没有初始化最近签名者的集合，所以只有使用创世块。
+func newSnapshot(config *params.CliqueConfig, sigcache *lru.ARCCache, number uint64, hash common.Hash, signers []common.Address) *Snapshot {
+	snap := &amp;Snapshot{// 就是组装一个Snapshot对象，安装相应参数
+		config:   config,
+		sigcache: sigcache,
+		Number:   number,
+		Hash:     hash,
+		Signers:  make(map[common.Address]struct{}),
+		Recents:  make(map[uint64]common.Address),
+		Tally:    make(map[common.Address]Tally),
+	}
+	for _, signer := range signers {
+		snap.Signers[signer] = struct{}{}
+	}
+	return snap
+}
+</code></pre>
+<p>signFn函数：</p>
+<pre><code>// SignerFn是一个签名者的回调函数，用来请求一个能够被后台账户签名生成的哈希
+type SignerFn func(accounts.Account, []byte) ([]byte, error)
+</code></pre>
+<p>clique常量配置：</p>
+<pre><code>blockPeriod = uint64(15)    // clique规定，两个区块的生成时间至少间隔15秒，timestamp类型。
+</code></pre>
+<h2 id="clique底层机制">Clique底层机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#clique底层机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在进入共识引擎之前，当前结点已经生成了一个完整的区块，包括区块头和密封的交易列表，然后进入seal函数，通过ethash或者clique算法引擎来操作出块确权。本文重点讲述了针对clique算法的源码分析，clique算法基于POA共识，是在结点中找出有权力的几个“超级结点”，只有这些结点可以生成合法区块，其他结点的出块都会直接丢弃。</p>
+<h3 id="一clique是如何确定签名者以及签名方法的">一：clique是如何确定签名者以及签名方法的？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一clique是如何确定签名者以及签名方法的" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>我在clique文件中搜索，发现有一个方法做了这个工作：</p>
+<pre><code>// Authorize函数注入共识引擎clique一个私钥地址（签名者）以及签名方法signFn，用来挖矿新块
+func (c *Clique) Authorize(signer common.Address, signFn SignerFn) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.signer = signer
+	c.signFn = signFn
+}
+</code></pre>
+<p>那么继续搜索，该函数是在何时被调用的，找到了位于/eth/backend.go中的函数StartMining：</p>
+<pre><code>func (s *Ethereum) StartMining(local bool) error {
+	eb, err := s.Etherbase()// 用户地址
+	if err != nil {
+		log.Error(&quot;Cannot start mining without etherbase&quot;, &quot;err&quot;, err)//未找到以太账户地址，报错
+		return fmt.Errorf(&quot;etherbase missing: %v&quot;, err)
+	}
+	// 如果是clique共识算法，则走if分支，如果是ethash则跳过if。
+	if clique, ok := s.engine.(*clique.Clique); ok {// Comma-ok断言语法见下方分析。
+		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})// 通过用户地址获得wallet对象
+		if wallet == nil || err != nil {
+			log.Error(&quot;Etherbase account unavailable locally&quot;, &quot;err&quot;, err)
+			return fmt.Errorf(&quot;signer missing: %v&quot;, err)
+		}
+		clique.Authorize(eb, wallet.SignHash)//在这里！注入了签名者以及通过wallet对象获取到签名方法
+	}
+	if local {
+		// 如果本地CPU挖矿已启动，我们可以禁止注入机制以加速同步时间。
+		// CPU挖矿在主网是荒诞的，所以没有人能碰到这个路径，然而一旦CPU挖矿同步标志完成以后，将保证私网工作也在一个独立矿工结点。
+		atomic.StoreUint32(&amp;s.protocolManager.acceptTxs, 1)
+	}
+	go s.miner.Start(eb)//并发启动挖矿工作
+	return nil
+}
+</code></pre>
+<p>最终，通过miner.Start(eb)，调用到work <span>→</span> agent <span>→</span> CPUAgent <span>→</span> update <span>→</span> seal，回到最上方我们的入口。</p>
+<blockquote>
+<p>这里要补充一点，<a href="http://www.cnblogs.com/Evsward/p/miner.html" class="external">挖矿机制<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>是从miner.start()作为入口开始分析的，而上面的StartMining函数是在miner.start()之前的。这样就把整个这一条线串起来了。</p>
+</blockquote>
+<h3 id="go语法补充comma-ok断言">Go语法补充：Comma-ok断言<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#go语法补充comma-ok断言" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>if clique, ok := s.engine.(*clique.Clique); ok {</p>
+</blockquote>
+<p>这段语句很令人迷惑，经过搜查，以上语法被称作Comma-ok断言。</p>
+<pre><code>value, ok = element.(T)
+</code></pre>
+<p>value是element变量的值，ok是布尔类型用来表达断言结果，element是接口变量，T是断言类型。</p>
+<p>套入以上代码段，翻译过来即：</p>
+<blockquote>
+<p>如果s.engine是Clique类型，则ok为true，同时clique就等于s.engine。</p>
+</blockquote>
+<h3 id="二snapshot起到的作用是什么">二：Snapshot起到的作用是什么？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二snapshot起到的作用是什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Snapshot对象在Seal方法中是通过调用snapshot构造函数来获取到的。而snapshot构造函数内部有较长的函数体，包括newSnapshot方法以及loadSnapshot方法的处理。从这个分析来看，我们也可以知道Snapshot是快照，也是缓存的一种机制，同时它也不仅仅是缓存，因为它存储了最近签名者的map集合。</p>
+<blockquote>
+<p>Snapshot可以从内存（即程序中的变量）或是磁盘上（即通过数据库leveldb）获取或者存储，实际上这就是二级缓存的概念了。</p>
+</blockquote>
+<h3 id="三认证结点的出块机会均等">三：认证结点的出块机会均等<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三认证结点的出块机会均等" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>首先将上文Seal方法的源码遗留代码段展示如下。</p>
+<pre><code>for seen, recent := range snap.Recents {
+	if recent == signer {
+		if limit := uint64(len(snap.Signers)/2 + 1); number &lt; limit || seen > number-limit {
+			log.Info(&quot;Signed recently, must wait for others&quot;)
+			&lt;-stop
+			return nil, nil
+		}
+	}
+}
+</code></pre>
+<p>其中</p>
+<pre><code>if recent == signer {
+</code></pre>
+<p>如果当前结点最近签名过，则跳过，为保证<strong>机会均等</strong>，避免某个认证结点可以连续出块，从而作恶。</p>
+<pre><code>if limit := uint64(len(snap.Signers)/2 + 1); number &lt; limit || seen > number-limit {
+</code></pre>
+<p>实际上到了这里就已经在决定出块权了。我们依次来看，</p>
+<ul>
+<li>snap.Signers是所有的认证结点。</li>
+<li>limit的值是所有认证结点的数量的一半加1，也就是说可以保证limit>50%好的认证结点个数（安全性考虑：掌握大于50%的控制权）。<strong>结合上面的机会均等，clique要求认证结点在每轮limit个区块中只能生成一个区块。</strong></li>
+<li>number是当前区块号</li>
+<li>seen是 “for seen, recent := range snap.Recents {” 中Recents的index，从0开始，最大值为Recents的总数-1。</li>
+</ul>
+<p>接着，我们来分析控制程序中止的条件表达式：</p>
+<pre><code>number &lt; limit || seen > number-limit
+</code></pre>
+<ul>
+<li>number &lt; limit, 如果区块高度小于limit</li>
+<li>seen > number - limit，缓存中最近签发者序号已经超过了区块高度与limit之差。number-limit是最多的坏节点，索引seen大于坏节点也要中断（<strong>TODO: number区块高度与认证结点的关系</strong>）</li>
+</ul>
+<p>在这两种情况下，会中断程序，停止签名以及出块操作。</p>
+<h3 id="四出块难度">四：出块难度<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四出块难度" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>// inturn函数通过给定的区块高度和签发者返回该签发者是否在轮次内
+func (s *Snapshot) inturn(number uint64, signer common.Address) bool {
+    // 方法体的内容就是区块高度与认证签发者集合长度的余数是否等于该签发者的下标值
+	signers, offset := s.signers(), 0
+	for offset &lt; len(signers) &amp;&amp; signers[offset] != signer {
+		offset++
+	}
+	return (number % uint64(len(signers))) == uint64(offset)
+}
+</code></pre>
+<blockquote>
+<p>一句话，clique要求签发者必须按照其在snapshot中的认证签发者集合按照字典排序的顺序出块。</p>
+</blockquote>
+<p>符合以上条件的话，难度为2，否则为1。</p>
+<pre><code>diffInTurn = big.NewInt(2) // 签名在轮次内的区块难度为2。
+diffNoTurn = big.NewInt(1) // 签名未在轮次内的区块难度为1。
+</code></pre>
+<p>clique的出块难度比较容易理解，这是在POW中大书特书的部分但在clique中却十分简单，当inturn的结点离线时，其他结点会来竞争，难度值降为1。然而正常出块时，limit中的所有认证结点包括一个inturn和其他noturn的结点，clique是采用了给noturn加延迟时间的方式来支持inturn首先出块，避免noturn的结点无谓生成区块。这部分代码在下面再贴一次。</p>
+<pre><code>wiggle := time.Duration(len(snap.Signers)/2+1) * wiggleTime // wiggleTime = 500 * time.Millisecond // 随机推延，从而允许并发签名（针对每个签名者）
+delay += time.Duration(rand.Int63n(int64(wiggle)))
+</code></pre>
+<blockquote>
+<p>clique认可难度值最高的链为主链，所以完全inturn结点出的块组成的链会是最理想的主链。</p>
+</blockquote>
+<h3 id="五区块校验">五：区块校验<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五区块校验" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>// 同样位于clique文件中的verifySeal函数，顾名思义是结点用来校验别的结点广播过来的区块信息的。
+func (c *Clique) verifySeal(chain consensus.ChainReader, header *types.Header, parents []*types.Header) error {
+	// 创世块的话不校验
+	number := header.Number.Uint64()
+	if number == 0 {
+		return errUnknownBlock
+	}
+	// 取到所需snapshot对象，用来校验区块头并且将其缓存。
+	snap, err := c.snapshot(chain, number-1, header.ParentHash, parents)
+	if err != nil {
+		return err
+	}
+
+	// 处理授权秘钥，检查是否违背认证签名者集合
+	signer, err := ecrecover(header, c.signatures)// 从区块头中解密出Extra字段，找到签名字符串，获得签名者地址信息。可以跳转到下面ecrecover函数的源码分析。
+	if err != nil {
+		return err
+	}
+	if _, ok := snap.Signers[signer]; !ok {
+		return errUnauthorized
+	}
+    // 与Seal相同的处理，机会均等
+	for seen, recent := range snap.Recents {
+		if recent == signer {
+			if limit := uint64(len(snap.Signers)/2 + 1); seen > number-limit {
+				return errUnauthorized
+			}
+		}
+	}
+	// 区分是否inturn，设置区块困难度，上面也介绍过了。
+	inturn := snap.inturn(header.Number.Uint64(), signer)
+	if inturn &amp;&amp; header.Difficulty.Cmp(diffInTurn) != 0 {
+		return errInvalidDifficulty
+	}
+	if !inturn &amp;&amp; header.Difficulty.Cmp(diffNoTurn) != 0 {
+		return errInvalidDifficulty
+	}
+	return nil
+}
+</code></pre>
+<p>ecrecover函数的源码分析：</p>
+<pre><code>// ecrecover函数从一个签名的区块头中解压出以太坊账户地址
+func ecrecover(header *types.Header, sigcache *lru.ARCCache) (common.Address, error) {
+	// 如果签名已经被缓存，返回它。
+	hash := header.Hash()
+	if address, known := sigcache.Get(hash); known {
+		return address.(common.Address), nil
+	}
+	// 从区块头的Extra字段取得签名内容。
+	if len(header.Extra) &lt; extraSeal {
+		return common.Address{}, errMissingSignature
+	}
+	signature := header.Extra[len(header.Extra)-extraSeal:]
+
+	// 通过密码学技术从签名内容中解密出公钥和以太坊地址。
+	pubkey, err := crypto.Ecrecover(sigHash(header).Bytes(), signature)// 具体源码见下方
+	if err != nil {
+		return common.Address{}, err
+	}
+	var signer common.Address
+	copy(signer[:], crypto.Keccak256(pubkey[1:])[12:])//将公钥利用keccak256解密赋值给signer。
+
+	sigcache.Add(hash, signer)//加入缓存
+	return signer, nil
+}
+</code></pre>
+<p>crypto包的Ecrecover函数：</p>
+<pre><code>func Ecrecover(hash, sig []byte) ([]byte, error) {
+	return secp256k1.RecoverPubkey(hash, sig)
+}
+</code></pre>
+<p>Ecrecover函数是使用secp256k1来解密公钥。</p>
+<p>下面我们从VerifySeal函数反推，找出调用该函数的位置在miner/remote_agent.go，</p>
+<pre><code>// SubmitWork函数尝试注入一个pow解决方案（共识引擎）到远程代理，返回这个解决方案是否被接受。（不能同时是一个坏的pow也不能有其他任何错误，例如没有工作被pending
+func (a *RemoteAgent) SubmitWork(nonce types.BlockNonce, mixDigest, hash common.Hash) bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// 保证被提交的工作不是空
+	work := a.work[hash]
+	if work == nil {
+		log.Info(&quot;Work submitted but none pending&quot;, &quot;hash&quot;, hash)
+		return false
+	}
+	// 保证引擎是真实有效的。
+	result := work.Block.Header()
+	result.Nonce = nonce
+	result.MixDigest = mixDigest
+
+	if err := a.engine.VerifySeal(a.chain, result); err != nil {//在这里，VerifySeal方法被调用。
+		log.Warn(&quot;Invalid proof-of-work submitted&quot;, &quot;hash&quot;, hash, &quot;err&quot;, err)
+		return false
+	}
+	block := work.Block.WithSeal(result)
+
+	// 解决方案看上去是有效的，返回到矿工并且通知接受结果。
+	a.returnCh &lt;- &amp;Result{work, block}
+	delete(a.work, hash)
+
+	return true
+}
+</code></pre>
+<p>这个SubmitWork位于挖矿的pkg中，主要工作是对work的校验，包括work本身是否为空，work中的区块头以及区块头中包含的字段的有效性，然后是对区块头的VerifySeal（该函数的功能在上面已经介绍到了，主要是对区块签名者的认证，区块难度值的确认）</p>
+<p>继续反推找到SubmitWork函数被调用的位置：</p>
+<pre><code>// SubmitWork函数能够被外部矿工用来提交他们的POW。
+func (api *PublicMinerAPI) SubmitWork(nonce types.BlockNonce, solution, digest common.Hash) bool {
+	return api.agent.SubmitWork(nonce, digest, solution)
+}
+</code></pre>
+<p><strong>总结</strong></p>
+<p>区块的校验是外部结点自动执行PublicMinerAPI的SubmitWork方法，从而层层调用，通过检查区块头内的签名内容，通过secp256k1方法恢复公钥，然后利用Keccak256将公钥加密为一个以太地址作为签名地址，获得签名地址以后，去本地认证结点缓存中检查，看该签名地址是否符合要求。最终只要通过层层校验，就不会报出errUnauthorized的错误。</p>
+<blockquote>
+<p>注意：签名者地址common.Address在Seal时被签名signature存在区块头的Extra字段中，然后在VerifySeal中被从区块头中取出签名signature。该签名的解密方式比较复杂：要先通过secp256k1恢复一个公钥，然后利用这个公钥和Keccak256加密出签名者地址common.Address。</p>
+</blockquote>
+<p>common.Address本身就是结点公钥的Keccak256加密结果。请参照common/types.go：</p>
+<pre><code>// Hex函数返回了一个十六禁止的字符串，代表了以太坊地址。
+func (a Address) Hex() string {
+	unchecksummed := hex.EncodeToString(a[:])
+	sha := sha3.NewKeccak256()//这里就不展开了，可以看出是通过Keccak256方法将未检查的明文Address加密为一个标准以太坊地址
+	sha.Write([]byte(unchecksummed))
+	hash := sha.Sum(nil)
+
+	result := []byte(unchecksummed)
+	for i := 0; i &lt; len(result); i++ {
+		hashByte := hash[i/2]
+		if i%2 == 0 {
+			hashByte = hashByte >> 4
+		} else {
+			hashByte &amp;= 0xf
+		}
+		if result[i] > '9' &amp;&amp; hashByte > 7 {
+			result[i] -= 32
+		}
+	}
+	return &quot;0x&quot; + string(result)
+}
+</code></pre>
+<h3 id="六-基于投票的认证结点的运行机制">六： 基于投票的认证结点的运行机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六-基于投票的认证结点的运行机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>上面我们分析了clique的认证结点的出块，校验等细节，那么这里引出终极问题：如何确认一个普通结点是否是认证结点呢？</p>
+<blockquote>
+<p>答：clique是基于投票机制来确认认证结点的。</p>
+</blockquote>
+<p>先来看投票实体类，存在于snapshot源码中。</p>
+<pre><code>// Vote代表了一个独立的投票，这个投票可以授权一个签名者，更改授权列表。
+type Vote struct {
+	Signer    common.Address `json:&quot;signer&quot;`    // 已授权的签名者（通过投票）
+	Block     uint64         `json:&quot;block&quot;`     // 投票区块号
+	Address   common.Address `json:&quot;address&quot;`   // 被投票的账户，修改它的授权
+	Authorize bool           `json:&quot;authorize&quot;` // 对一个被投票账户是否授权或解授权
+}
+</code></pre>
+<p>这个Vote是存在于Snapshot的属性字段中，所以投票机制离不开Snapshot，我们在这里再次将Snapshot实体源码重新分析一遍，上面注释过的内容我不再复述，而是直接关注在投票机制相关字段内容上。</p>
+<pre><code>type Snapshot struct {
+	config   *params.CliqueConfig
+	sigcache *lru.ARCCache       
+
+	Number  uint64                      `json:&quot;number&quot;`  
+	Hash    common.Hash                 `json:&quot;hash&quot;`    
+	Signers map[common.Address]struct{} `json:&quot;signers&quot;` // 认证节点集合
+	Recents map[uint64]common.Address   `json:&quot;recents&quot;` 
+	Votes   []*Vote                     `json:&quot;votes&quot;`   // 上面的Vote对象数组
+	Tally   map[common.Address]Tally    `json:&quot;tally&quot;`   // 也是一个自定义类型，见下方
+}
+</code></pre>
+<p>Tally结构体：</p>
+<pre><code>// Tally是一个简单的用来保存当前投票分数的计分器
+type Tally struct {
+	Authorize bool `json:&quot;authorize&quot;` // 授权true或移除false
+	Votes     int  `json:&quot;votes&quot;`     // 该提案已获票数
+}
+</code></pre>
+<p>另外Clique实体中还有个有争议的字段proposals，当时并没有分析清楚，何谓提案？</p>
+<blockquote>
+<p>proposal是可以通过rpc申请加入或移除一个认证节点，结构为待操作地址（节点地址）和状态（加入或移除）</p>
+</blockquote>
+<h4 id="投票中某些概念的确定">投票中某些概念的确定<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#投票中某些概念的确定" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>投票的范围是在委员会，委员会的意思就是所有矿工。</li>
+<li>概念介绍：checkpoint，checkpointInterval = 1024 ，每过1024个区块，则保存snapshot到数据库</li>
+<li>概念介绍：Epoch，与ethash一样，一个Epoch是三万个区块</li>
+</ul>
+<h4 id="投票流程">投票流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#投票流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>首先委员会某个成员（即节点矿工）通过rpc调用consensus/clique/api.go中的propose方法</li>
+</ul>
+<pre><code>// Propose注入一个新的授权提案，可以授权一个签名者或者移除一个。
+func (api *API) Propose(address common.Address, auth bool) {
+	api.clique.lock.Lock()
+	defer api.clique.lock.Unlock()
+
+	api.clique.proposals[address] = auth// true:授权，false:移除
+}
+</code></pre>
+<ul>
+<li>上面rpc提交过来的propose会写入Clique.proposals集合中。</li>
+<li>在挖矿开始以后，会在miner.start()中提交一个commitNewWork，其中涉及到准备区块头Prepare的方法，我们进入到clique的实现，其中涉及到对上面的Clique.proposals的处理：</li>
+</ul>
+<pre><code>// 如果存在pending的proposals，则投票
+if len(addresses) > 0 {
+	header.Coinbase = addresses[rand.Intn(len(addresses))]//将投票节点的地址赋值给区块头的Coinbase字段。
+	// 下面是通过提案内容来组装区块头的随机数字段。
+	if c.proposals[header.Coinbase] {
+		copy(header.Nonce[:], nonceAuthVote)
+	} else {
+		copy(header.Nonce[:], nonceDropVote)
+	}
+}
+
+// nonceAuthVote和nonceDropVote常量的声明与初始化
+nonceAuthVote = hexutil.MustDecode(&quot;0xffffffffffffffff&quot;) // 授权签名者的必要随机数
+nonceDropVote = hexutil.MustDecode(&quot;0x0000000000000000&quot;) // 移除签名者的必要随机数
+</code></pre>
+<ul>
+<li>整个区块组装好以后（其他的内容不再复述），会被广播到外部结点校验，如果没有问题该块被成功出了，则区块头中的这个提案也会被记录在主链上。</li>
+<li>区块在生成时，会创建Snapshot，在snapshot构造函数中，会涉及到对proposal的处理apply方法。</li>
+</ul>
+<pre><code>// apply通过接受一个给定区块头创建了一个新的授权
+func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
+	if len(headers) == 0 {
+		return s, nil
+	}
+	for i := 0; i &lt; len(headers)-1; i++ {
+		if headers[i+1].Number.Uint64() != headers[i].Number.Uint64()+1 {
+			return nil, errInvalidVotingChain
+		}
+	}
+	if headers[0].Number.Uint64() != s.Number+1 {
+		return nil, errInvalidVotingChain
+	}
+	snap := s.copy()
+    // 投票的处理核心代码
+	for _, header := range headers {
+		// Remove any votes on checkpoint blocks
+		number := header.Number.Uint64()
+		// 如果区块高度正好在Epoch结束，则清空投票和计分器
+		if number%s.config.Epoch == 0 {
+			snap.Votes = nil
+			snap.Tally = make(map[common.Address]Tally)
+		}
+		if limit := uint64(len(snap.Signers)/2 + 1); number >= limit {
+			delete(snap.Recents, number-limit)
+		}
+		// 从区块头中解密出来签名者地址
+		signer, err := ecrecover(header, s.sigcache)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := snap.Signers[signer]; !ok {
+			return nil, errUnauthorized
+		}
+		for _, recent := range snap.Recents {
+			if recent == signer {
+				return nil, errUnauthorized
+			}
+		}
+		snap.Recents[number] = signer
+
+		// 区块头认证，不管该签名者之前的任何投票
+		for i, vote := range snap.Votes {
+			if vote.Signer == signer &amp;&amp; vote.Address == header.Coinbase {
+				// 从缓存计数器中移除该投票
+				snap.uncast(vote.Address, vote.Authorize)
+
+				// 从按时间排序的列表中移除投票
+				snap.Votes = append(snap.Votes[:i], snap.Votes[i+1:]...)
+				break // only one vote allowed
+			}
+		}
+		// 从签名者中计数新的投票
+		var authorize bool
+		switch {
+		case bytes.Equal(header.Nonce[:], nonceAuthVote):
+			authorize = true
+		case bytes.Equal(header.Nonce[:], nonceDropVote):
+			authorize = false
+		default:
+			return nil, errInvalidVote
+		}
+		if snap.cast(header.Coinbase, authorize) {
+			snap.Votes = append(snap.Votes, &amp;Vote{
+				Signer:    signer,
+				Block:     number,
+				Address:   header.Coinbase,
+				Authorize: authorize,
+			})
+		}
+		// 判断票数是否超过一半的投票者，如果投票通过，更新签名者列表
+		if tally := snap.Tally[header.Coinbase]; tally.Votes > len(snap.Signers)/2 {
+			if tally.Authorize {
+				snap.Signers[header.Coinbase] = struct{}{}
+			} else {
+				delete(snap.Signers, header.Coinbase)
+
+				if limit := uint64(len(snap.Signers)/2 + 1); number >= limit {
+					delete(snap.Recents, number-limit)
+				}
+				for i := 0; i &lt; len(snap.Votes); i++ {
+					if snap.Votes[i].Signer == header.Coinbase {
+						snap.uncast(snap.Votes[i].Address, snap.Votes[i].Authorize)
+
+						snap.Votes = append(snap.Votes[:i], snap.Votes[i+1:]...)
+
+						i--
+					}
+				}
+			}
+			// 不管之前的任何投票，直接改变账户
+			for i := 0; i &lt; len(snap.Votes); i++ {
+				if snap.Votes[i].Address == header.Coinbase {
+					snap.Votes = append(snap.Votes[:i], snap.Votes[i+1:]...)
+					i--
+				}
+			}
+			delete(snap.Tally, header.Coinbase)
+		}
+	}
+	snap.Number += uint64(len(headers))
+	snap.Hash = headers[len(headers)-1].Hash()
+
+	return snap, nil
+}
+</code></pre>
+<p>关键控制的代码是tally.Votes > len(snap.Signers)/2，意思是计分器中的票数大于一半的签名者，就表示该投票通过，下面就是要更改snapshot中的认证签名者列表缓存，同时要同步给其他节点，并删除该投票相关信息。</p>
+<h2 id="总结">总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>本以为clique比较简单，不必调查这么长，然而POA的共识算法还是比较有难度的，它和POW是基于完全不同的两种场景的实现方式，出块方式也完全不同。下面我尝试用简短的语言来总结Clique的共识机制。</p>
+<blockquote>
+<p>clique共识是基于委员会选举认证节点来确认出块权力的方式实现的。投票方式通过rpc请求propose，snapshot二级缓存机制，唱票，执行投票结果。认证节点出块机会均等，困难度通过轮次（是否按照缓存认证顺序出块）确定，区块头Extra存储签名，keccak256加密以太地址，secp256k1解密签名为公钥，通过认证结点出块的逻辑可以反推区块校验。</p>
+</blockquote>
+<p>到目前为止，我们对POA共识机制，以及以太坊clique的实现有了深刻的理解与认识，相信如果让我们去实现一套POA，也是完全有能力的。大家在阅读本文时有任何疑问均可留言给我，我一定会及时回复。</p>
+<hr/>
+<h2 id="总结参考">总结&amp;参考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#总结参考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p><a href="https://github.com/blockchainGuide" class="external">https://github.com/blockchainGuide<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p>公众号：区块链技术栈  （推荐哦）</p>
+<p><a href="https://eth.wiki/concepts/ethash/design-rationale" class="external">https://eth.wiki/concepts/ethash/design-rationale<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><a href="https://eth.wiki/concepts/ethash/dag" class="external">https://eth.wiki/concepts/ethash/dag<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><a href="https://www.vijaypradeep.com/blog/2017-04-28-ethereums-memory-hardness-explained/" class="external">https://www.vijaypradeep.com/blog/2017-04-28-ethereums-memory-hardness-explained/<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+</blockquote></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-166" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#clique" data-for="clique">clique</a></li><li class="depth-0"><a href="#源码分析" data-for="源码分析">源码分析</a></li><li class="depth-0"><a href="#clique底层机制" data-for="clique底层机制">Clique底层机制</a></li><li class="depth-1"><a href="#一clique是如何确定签名者以及签名方法的" data-for="一clique是如何确定签名者以及签名方法的">一：clique是如何确定签名者以及签名方法的？</a></li><li class="depth-1"><a href="#go语法补充comma-ok断言" data-for="go语法补充comma-ok断言">Go语法补充：Comma-ok断言</a></li><li class="depth-1"><a href="#二snapshot起到的作用是什么" data-for="二snapshot起到的作用是什么">二：Snapshot起到的作用是什么？</a></li><li class="depth-1"><a href="#三认证结点的出块机会均等" data-for="三认证结点的出块机会均等">三：认证结点的出块机会均等</a></li><li class="depth-1"><a href="#四出块难度" data-for="四出块难度">四：出块难度</a></li><li class="depth-1"><a href="#五区块校验" data-for="五区块校验">五：区块校验</a></li><li class="depth-1"><a href="#六-基于投票的认证结点的运行机制" data-for="六-基于投票的认证结点的运行机制">六： 基于投票的认证结点的运行机制</a></li><li class="depth-0"><a href="#总结" data-for="总结">总结</a></li><li class="depth-0"><a href="#总结参考" data-for="总结参考">总结&amp;参考</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../postscript.js" type="module" data-persist="true"></script></html>

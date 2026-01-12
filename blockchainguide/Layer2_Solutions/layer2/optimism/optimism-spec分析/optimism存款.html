@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>optimism存款</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="量化投资技术文档"/><meta property="og:title" content="optimism存款"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="optimism存款"/><meta name="twitter:description" content="存款 存入交易，也称为存款，是在L1上发起并在L2上执行的交易。本文件概述了一种新的存款交易类型。它还描述了如何在 L1 上发起存款，以及 L2 上的授权和验证条件。 词汇注释：存入交易特指L2交易，而 存款可以指各个阶段的交易（例如存入L1时）。 目录 充值交易类型 源哈希计算 充值交易种类 存入交易的验证和授权 执行 随机数处理 存款收据 L1属性充值交易 L2 上的特殊账户 L1 属性存款人账户 L1属性预部署合约 L1属性预部署合约：参考实现 用户存入交易 存款合约 地址别名 存款合约实施：乐观门户 充值交易类型 存入交易与现有交易类型有以下显着区别： 它们源自第 1 层块，并且必须作..."/><meta property="og:description" content="存款 存入交易，也称为存款，是在L1上发起并在L2上执行的交易。本文件概述了一种新的存款交易类型。它还描述了如何在 L1 上发起存款，以及 L2 上的授权和验证条件。 词汇注释：存入交易特指L2交易，而 存款可以指各个阶段的交易（例如存入L1时）。 目录 充值交易类型 源哈希计算 充值交易种类 存入交易的验证和授权 执行 随机数处理 存款收据 L1属性充值交易 L2 上的特殊账户 L1 属性存款人账户 L1属性预部署合约 L1属性预部署合约：参考实现 用户存入交易 存款合约 地址别名 存款合约实施：乐观门户 充值交易类型 存入交易与现有交易类型有以下显着区别： 它们源自第 1 层块，并且必须作..."/><meta property="og:image:alt" content="存款 存入交易，也称为存款，是在L1上发起并在L2上执行的交易。本文件概述了一种新的存款交易类型。它还描述了如何在 L1 上发起存款，以及 L2 上的授权和验证条件。 词汇注释：存入交易特指L2交易，而 存款可以指各个阶段的交易（例如存入L1时）。 目录 充值交易类型 源哈希计算 充值交易种类 存入交易的验证和授权 执行 随机数处理 存款收据 L1属性充值交易 L2 上的特殊账户 L1 属性存款人账户 L1属性预部署合约 L1属性预部署合约：参考实现 用户存入交易 存款合约 地址别名 存款合约实施：乐观门户 充值交易类型 存入交易与现有交易类型有以下显着区别： 它们源自第 1 层块，并且必须作..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/blockchainguide/Layer2_Solutions/layer2/optimism/optimism-spec分析/optimism存款"/><meta property="twitter:url" content="https://https//mindcarver.top/blockchainguide/Layer2_Solutions/layer2/optimism/optimism-spec分析/optimism存款"/><link rel="icon" href="../../../../../static/icon.png"/><meta name="description" content="存款 存入交易，也称为存款，是在L1上发起并在L2上执行的交易。本文件概述了一种新的存款交易类型。它还描述了如何在 L1 上发起存款，以及 L2 上的授权和验证条件。 词汇注释：存入交易特指L2交易，而 存款可以指各个阶段的交易（例如存入L1时）。 目录 充值交易类型 源哈希计算 充值交易种类 存入交易的验证和授权 执行 随机数处理 存款收据 L1属性充值交易 L2 上的特殊账户 L1 属性存款人账户 L1属性预部署合约 L1属性预部署合约：参考实现 用户存入交易 存款合约 地址别名 存款合约实施：乐观门户 充值交易类型 存入交易与现有交易类型有以下显着区别： 它们源自第 1 层块，并且必须作..."/><meta name="generator" content="Quartz"/><link href="../../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="blockchainguide/Layer2_Solutions/layer2/optimism/optimism-spec分析/optimism存款"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../../..">量化投资技术文档</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-249"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-249" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/">区块链技术指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Layer2_Solutions/">Layer2_Solutions</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Layer2_Solutions/layer2/">layer2</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Layer2_Solutions/layer2/optimism/">optimism</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../../blockchainguide/Layer2_Solutions/layer2/optimism/optimism-spec分析/">optimism spec分析</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>optimism存款</a></div></nav><h1 class="article-title">optimism存款</h1><p show-comma="true" class="content-meta"><time datetime="2026-01-12T10:57:07.432Z">2026年1月12日</time><span>18分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="存款">存款<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#存款" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#deposited" class="external">存入交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>，也称为<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#deposits" class="external">存款<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>，是在L1上发起并在L2上执行的交易。本文件概述了一种新的存款<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#transaction-type" class="external">交易类型<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>。它还描述了如何在 L1 上发起存款，以及 L2 上的授权和验证条件。</p>
+<p><strong>词汇注释</strong>：<em>存入交易</em>特指L2交易，而 <em>存款</em>可以指各个阶段的交易（例如存入L1时）。</p>
+<p><strong>目录</strong></p>
+<ul>
+<li>充值交易类型
+<ul>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#source-hash-computation" class="external">源哈希计算<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#kinds-of-deposited-transactions" class="external">充值交易种类<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#validation-and-authorization-of-deposited-transactions" class="external">存入交易的验证和授权<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li>执行
+<ul>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#nonce-handling" class="external">随机数处理<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#deposit-receipt" class="external">存款收据<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-deposited-transaction" class="external">L1属性充值交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li>L2 上的特殊账户
+<ul>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-depositor-account" class="external">L1 属性存款人账户<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li>L1属性预部署合约
+<ul>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-predeployed-contract-reference-implementation" class="external">L1属性预部署合约：参考实现<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>用户存入交易
+<ul>
+<li>存款合约
+<ul>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#address-aliasing" class="external">地址别名<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+<li><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#deposit-contract-implementation-optimism-portal" class="external">存款合约实施：乐观门户<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="充值交易类型">充值交易类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#充值交易类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#deposited" class="external">存入交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>与现有交易类型有以下显着区别：</p>
+<ol>
+<li>它们源自第 1 层块，并且必须作为协议的一部分包含在内。</li>
+<li>它们不包括签名验证（请参阅<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#user-deposited-transactions" class="external">用户存入交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a> 了解原理）。</li>
+<li>他们在 L1 上购买 L2 Gas，因此 L2 Gas 不可退还。</li>
+</ol>
+<p>我们定义了一个新的<a href="https://eips.ethereum.org/EIPS/eip-2718" class="external">EIP-2718<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>兼容交易类型，其前缀<code>0x7E</code>代表存款交易。</p>
+<p>存款具有以下字段（rlp 按照它们在此处出现的顺序进行编码）：</p>
+<ul>
+<li>
+<p><code>bytes32 sourceHash</code>：源哈希，唯一标识存款的来源。</p>
+</li>
+<li>
+<p><code>address from</code>：发件人帐户的地址。</p>
+</li>
+<li>
+<p><code>address to</code>：接收者帐户的地址，如果存入的交易是合约创建，则为空（零长度）地址。</p>
+</li>
+<li>
+<p><code>uint256 mint</code>：在 L2 上铸造的 ETH 价值。</p>
+</li>
+<li>
+<p><code>uint256 value</code>：发送到接收者账户的 ETH 值。</p>
+</li>
+<li>
+<p><code>uint64 gas</code>：L2 交易的 Gas 限制。</p>
+</li>
+<li>
+<pre><code>bool isSystemTx
+</code></pre>
+<p>：如果为 true，则交易不会与 L2 区块气池交互。</p>
+<ul>
+<li><code>false</code>注意：从 Regolith 升级开始，布尔值被禁用（强制为）。</li>
+</ul>
+</li>
+<li>
+<p><code>bytes data</code>：通话数据。</p>
+</li>
+</ul>
+<p><a href="https://eips.ethereum.org/EIPS/eip-155" class="external">与EIP-155<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>交易相比，此交易类型：</p>
+<ul>
+<li>
+<p>不包括 a</p>
+<pre><code>nonce
+</code></pre>
+<p>，因为它是由 标识的</p>
+<pre><code>sourceHash
+</code></pre>
+<p>。API 响应仍然包含一个</p>
+<pre><code>nonce
+</code></pre>
+<p>属性：</p>
+<ul>
+<li>在风化层之前：<code>nonce</code>始终是<code>0</code></li>
+<li>对于Regolith：<code>nonce</code>设置为<code>depositNonce</code>相应交易收据的属性。</li>
+</ul>
+</li>
+<li>
+<p>不包含签名信息，并<code>from</code>明确地址。API 响应包含归零签名<code>v</code>, <code>r</code>,<code>s</code>值以实现向后兼容。</p>
+</li>
+<li>
+<p>包括新的<code>sourceHash</code>、<code>from</code>、<code>mint</code>和<code>isSystemTx</code>属性。API 响应包含这些作为附加字段。</p>
+</li>
+</ul>
+<p>我们选择是<code>0x7E</code>因为当前允许交易类型标识符达到<code>0x7F</code>。选择高标识符可以最大限度地降低该标识符将来被 L1 链上的另一种交易类型占用的风险。我们不会选择<code>0x7F</code>它自己，以防它被用于可变长度编码方案。</p>
+<h3 id="源哈希计算">源哈希计算<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#源哈希计算" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>存款交易的<code>sourceHash</code>是根据来源计算的：</p>
+<ul>
+<li>用户存入： <code>keccak256(bytes32(uint256(0)), keccak256(l1BlockHash, bytes32(uint256(l1LogIndex))))</code>. 其中<code>l1BlockHash</code>、 和<code>l1LogIndex</code>all 指的是L1上包含充值日志事件。 <code>l1LogIndex</code>是该区块的日志事件组合列表中的存款事件日志的索引。</li>
+<li>存入L1属性： <code>keccak256(bytes32(uint256(1)), keccak256(l1BlockHash, bytes32(uint256(seqNumber))))</code>。其中<code>l1BlockHash</code>指的是存放信息属性的L1块哈希。且<code>seqNumber = l2BlockNum - l2EpochStartBlockNum</code>，其中<code>l2BlockNum</code>是存款 tx 包含在 L2 中的 L2 区块号，<code>l2EpochStartBlockNum</code>是该纪元中第一个 L2 区块的 L2 区块号。</li>
+</ul>
+<p>如果没有<code>sourceHash</code>存款，两个不同的存款交易可能具有相同的哈希值。</p>
+<p>外部<code>keccak256</code>对域中的实际唯一标识信息进行哈希处理，以避免不同类型的源之间的冲突。</p>
+<p>我们不使用发送者的随机数来确保唯一性，因为这需要 在块派生期间从<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#execution-engine" class="external">执行引擎读取额外的 L2 EVM 状态。<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<h3 id="充值交易种类">充值交易种类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#充值交易种类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>虽然我们只定义了一种新的交易类型，但我们可以根据两种存入交易在 L2 区块中的定位来区分它们：</p>
+<ol>
+<li>第一个交易必须是<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-deposited-transaction" class="external">L1 属性存入交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>，后面是</li>
+<li>提交到 L1 上的存款馈送合约的一组零个或多个<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#user-deposited-transactions" class="external">用户存款交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a><code>OptimismPortal</code>（称为）。用户存入的交易仅存在于 L2 纪元的第一个区块中。</li>
+</ol>
+<p>我们仅定义一个新的交易类型，以便最大限度地减少对 L1 客户端软件的修改以及总体复杂性。</p>
+<h3 id="存入交易的验证和授权">存入交易的验证和授权<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#存入交易的验证和授权" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>如上所述，存入的交易类型不包括用于验证的签名。相反，授权是由<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#L2-chain-derivation" class="external">L2 链派生<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>过程处理的，正确应用时，只会派生出具有<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#deposit-contract" class="external">L1 存款合约<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a><code>from</code>日志证明的地址的交易。</p>
+<h3 id="执行">执行<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#执行" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>为了执行存入交易：</p>
+<p>首先，账户余额<code>from</code>必须增加 的金额<code>mint</code>。这是无条件的，并且不会在存款失败时恢复。</p>
+<p>然后，根据交易的属性初始化存入交易的执行环境，其方式与 EIP-155 交易完全相同。</p>
+<p>存款交易的处理方式与类型 3 (EIP-1559) 交易完全相同，但以下情况除外：</p>
+<ul>
+<li>没有验证任何费用字段：押金没有任何费用，因为它支付了 L1 上的 Gas 费用。</li>
+<li>未验证任何<code>nonce</code>字段：存款没有任何字段，它由其唯一标识<code>sourceHash</code>。</li>
+<li>不处理访问列表：存款没有访问列表，因此会像访问列表为空一样进行处理。</li>
+<li>不检查是否<code>from</code>是外部所有者账户 (EOA)：通过 L1 地址屏蔽确保存款不是 EAO，这可能会在未来的 L1 合约部署中发生变化，例如启用类似账户抽象的机制。</li>
+<li>风化层升级前：
+<ul>
+<li>执行输出显示非标准气体使用情况：
+<ul>
+<li>如果<code>isSystemTx</code>为 false：执行输出表明它使用了<code>gasLimit</code>gas。</li>
+<li>如果<code>isSystemTx</code>为真：执行输出表明它使用了<code>0</code>gas。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>天然气不会以 ETH 形式退还。（要么不退还，要么利用押金的 Gas 价格为 的事实<code>0</code>）</li>
+<li>不收取交易优先费。不向集体费用接收者支付任何费用。</li>
+<li>不收取 L1 成本费用，因为押金来自 L1，无需作为数据提交回 L1。</li>
+<li>不收取基本费用。基本费用总额核算不变。</li>
+</ul>
+<p>请注意，这包括像常规交易一样的合约部署行为，并且 Gas 计量是相同的（除了上面与费用相关的更改之外），包括内在 Gas 的计量。</p>
+<p>EVM 执行发出的任何非 EVM 状态转换错误都会以特殊方式处理：</p>
+<ul>
+<li>它转化为EVM错误：即存款将始终被包含在内，但如果遇到非EVM状态转换错误，其收据将指示失败，例如由于帐户不足而无法转移指定数量的 <code>value</code>ETH -平衡。</li>
+<li>在存款的铸造部分之后，世界状态将回滚到 EVM 处理开始时的状态。</li>
+<li><code>nonce</code>世界状态中的 of增加<code>from</code>1，使错误相当于本机 EVM 故障。请注意，之前的<code>nonce</code>增量可能在 EVM 处理期间发生，但这将首先回滚。</li>
+</ul>
+<p>最后，经过上述处理后，执行后处理的运行方式相同：即气池和收据的处理与常规交易相同。然而，从 Regolith 升级开始，存款交易的接收会增加一个附加值 <code>depositNonce</code>，存储EVM 处理<em>之前</em>注册的发送者<code>nonce</code>的值。<code>from</code></p>
+<p>请注意，执行输出所述使用的 Gas 会从 Gas 池中减去，但此执行输出值在 Regolith 升级之前具有特殊的边缘情况。</p>
+<p>应用程序开发人员请注意：因为<code>CALLER</code>和<code>ORIGIN</code>被设置为<code>from</code>，所以在存款交易期间使用检查的语义<code>tx.origin == msg.sender</code>将无法确定调用者是否是 EOA。相反，该支票只能用于识别 L2 存款交易中的第一次调用。然而，此检查仍然满足开发人员使用此检查来确保在<code>CALLER</code>调用之前和之后无法执行代码的常见情况。</p>
+<h4 id="随机数处理">随机数处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#随机数处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>尽管缺乏签名验证，我们仍然<code>from</code>在执行存款交易时增加帐户的随机数。在仅存款汇总的情况下，这对于交易排序或防止重放来说不是必需的，但它与<a href="https://github.com/ethereum/execution-specs/blob/617903a8f8d7b50cf71bf1aa733c37897c8d75c1/src/ethereum/frontier/utils/address.py#L40" class="external">合约创建<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>期间随机数的使用保持了一致性。它还可以简化与下游工具（例如钱包和区块浏览器）的集成。</p>
+<h2 id="存款收据">存款收据<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#存款收据" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>交易收据使用符合<a href="https://eips.ethereum.org/EIPS/eip-2718" class="external">EIP-2718<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>的标准类型。存款交易收据类型与常规收据相同，但扩展了一个可选<code>depositNonce</code>字段。</p>
+<p>RLP 编码的共识强制字段是：</p>
+<ul>
+<li>
+<p><code>postStateOrStatus</code>（标准）：这包含事务状态，请参阅<a href="https://eips.ethereum.org/EIPS/eip-658" class="external">EIP-658<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>。</p>
+</li>
+<li>
+<pre><code>cumulativeGasUsed
+</code></pre>
+<p>（标准）：迄今为止区块中使用的天然气，包括本次交易。</p>
+<ul>
+<li><code>CumulativeGasUsed</code>实际使用的gas是根据与之前交易的差异得出的。</li>
+<li>从 Regolith 开始，这说明了存款的实际 Gas 使用量，就像常规交易一样。</li>
+</ul>
+</li>
+<li>
+<p><code>bloom</code>（标准）：事务日志的布隆过滤器。</p>
+</li>
+<li>
+<p><code>logs</code>（标准）：记录 EVM 处理发出的事件。</p>
+</li>
+<li>
+<pre><code>depositNonce
+</code></pre>
+<p>（唯一扩展）：可选字段。存款交易会保留执行期间使用的随机数。</p>
+<ul>
+<li>在 Regolith 之前，<code>depositNonce</code>必须始终忽略此字段。</li>
+<li>对于风化层，<code>depositNonce</code>必须始终包含该字段。</li>
+</ul>
+</li>
+</ul>
+<p>从 Regolith 开始，收据 API 响应利用收据更改来获得更准确的响应数据：</p>
+<ul>
+<li>包含<code>depositNonce</code>在 API 响应中的收据 JSON 数据中</li>
+<li>对于合约部署（当 时<code>to == null</code>），<code>depositNonce</code>有助于导出正确的<code>contractAddress</code>元数据，而不是假设随机数为零。</li>
+<li>这<code>cumulativeGasUsed</code>说明了 EVM 处理中计量的实际气体使用量。</li>
+</ul>
+<h2 id="l1属性充值交易">L1属性充值交易<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#l1属性充值交易" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>L1<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#l1-attributes-deposited-transaction" class="external">属性押金交易是发送到<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-predeployed-contract" class="external">L1属性预部署合约的<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>押金交易。</p>
+<p>该交易必须具有以下值：</p>
+<ol>
+<li><code>from</code>是（ <a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-depositor-account" class="external">L1属性存款人账户<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a><code>0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001</code>的地址 ）</li>
+<li><code>to</code>是（ <a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-predeployed-contract" class="external">L1属性预部署合约<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a><code>0x4200000000000000000000000000000000000015</code>的地址）。</li>
+<li><code>mint</code>是<code>0</code></li>
+<li><code>value</code>是<code>0</code></li>
+<li><code>gasLimit</code>设置为 150,000,000。</li>
+<li><code>isSystemTx</code>设置为<code>true</code>.</li>
+<li><code>data</code>是对<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-predeployed-contract" class="external">L1 属性预部署合约<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>函数 的<a href="https://docs.soliditylang.org/en/v0.8.10/abi-spec.html" class="external">ABI<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>编码调用，具有与相应 L1 块关联的正确值（参见 <a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-predeployed-contract-reference-implementation" class="external">参考实现<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>）。<code>setL1BlockValues()</code></li>
+</ol>
+<p>如果风化层升级处于活动状态，某些字段将被覆盖：</p>
+<ol>
+<li><code>gasLimit</code>设置为 1,000,000</li>
+<li><code>isSystemTx</code>被设定为<code>false</code></li>
+</ol>
+<p>系统发起的 L1 属性交易不会为其分配的任何 ETH 收取费用<code>gasLimit</code>，因为它实际上是状态转换处理的一部分。</p>
+<h2 id="l2-上的特殊账户">L2 上的特殊账户<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#l2-上的特殊账户" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>L1属性存款交易涉及两个特殊目的账户：</p>
+<ol>
+<li>L1属性存款人账户</li>
+<li>L1属性预部署合约</li>
+</ol>
+<h3 id="l1-属性存款人账户">L1 属性存款人账户<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#l1-属性存款人账户" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>存款人账户是一个没有已知私钥的<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#eoa" class="external">EOA 。<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>它有地址 <code>0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001</code>。 在执行 L1 属性存入交易期间，其值由<code>CALLER</code>和操作码返回。<code>ORIGIN</code></p>
+<h3 id="l1属性预部署合约">L1属性预部署合约<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#l1属性预部署合约" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>L2 上地址 处的预部署合约<code>0x4200000000000000000000000000000000000015</code>，保存存储中相应 L1 区块中的某些区块变量，以便在执行后续存入交易时可以访问它们。</p>
+<p>预部署存储以下值：</p>
+<ul>
+<li>
+<p>L1块属性：</p>
+<ul>
+<li><code>number</code>( <code>uint64</code>)</li>
+<li><code>timestamp</code>( <code>uint64</code>)</li>
+<li><code>basefee</code>( <code>uint256</code>)</li>
+<li><code>hash</code>( <code>bytes32</code>)</li>
+</ul>
+</li>
+<li>
+<p><code>sequenceNumber</code>( <code>uint64</code>)：这等于相对于纪元开始的 L2 区块编号，即 L1 属性上次更改的 L2 区块到 L2 区块高度的距离，并在新纪元开始时重置为 0。</p>
+</li>
+<li>
+<p>与 L1 块相关的系统配置，请参阅</p>
+<p>系统配置规范</p>
+<p>：</p>
+<ul>
+<li><code>batcherHash</code>( <code>bytes32</code>)：对当前正在运行的批次提交者的版本化承诺。</li>
+<li><code>overhead</code>( <code>uint256</code>)：应用于此 L2 区块中交易的 L1 成本计算的 L1 费用开销。</li>
+<li><code>scalar</code>( <code>uint256</code>)：应用于此 L2 区块中交易的 L1 成本计算的 L1 费用标量。</li>
+</ul>
+</li>
+</ul>
+<p>该合约实施授权方案，使其仅接受来自<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#l1-attributes-depositor-account" class="external">存款人账户的<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>状态更改调用。</p>
+<p>合约具有如下solidity接口，可以按照 <a href="https://docs.soliditylang.org/en/v0.8.10/abi-spec.html" class="external">合约ABI规范<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>进行交互。</p>
+<h4 id="l1属性预部署合约参考实现">L1属性预部署合约：参考实现<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#l1属性预部署合约参考实现" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>L1 属性预部署合约的参考实现可以在<a href="https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/contracts/L2/L1Block.sol" class="external">L1Block.sol<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>中找到。</p>
+<p><code>pnpm build</code>在目录中运行后<code>packages/contracts</code>，要添加到创世文件的字节码将位于<code>deployedBytecode</code>构建工件文件的字段 中，位置为<code>/packages/contracts/artifacts/contracts/L2/L1Block.sol/L1Block.json</code>.</p>
+<h2 id="用户存入交易">用户存入交易<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#用户存入交易" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p><a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#user-deposited-transaction" class="external">用户存入交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>是由<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/glossary.md#L2-chain-derivation" class="external">L2链衍生<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>过程 生成的<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#the-deposited-transaction-type" class="external">存入交易<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>。每笔用户充值交易的内容由L1上的<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#deposit-contract" class="external">充值合约<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>发出的 相应事件决定。<code>TransactionDeposited</code></p>
+<ol>
+<li>
+<p><code>from</code>与发出的值没有变化（尽管它可能已转换为<code>OptimismPortal</code>存款馈送合约中的别名）。</p>
+</li>
+<li>
+<pre><code>to
+</code></pre>
+<p>是任意20字节地址（包括零地址）</p>
+<ul>
+<li>如果创建合约（参见<code>isCreation</code>），该地址设置为<code>null</code>。</li>
+</ul>
+</li>
+<li>
+<p><code>mint</code>设置为发射值。</p>
+</li>
+<li>
+<p><code>value</code>设置为发射值。</p>
+</li>
+<li>
+<p><code>gaslimit</code>与发射值相比没有变化。它必须至少为 21000。</p>
+</li>
+<li>
+<p><code>isCreation``true</code>如果交易是合约创建，则设置为，<code>false</code>否则。</p>
+</li>
+<li>
+<p><code>data</code>与发射值相比没有变化。根据它的值，<code>isCreation</code>它被处理为调用数据或合约初始化代码。</p>
+</li>
+<li>
+<p><code>isSystemTx</code>由汇总节点为某些具有不计量执行的事务设置。用于<code>false</code>用户存入交易</p>
+</li>
+</ol>
+<h3 id="存款合约">存款合约<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#存款合约" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>存款合约部署到L1。存款交易源自<code>TransactionDeposited</code>存款合约发出的事件中的值。</p>
+<p>保证金合约负责维护<a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/guaranteed-gas-market.md" class="external">保证 Gas 市场<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>，对 L2 上使用的 Gas 收取保证金，并保证单个 L1 区块的保证 Gas 总量不超过 L2 区块 Gas 限额。</p>
+<p>存款合约处理两种特殊情况：</p>
+<ol>
+<li>合约创建押金，通过将<code>isCreation</code>标志设置为 来表示<code>true</code>。如果<code>to</code>地址非零，合约将恢复。</li>
+<li>来自合约账户的调用，在这种情况下，该<code>from</code>值将转换为其 L2 <a href="https://github.com/ethereum-optimism/optimism/blob/develop/specs/deposits.md#address-aliasing" class="external">别名<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>。</li>
+</ol>
+<h4 id="地址别名">地址别名<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#地址别名" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>如果调用者是合约，则地址将通过添加 <code>0x1111000000000000000000000000000000001111</code>来转换。数学是<code>unchecked</code>在 Solidity 上完成的<code>uint160</code>，因此该值会溢出。这可以防止 L1 上的合约与 L2 上的合约具有相同地址但代码不同的攻击。我们可以安全地忽略 EOA 的这一点，因为它们保证具有相同的“代码”（即根本没有代码）。这也使得用户即使在 Sequencer 关闭时也可以与 L2 上的合约进行交互。</p>
+<h4 id="存款合约实施乐观门户">存款合约实施：乐观门户<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#存款合约实施乐观门户" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>存款合约的参考实现可以在<a href="https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/contracts/L1/OptimismPortal.sol" class="external">OptimismPortal.sol<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a>中找到。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-87" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#存款" data-for="存款">存款</a></li><li class="depth-1"><a href="#充值交易类型" data-for="充值交易类型">充值交易类型</a></li><li class="depth-2"><a href="#源哈希计算" data-for="源哈希计算">源哈希计算</a></li><li class="depth-2"><a href="#充值交易种类" data-for="充值交易种类">充值交易种类</a></li><li class="depth-2"><a href="#存入交易的验证和授权" data-for="存入交易的验证和授权">存入交易的验证和授权</a></li><li class="depth-2"><a href="#执行" data-for="执行">执行</a></li><li class="depth-1"><a href="#存款收据" data-for="存款收据">存款收据</a></li><li class="depth-1"><a href="#l1属性充值交易" data-for="l1属性充值交易">L1属性充值交易</a></li><li class="depth-1"><a href="#l2-上的特殊账户" data-for="l2-上的特殊账户">L2 上的特殊账户</a></li><li class="depth-2"><a href="#l1-属性存款人账户" data-for="l1-属性存款人账户">L1 属性存款人账户</a></li><li class="depth-2"><a href="#l1属性预部署合约" data-for="l1属性预部署合约">L1属性预部署合约</a></li><li class="depth-1"><a href="#用户存入交易" data-for="用户存入交易">用户存入交易</a></li><li class="depth-2"><a href="#存款合约" data-for="存款合约">存款合约</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/jackyzha0/quartz">GitHub</a></li><li><a href="https://discord.gg/cRFFHYye7t">Discord Community</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../../postscript.js" type="module" data-persist="true"></script></html>
