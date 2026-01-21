@@ -3,7 +3,7 @@ import * as Plugin from "./quartz/plugins"
 
 const config: QuartzConfig = {
   configuration: {
-    pageTitle: "量化投资技术文档",
+    pageTitle: "MindCarver Blog",
     pageTitleSuffix: "",
     enableSPA: true,
     enablePopovers: true,
