@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>rag_summary</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="rag_summary"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="rag_summary"/><meta name="twitter:description" content="RAG系统：知识检索增强 - 核心内容总结 1."/><meta property="og:description" content="RAG系统：知识检索增强 - 核心内容总结 1."/><meta property="og:image:alt" content="RAG系统：知识检索增强 - 核心内容总结 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/rag/rag_summary"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/rag/rag_summary"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="RAG系统：知识检索增强 - 核心内容总结 1."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/rag/rag_summary"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div><div class="profile-description"><p>深山中的匠心，专注于区块链开发与量化研究。相信最深刻的创新来自专注与坚持。</p></div><div class="profile-skills"><div class="skill-group"><span class="skill-icon">🔗</span><div><strong>区块链</strong><p class="skill-detail">智能合约 · DeFi · ZK证明</p></div></div><div class="skill-group"><span class="skill-icon">🤖</span><div><strong>机器学习</strong><p class="skill-detail">PyTorch · 时序预测 · 交易策略</p></div></div><div class="skill-group"><span class="skill-icon">📈</span><div><strong>量化交易</strong><p class="skill-detail">统计套利 · 风险管理 · MEV</p></div></div></div><div class="profile-links"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-link"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>GitHub</a></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-20"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-20" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/rag/">rag</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>rag_summary</a></div></nav><h1 class="article-title">rag_summary</h1><p show-comma="true" class="content-meta"><time datetime="2026-02-03T09:49:30.498Z">2026年2月03日</time><span>24分钟阅读</span></p><ul class="tags"><li><a href="../../tags/" class="internal tag-link"></a></li></ul></div></div><article class="popover-hint"><h1 id="rag系统知识检索增强---核心内容总结">RAG系统：知识检索增强 - 核心内容总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#rag系统知识检索增强---核心内容总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="1-核心概念">1. 核心概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-核心概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="什么是rag">什么是RAG？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#什么是rag" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>检索增强生成（Retrieval-Augmented Generation, RAG）</strong> 是一种将信息检索与文本生成相结合的技术。其核心原理是：</p>
+<ol>
+<li><strong>检索</strong>：从外部知识库查询相关内容</li>
+<li><strong>增强</strong>：将检索结果整合到提示词中辅助模型生成</li>
+<li><strong>生成</strong>：输出准确且透明的答案</li>
+</ol>
+<h3 id="核心价值">核心价值<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心价值" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>RAG解决了大语言模型的两个基本限制：</p>
+<ul>
+<li><strong>静态、有限的知识</strong>：模型有训练数据截止日期，无法访问实时信息</li>
+<li><strong>缺乏领域专长</strong>：通用模型在专业领域可能缺乏深入知识</li>
+<li><strong>幻觉问题</strong>：检索验证有助于减少模型幻觉</li>
+<li><strong>可解释性</strong>：提供信息来源以增强答案可信度</li>
+</ul>
+<hr/>
+<h2 id="2-发展历程">2. 发展历程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-发展历程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="第一阶段naive-rag-2020-2021">第一阶段：Naive RAG (2020-2021)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第一阶段naive-rag-2020-2021" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>检索方法</strong>：传统关键词匹配算法（TF-IDF、BM25）</li>
+<li><strong>生成模式</strong>：直接将检索到的文档拼接进提示词上下文</li>
+<li><strong>特点</strong>：简单的”检索-阅读”模式，适合字面匹配但语义理解有限</li>
+</ul>
+<h3 id="第二阶段advanced-rag-2022-2023">第二阶段：Advanced RAG (2022-2023)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第二阶段advanced-rag-2022-2023" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>检索方法</strong>：转向基于密度的语义检索</li>
+<li><strong>生成模式</strong>：引入查询重写、文档分块、重排序等优化技术</li>
+<li><strong>进展</strong>：模型能理解超越关键词的语义相似性</li>
+</ul>
+<h3 id="第三阶段modular-rag-2023至今">第三阶段：Modular RAG (2023至今)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第三阶段modular-rag-2023至今" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>检索方法</strong>：混合检索、多查询扩展、假设文档嵌入</li>
+<li><strong>生成模式</strong>：链式思维推理、自我反思和修正</li>
+<li><strong>特点</strong>：模块化、可插拔、可组合的独立组件，适应多样化场景</li>
+</ul>
+<hr/>
+<h2 id="3-基本工作流程">3. 基本工作流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-基本工作流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="数据准备阶段">数据准备阶段<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#数据准备阶段" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>数据提取</strong>：从知识源提取内容</li>
+<li><strong>文本分割</strong>：将文档切分为可管理的块</li>
+<li><strong>向量化</strong>：将文本块转换为高维向量</li>
+<li><strong>数据库构建</strong>：构建可检索的知识数据库</li>
+</ol>
+<h3 id="应用阶段">应用阶段<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#应用阶段" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>用户查询</strong>：接收用户问题</li>
+<li><strong>检索</strong>：从数据库中搜索相关信息</li>
+<li><strong>提示词注入</strong>：将检索结果整合到上下文中</li>
+<li><strong>答案生成</strong>：使用大语言模型生成准确响应</li>
+</ol>
+<hr/>
+<h2 id="4-系统架构">4. 系统架构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-系统架构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Hello-Agents的RAG系统采用**“五层七步”**设计模式：</p>
+<pre><code>用户层：RAGTool统一接口
+    ↓
+应用层：智能问答、搜索、管理
+    ↓
+处理层：文档解析、分块、向量化
+    ↓
+存储层：向量数据库、文档存储
+    ↓
+基础设施层：嵌入模型、大语言模型、数据库
+</code></pre>
+<h3 id="完整处理流水线">完整处理流水线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#完整处理流水线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>任意格式文档 → MarkItDown转换 → Markdown文本
+→ 智能分块 → 向量化 → 存储与检索
+</code></pre>
+<h3 id="各层详细解析">各层详细解析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#各层详细解析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="1-用户层ragtool统一接口"><strong>1. 用户层：RAGTool统一接口</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-用户层ragtool统一接口" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p><strong>作用</strong>：对外暴露的API，用户直接交互的界面</p>
+<p><strong>具体职责</strong>：</p>
+<ul>
+<li>提供简单易用的方法调用</li>
+<li>隐藏底层复杂性</li>
+<li>参数验证和错误提示</li>
+</ul>
+<p><strong>示例</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 用户代码示例</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">rag </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> RAGTool(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">knowledge_base</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;./knowledge&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 添加文档</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">rag.add_document(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;report.pdf&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 提问</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">answer </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> rag.ask(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;报告讲了什么？&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 搜索</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">results </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> rag.search(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Python教程&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">top_k</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">5</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></figure>
+<p><strong>类比</strong>：像餐厅的前台服务员，接收你的订单并转给后厨处理</p>
+<hr/>
+<h4 id="2-应用层智能问答搜索管理"><strong>2. 应用层：智能问答、搜索、管理</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-应用层智能问答搜索管理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p><strong>作用</strong>：业务逻辑层，决定如何响应用户请求</p>
+<p><strong>具体职责</strong>：</p>
+<ul>
+<li>判断请求类型（问答、搜索、管理）</li>
+<li>整合多个模块（RAG + Memory）</li>
+<li>执行复杂的业务流程</li>
+<li>生成报告和统计数据</li>
+</ul>
+<p><strong>示例</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">class</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> PDFLearningAssistant</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    def</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> handle_user_request</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(self, user_input):</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        # 判断请求类型</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> is_question(user_input):</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">            # 执行问答流程</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.handle_question(user_input)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        elif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> is_document_upload(user_input):</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">            # 执行文档处理流程</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.handle_upload(user_input)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        elif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> is_summary_request(user_input):</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">            # 整合RAG和Memory生成学习报告</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.generate_summary()</span></span></code></pre></figure>
+<p><strong>类比</strong>：餐厅的厨师团队，根据订单决定做什么菜、用什么食材</p>
+<hr/>
+<h4 id="3-处理层文档解析分块向量化-核心转换层"><strong>3. 处理层：文档解析、分块、向量化</strong> ⭐核心转换层<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-处理层文档解析分块向量化-核心转换层" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p><strong>作用</strong>：将原始文档转换为机器可理解的形式</p>
+<p><strong>为什么需要这一层</strong>：</p>
+<ul>
+<li>原始文档（PDF）大语言模型看不懂</li>
+<li>文档太大，需要分割成小块</li>
+<li>文字需要转换成向量才能”理解”语义</li>
+</ul>
+<p><strong>具体操作</strong>：</p>
+<ol>
+<li>
+<p><strong>文档解析</strong>：PDF → Markdown（用MarkItDown工具）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输入：PDF文件</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;report.pdf&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (二进制格式)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># MarkItDown转换</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">markdown_text </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> markitdown.convert(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;report.pdf&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输出：结构化Markdown</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;&quot;&quot;</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"># 技术报告</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">本章介绍RAG系统...</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">## 核心概念</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">RAG是一种...</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;&quot;&quot;</span></span></code></pre></figure>
+</li>
+<li>
+<p><strong>智能分块</strong>：Markdown → 文本块（按标题、段落分割）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输入：Markdown文本</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">markdown_text </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;# 标题</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">段落1</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">段落2</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">...&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 按语义分割</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">chunks </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> smart_chunk(markdown_text)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输出：文本块</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">[</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;# 标题</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">段落1&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;段落2</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">段落3&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    ...</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span></code></pre></figure>
+</li>
+<li>
+<p><strong>向量化</strong>：文本块 → 高维数字向量（用嵌入模型）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输入：文本块</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">chunk </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;RAG是一种检索增强生成的技术&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 嵌入模型转换</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">embedding </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> embed_model.encode(chunk)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输出：高维向量</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.5</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 通常有1024或1536维</span></span></code></pre></figure>
+</li>
+</ol>
+<p><strong>类比</strong>：食材加工环节，把生肉洗净、切片、调味，让后厨能烹饪</p>
+<hr/>
+<h4 id="4-存储层向量数据库文档存储"><strong>4. 存储层：向量数据库、文档存储</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-存储层向量数据库文档存储" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p><strong>作用</strong>：持久化存储，管理数据</p>
+<p><strong>为什么需要分离存储</strong>：</p>
+<ul>
+<li>向量需要快速检索（找相似的）</li>
+<li>文档需要展示给用户</li>
+<li>元数据需要用于过滤和统计</li>
+</ul>
+<p><strong>具体存储内容</strong>：</p>
+<ol>
+<li>
+<p><strong>向量数据库</strong>（Qdrant）：存储向量（处理层的输出）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 存储结构</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;doc1_chunk_0&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;vector&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: [</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.5</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">],  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 向量</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;payload&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: {</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">        &quot;text&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;RAG是一种检索增强生成的技术&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 原始文本</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">        &quot;source&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;report.pdf&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 来源</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">        &quot;timestamp&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;2025-01-30&quot;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  # 时间</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+</li>
+<li>
+<p><strong>文档存储</strong>：存储原始Markdown文本</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 用于展示给用户或重新处理</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">knowledge_base</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">documents</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">├── report.pdf</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">├── report.md</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">└── metadata.json</span></span></code></pre></figure>
+</li>
+<li>
+<p><strong>元数据</strong>：存储来源、时间、标签等信息</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;document_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;report_001&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;chunks&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">15</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;total_tokens&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">12500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;created_at&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;2025-01-30T10:00:00&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;tags&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: [</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;技术&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;RAG&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;AI&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+</li>
+</ol>
+<p><strong>类比</strong>：仓库，分类存放加工好的食材和原材料，方便快速取用</p>
+<hr/>
+<h4 id="5-基础层嵌入模型llm数据库"><strong>5. 基础层：嵌入模型、LLM、数据库</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-基础层嵌入模型llm数据库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p><strong>作用</strong>：提供底层技术能力</p>
+<p><strong>为什么独立成层</strong>：</p>
+<ul>
+<li>这些是通用的AI能力，可以复用</li>
+<li>可以随时替换（换不同的模型）</li>
+<li>可以统一管理和监控</li>
+</ul>
+<p><strong>具体组件</strong>：</p>
+<ol>
+<li>
+<p><strong>嵌入模型</strong>（text-embedding-v3）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 负责把文字变成向量</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">embedding_model </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> TextEmbeddingV3()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 可以替换成其他模型</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># embedding_model = SentenceTransformer(&quot;all-MiniLM-L6-v2&quot;)</span></span></code></pre></figure>
+</li>
+<li>
+<p><strong>大语言模型</strong>（GPT-4等）</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 负责生成回答</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">llm </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> GPT4Model()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 可以替换成其他模型</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># llm = Claude3Model()</span></span></code></pre></figure>
+</li>
+<li>
+<p><strong>数据库引擎</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 提供查询能力</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">vector_db </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> QdrantClient()</span></span></code></pre></figure>
+</li>
+</ol>
+<p><strong>类比</strong>：厨房的基础设施（炉灶、刀具、水电），可以灵活更换升级</p>
+<hr/>
+<h3 id="为什么需要分层">为什么需要分层？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#为什么需要分层" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="问题1为什么处理层存储层基础层要分开"><strong>问题1：为什么处理层、存储层、基础层要分开？</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题1为什么处理层存储层基础层要分开" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>层级</th><th>职责</th><th>数据状态</th><th>可替换性</th><th>示例</th></tr></thead><tbody><tr><td><strong>基础层</strong></td><td>提供AI能力</td><td>模型本身</td><td>高（可换不同模型）</td><td>换嵌入模型</td></tr><tr><td><strong>处理层</strong></td><td>数据转换</td><td>变换过程中</td><td>中（可改算法）</td><td>改分块策略</td></tr><tr><td><strong>存储层</strong></td><td>数据管理</td><td>存储状态</td><td>高（可换数据库）</td><td>换向量数据库</td></tr></tbody></table></div>
+<p><strong>实际例子</strong>：</p>
+<ul>
+<li>想用更好的嵌入模型？只需修改基础层，不用动其他层</li>
+<li>想改进分块算法？只需修改处理层，存储和基础层不变</li>
+<li>想换成其他向量数据库？只需修改存储层，其他层不受影响</li>
+</ul>
+<hr/>
+<h3 id="完整数据流转示例">完整数据流转示例<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#完整数据流转示例" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="场景1添加文档"><strong>场景1：添加文档</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#场景1添加文档" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<pre><code>用户代码：
+    rag.add_document(&quot;report.pdf&quot;)
+
+用户层：
+    ↓ 调用 RAGTool.add_document()
+
+应用层：
+    ↓ 判断这是文档上传请求
+    ↓ 调用处理层
+
+处理层：
+    ↓ 1. 文档解析
+       &quot;report.pdf&quot; → MarkItDown → &quot;报告内容.md&quot;
+
+    ↓ 2. 智能分块
+       &quot;报告内容.md&quot; → [&quot;段落1&quot;, &quot;段落2&quot;, &quot;段落3&quot;]
+
+    ↓ 3. 向量化（调用基础层的嵌入模型）
+       &quot;段落1&quot; → 嵌入模型 → [0.1, 0.5, -0.2, ...]
+       &quot;段落2&quot; → 嵌入模型 → [0.3, -0.1, 0.7, ...]
+       &quot;段落3&quot; → 嵌入模型 → [-0.2, 0.6, 0.4, ...]
+
+存储层：
+    ↓ 存储向量到Qdrant
+    存储原始文本和元数据
+
+返回：&quot;文档添加成功，共3个文本块&quot;
+</code></pre>
+<hr/>
+<h4 id="场景2问答"><strong>场景2：问答</strong><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#场景2问答" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<pre><code>用户代码：
+    answer = rag.ask(&quot;报告讲了什么？&quot;)
+
+用户层：
+    ↓ 调用 RAGTool.ask()
+
+应用层：
+    ↓ 判断这是问答请求
+    ↓ 应用层整合RAG检索 + LLM生成
+
+处理层（MQE扩展）：
+    ↓ 原始查询：&quot;报告讲了什么？&quot;
+    ↓ 扩展查询（MQE）：
+       - &quot;报告的主要内容&quot;
+       - &quot;报告的核心观点&quot;
+
+基础层（嵌入模型）：
+    ↓ 将扩展查询转向量
+       &quot;报告的主要内容&quot; → [0.2, 0.4, ...]
+       &quot;报告的核心观点&quot; → [0.1, 0.3, ...]
+
+存储层（Qdrant检索）：
+    ↓ 向量相似度搜索
+    ↓ 找到最相似的3个向量
+    ↓ 返回对应的文本块：
+       [
+           &quot;RAG系统是一种检索增强生成的技术...&quot;,
+           &quot;本章介绍了RAG的核心概念...&quot;,
+           &quot;RAG的主要优势包括...&quot;
+       ]
+
+应用层：
+    ↓ 将检索结果整合到提示词
+    prompt = &quot;&quot;&quot;
+    上下文：[RAG系统是一种检索增强生成的技术...]
+    问题：报告讲了什么？
+    &quot;&quot;&quot;
+
+基础层（LLM）：
+    ↓ 生成最终答案
+    &quot;报告主要介绍了RAG系统的概念、发展历程和核心技术...&quot;
+
+返回给用户层
+</code></pre>
+<hr/>
+<h3 id="代码示例完整的ragtool使用">代码示例：完整的RAGTool使用<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#代码示例完整的ragtool使用" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># ==================== 用户层使用 ====================</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">from</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> hello_agents.tools </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> RAGTool</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 初始化</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">rag </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> RAGTool(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    knowledge_base</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;./my_knowledge&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    chunk_size</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    chunk_overlap</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">200</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># ==================== 场景1：添加文档 ====================</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 用户只需简单调用，内部自动走完整流程</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">rag.add_document(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;technical_report.pdf&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 内部执行：</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   1. 处理层：PDF → Markdown → 分块 → 向量</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   2. 存储层：存储到Qdrant</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   3. 基础层：调用嵌入模型</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># ==================== 场景2：智能问答 ====================</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 用户提问</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">answer </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> rag.ask(</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;什么是RAG？&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    enable_mqe</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">True</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,     </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 启用多查询扩展</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    enable_hyde</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">True</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,    </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 启用假设文档嵌入</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    top_k</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">3</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">              # 返回最相关的3个片段</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 内部执行：</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   1. 处理层：MQE扩展查询，HyDE生成假设答案</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   2. 基础层：将查询转向量</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   3. 存储层：从Qdrant检索相似文档</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   4. 应用层：整合上下文和问题</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   5. 基础层：LLM生成最终答案</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(answer)</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输出：&quot;RAG（检索增强生成）是一种将信息检索与文本生成相结合的技术...&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># ==================== 场景3：搜索文档 ====================</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 只搜索，不生成答案</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">results </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> rag.search(</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;Python教程&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    top_k</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">5</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    score_threshold</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.7</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">  # 只返回相似度>0.7的</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 内部执行：</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   1. 基础层：查询转向量</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   2. 存储层：Qdrant检索</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">#   3. 返回原始文本块</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> result </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> results:</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;相似度: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">result.score</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:.2f</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;内容: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">result.text</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;来源: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">result.source</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;---&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># ==================== 场景4：统计信息 ====================</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">stats </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> rag.stats()</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;文档数: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">stats.total_documents</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;文本块数: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">stats.total_chunks</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;总token数: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">stats.total_tokens</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></figure>
+<hr/>
+<h3 id="架构对比不分层-vs-分层">架构对比：不分层 vs 分层<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#架构对比不分层-vs-分层" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="-不分层的缺点">❌ 不分层的缺点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#-不分层的缺点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 所有逻辑混在一起</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">def</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> add_document</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(file):</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # 混合了：文件处理、分块、向量化、存储</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    pdf_text </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> read_pdf(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">file</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 处理逻辑</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    chunks </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> split_text(pdf_text)  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 处理逻辑</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    vectors </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> embed(chunks)  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 基础层调用</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    save_to_qdrant(vectors)  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 存储逻辑</span></span></code></pre></figure>
+<p><strong>问题</strong>：</p>
+<ul>
+<li>难以测试（想测试分块逻辑，必须连带嵌入和存储）</li>
+<li>难以复用（其他项目想用分块功能，无法单独提取）</li>
+<li>难以维护（修改嵌入模型，影响整个函数）</li>
+</ul>
+<hr/>
+<h4 id="-分层的优势">✅ 分层的优势<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#-分层的优势" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 用户层</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">class</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> RAGTool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    def</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> add_document</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(self, file):</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        chunks </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.processor.process(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">file</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)      </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 处理层</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.storage.save(chunks)                  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 存储层</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 处理层</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">class</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> DocumentProcessor</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    def</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> process</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(self, file):</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        text </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.parser.parse(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">file</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)    </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 解析</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        chunks </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.chunker.split(text) </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 分块</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        vectors </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.embedder.encode(chunks) </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 基础层</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> chunks, vectors</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 存储层</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">class</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> VectorStorage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    def</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> save</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(self, chunks, vectors):</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        self</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.qdrant.upsert(chunks, vectors)</span></span></code></pre></figure>
+<p><strong>优势</strong>：</p>
+<ul>
+<li>每层独立测试</li>
+<li>每层独立优化</li>
+<li>每层可独立替换</li>
+</ul>
+<hr/>
+<h2 id="5-实现细节">5. 实现细节<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-实现细节" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="51-多模态文档加载">5.1 多模态文档加载<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-多模态文档加载" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>MarkItDown</strong>作为通用文档转换引擎，支持：</p>
+<ul>
+<li><strong>文档</strong>：PDF、Word、Excel、PowerPoint</li>
+<li><strong>图像</strong>：JPG、PNG、GIF（通过OCR）</li>
+<li><strong>音频</strong>：MP3、WAV、M4A（通过转录）</li>
+<li><strong>文本</strong>：TXT、CSV、JSON、XML、HTML</li>
+<li><strong>代码</strong>：Python、JavaScript、Java等</li>
+</ul>
+<p><strong>关键特性</strong>：</p>
+<ul>
+<li>统一转换为结构化Markdown格式</li>
+<li>增强的PDF处理，带有后备机制</li>
+<li>错误处理和优雅降级</li>
+</ul>
+<h3 id="52-智能分块策略">5.2 智能分块策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-智能分块策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="markdown感知分割">Markdown感知分割<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#markdown感知分割" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>系统利用Markdown结构进行精确的语义分割：</p>
+<pre><code>标准Markdown文本 → 标题层级解析 → 段落语义分割
+→ 基于Token的分块 → 重叠策略优化 → 准备向量化
+</code></pre>
+<p><strong>处理过程</strong>：</p>
+<ol>
+<li>解析标题层次（#, <a href="../.././../tags/" class="tag-link internal alias" data-slug="tags/index"></a>, <a href="../.././../tags/" class="tag-link internal alias" data-slug="tags/index"></a>）以保持语义边界</li>
+<li>在段落级别分割以保持内容完整性</li>
+<li>基于token计数计算分块大小以优化检索</li>
+<li>实现重叠策略（默认200个token）以保持上下文连续性</li>
+</ol>
+<h4 id="双语token估算">双语Token估算<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#双语token估算" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>支持中英文混合文本：</p>
+<ul>
+<li>CJK字符：每个计为1个token</li>
+<li>非CJK字符：基于空格分割计数</li>
+</ul>
+<h3 id="53-统一嵌入和向量存储">5.3 统一嵌入和向量存储<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#53-统一嵌入和向量存储" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>嵌入模型选项</strong>：</p>
+<ol>
+<li><strong>DashScope API</strong>（主要）：基于云的嵌入服务（text-embedding-v3）</li>
+<li><strong>本地Transformer</strong>（后备）：sentence-transformers/all-MiniLM-L6-v2</li>
+<li><strong>TF-IDF</strong>（最后手段）：轻量级关键词方法</li>
+</ol>
+<p><strong>关键实现</strong>：</p>
+<ul>
+<li>批处理，可配置的批大小（默认：64）</li>
+<li>向量维度验证和归一化</li>
+<li>不匹配向量的自动维度调整</li>
+<li>带重试机制的错误处理</li>
+<li>针对更好嵌入质量的Markdown预处理</li>
+</ul>
+<p><strong>向量存储</strong>：</p>
+<ul>
+<li>使用Qdrant向量数据库，带有命名空间隔离</li>
+<li>支持元数据过滤（memory_type、data_source、rag_namespace）</li>
+<li>启用带分数阈值的相似性搜索</li>
+</ul>
+<hr/>
+<h2 id="6-高级检索策略">6. 高级检索策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-高级检索策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="61-多查询扩展mqe">6.1 多查询扩展（MQE）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-多查询扩展mqe" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>概念</strong>：生成语义等价的多样化查询以提高召回率</p>
+<p><strong>优势</strong>：</p>
+<ul>
+<li>解决查询与文档之间的词汇不匹配</li>
+<li>自动理解多种可能的解释</li>
+<li>对模糊查询或专业术语特别有效</li>
+</ul>
+<p><strong>实现示例</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 使用大语言模型生成多样化的查询扩展</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">原始查询：</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;如何学习Python？&quot;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">扩展查询：</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;Python入门教程&quot;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;Python学习方法&quot;</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;Python编程指南&quot;</span></span></code></pre></figure>
+<p><strong>影响</strong>：将召回率提高30-50%</p>
+<h3 id="62-假设文档嵌入hyde">6.2 假设文档嵌入（HyDE）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-假设文档嵌入hyde" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>概念</strong>：“用答案找答案” - 先生成假设的答案段落，然后用它们检索真实文档</p>
+<p><strong>核心洞察</strong>：问题和答案存在于不同的语义分布中</p>
+<ul>
+<li>问题：疑问句</li>
+<li>文档：陈述句</li>
+<li>假设答案：桥接语义差距</li>
+</ul>
+<p><strong>优势</strong>：</p>
+<ul>
+<li>假设答案在语义上更接近真实答案</li>
+<li>即使内容不准确，关键术语和概念也能指导准确检索</li>
+<li>显著提高领域特定查询的精确度</li>
+</ul>
+<p><strong>实现示例</strong>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 生成假设答案段落</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">查询：</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;什么是大语言模型？&quot;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">假设答案：</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;大语言模型是在海量文本数据上训练的AI系统。它们能够理解和生成类似人类的文本...&quot;</span></span></code></pre></figure>
+<h3 id="63-统一扩展检索框架">6.3 统一扩展检索框架<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-统一扩展检索框架" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>三步流程</strong>：</p>
+<ol>
+<li><strong>扩展</strong>：生成多个扩展查询（MQE + HyDE）</li>
+<li><strong>检索</strong>：对每个扩展查询并行向量搜索</li>
+<li><strong>合并</strong>：去重并对所有结果排序以返回top-k文档</li>
+</ol>
+<p><strong>关键参数</strong>：</p>
+<ul>
+<li><code>enable_mqe</code>：启用/禁用多查询扩展</li>
+<li><code>mqe_expansions</code>：扩展查询数量（默认：2）</li>
+<li><code>enable_hyde</code>：启用/禁用假设文档嵌入</li>
+<li><code>candidate_pool_multiplier</code>：扩展候选池（默认：4）</li>
+<li><code>score_threshold</code>：最小相似度分数</li>
+</ul>
+<p><strong>使用建议</strong>：</p>
+<ul>
+<li><strong>一般查询</strong>：仅启用MQE</li>
+<li><strong>领域特定查询</strong>：同时启用MQE和HyDE</li>
+<li><strong>性能敏感场景</strong>：使用基本检索或仅MQE</li>
+</ul>
+<hr/>
+<h2 id="7-ragtool-api">7. RAGTool API<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-ragtool-api" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="支持的操作">支持的操作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#支持的操作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>add_text</strong>：添加文本知识到知识库</li>
+<li><strong>add_document</strong>：添加多格式文档（PDF、Office、图像、音频）</li>
+<li><strong>search</strong>：使用可配置参数搜索知识库</li>
+<li><strong>ask</strong>：大语言模型增强的智能问答</li>
+<li><strong>stats</strong>：知识库统计信息</li>
+</ol>
+<h3 id="关键参数">关键参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#关键参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><code>knowledge_base_path</code>：知识库目录路径</li>
+<li><code>collection_name</code>：Qdrant集合名称（默认：“rag_knowledge_base”）</li>
+<li><code>rag_namespace</code>：数据隔离的命名空间（默认：“default”）</li>
+<li><code>chunk_size</code>：每块最大token数（默认：1000）</li>
+<li><code>chunk_overlap</code>：块之间重叠token数（默认：200）</li>
+</ul>
+<hr/>
+<h2 id="8-实际应用智能文档问答助手">8. 实际应用：智能文档问答助手<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-实际应用智能文档问答助手" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>本章演示了结合RAGTool和MemoryTool的完整实现：</p>
+<h3 id="系统组件">系统组件<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#系统组件" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>PDFLearningAssistant</strong>：封装RAG和Memory逻辑的核心助手类</li>
+<li><strong>Gradio Web界面</strong>：用户友好的Web应用程序</li>
+<li><strong>核心功能</strong>：
+<ul>
+<li>文档加载和处理</li>
+<li>高级检索的智能问答</li>
+<li>笔记记录和学习回顾</li>
+<li>统计和报告生成</li>
+</ul>
+</li>
+</ol>
+<h3 id="工作流程">工作流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工作流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>加载文档</strong>：MarkItDown转换 → 智能分块 → 向量化 → 存储</li>
+<li><strong>提问</strong>：MQE + HyDE高级检索 → 上下文感知的答案生成</li>
+<li><strong>记录学习</strong>：将问答历史和笔记存储到记忆系统</li>
+<li><strong>生成报告</strong>：汇总统计、学习指标和摘要</li>
+</ol>
+<h3 id="记忆集成">记忆集成<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#记忆集成" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>工作记忆</strong>：当前学习任务和上下文</li>
+<li><strong>情景记忆</strong>：学习事件和查询历史</li>
+<li><strong>语义记忆</strong>：概念知识和理解</li>
+<li><strong>感知记忆</strong>：文档特征和多模态信息</li>
+</ul>
+<hr/>
+<h2 id="9-关键技术亮点">9. 关键技术亮点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-关键技术亮点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="91-优势">9.1 优势<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#91-优势" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>通用文档支持</strong>：MarkItDown将任何格式转换为统一Markdown</li>
+<li><strong>语义感知分块</strong>：利用Markdown结构进行精确分割</li>
+<li><strong>多策略检索</strong>：结合MQE、HyDE和混合方法</li>
+<li><strong>统一嵌入</strong>：支持多种嵌入模型，自动后备</li>
+<li><strong>命名空间隔离</strong>：为不同用户/应用分离知识库</li>
+<li><strong>记忆集成</strong>：与记忆系统无缝集成以增强能力</li>
+</ol>
+<h3 id="92-设计原则">9.2 设计原则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#92-设计原则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>模块化</strong>：每层可以独立优化和替换</li>
+<li><strong>可重用性</strong>：处理流水线代码完全可重用</li>
+<li><strong>可扩展性</strong>：易于添加新的检索策略或文档处理器</li>
+<li><strong>性能</strong>：批处理、缓存和高效向量操作</li>
+<li><strong>鲁棒性</strong>：全面的错误处理和后备机制</li>
+</ol>
+<hr/>
+<h2 id="10-未来方向">10. 未来方向<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-未来方向" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>本章建议了几个探索领域：</p>
+<ol>
+<li><strong>多模态RAG</strong>：扩展到文本+图像或跨模态场景</li>
+<li><strong>高级检索</strong>：探索融合检索、学习排序等其他技术</li>
+<li><strong>知识图谱集成</strong>：结合向量检索与知识图谱推理</li>
+<li><strong>优化</strong>：针对特定任务评估不同的嵌入模型和检索策略</li>
+<li><strong>生产部署</strong>：可扩展性、多用户支持和性能优化</li>
+</ol>
+<hr/>
+<h2 id="11-学习建议">11. 学习建议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-学习建议" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>对于实践者：</p>
+<ol>
+<li><strong>动手实现</strong>：从零构建基本记忆模块并迭代</li>
+<li><strong>模型评估</strong>：比较不同嵌入模型和检索策略</li>
+<li><strong>真实项目</strong>：将记忆和RAG系统应用于实际个人项目</li>
+<li><strong>开源贡献</strong>：参与Hello-Agents开源项目</li>
+<li><strong>跨学科思维</strong>：将认知科学理论应用于工程解决方案</li>
+</ol>
+<hr/>
+<h2 id="总结">总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>RAG系统代表了增强大语言模型外部知识的先进方法，结合了文档处理、语义检索和智能生成的先进技术，以创建强大的知识赋能AI应用。通过多模态文档处理、智能分块、高级检索策略和记忆系统的集成，RAG为构建智能问答系统提供了完整的解决方案框架。</p>
+<p><strong>核心要点</strong>：</p>
+<ul>
+<li>RAG解决了大语言模型的知识限制和幻觉问题</li>
+<li>从Naive RAG发展到Modular RAG，技术不断演进</li>
+<li>高级检索策略（MQE、HyDE）显著提升检索效果</li>
+<li>模块化设计确保了系统的可扩展性和可维护性</li>
+<li>与记忆系统的集成为Agent提供了强大的知识基础</li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-6" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#rag系统知识检索增强---核心内容总结" data-for="rag系统知识检索增强---核心内容总结">RAG系统：知识检索增强 - 核心内容总结</a></li><li class="depth-1"><a href="#1-核心概念" data-for="1-核心概念">1. 核心概念</a></li><li class="depth-2"><a href="#什么是rag" data-for="什么是rag">什么是RAG？</a></li><li class="depth-2"><a href="#核心价值" data-for="核心价值">核心价值</a></li><li class="depth-1"><a href="#2-发展历程" data-for="2-发展历程">2. 发展历程</a></li><li class="depth-2"><a href="#第一阶段naive-rag-2020-2021" data-for="第一阶段naive-rag-2020-2021">第一阶段：Naive RAG (2020-2021)</a></li><li class="depth-2"><a href="#第二阶段advanced-rag-2022-2023" data-for="第二阶段advanced-rag-2022-2023">第二阶段：Advanced RAG (2022-2023)</a></li><li class="depth-2"><a href="#第三阶段modular-rag-2023至今" data-for="第三阶段modular-rag-2023至今">第三阶段：Modular RAG (2023至今)</a></li><li class="depth-1"><a href="#3-基本工作流程" data-for="3-基本工作流程">3. 基本工作流程</a></li><li class="depth-2"><a href="#数据准备阶段" data-for="数据准备阶段">数据准备阶段</a></li><li class="depth-2"><a href="#应用阶段" data-for="应用阶段">应用阶段</a></li><li class="depth-1"><a href="#4-系统架构" data-for="4-系统架构">4. 系统架构</a></li><li class="depth-2"><a href="#完整处理流水线" data-for="完整处理流水线">完整处理流水线</a></li><li class="depth-2"><a href="#各层详细解析" data-for="各层详细解析">各层详细解析</a></li><li class="depth-2"><a href="#为什么需要分层" data-for="为什么需要分层">为什么需要分层？</a></li><li class="depth-2"><a href="#完整数据流转示例" data-for="完整数据流转示例">完整数据流转示例</a></li><li class="depth-2"><a href="#代码示例完整的ragtool使用" data-for="代码示例完整的ragtool使用">代码示例：完整的RAGTool使用</a></li><li class="depth-2"><a href="#架构对比不分层-vs-分层" data-for="架构对比不分层-vs-分层">架构对比：不分层 vs 分层</a></li><li class="depth-1"><a href="#5-实现细节" data-for="5-实现细节">5. 实现细节</a></li><li class="depth-2"><a href="#51-多模态文档加载" data-for="51-多模态文档加载">5.1 多模态文档加载</a></li><li class="depth-2"><a href="#52-智能分块策略" data-for="52-智能分块策略">5.2 智能分块策略</a></li><li class="depth-2"><a href="#53-统一嵌入和向量存储" data-for="53-统一嵌入和向量存储">5.3 统一嵌入和向量存储</a></li><li class="depth-1"><a href="#6-高级检索策略" data-for="6-高级检索策略">6. 高级检索策略</a></li><li class="depth-2"><a href="#61-多查询扩展mqe" data-for="61-多查询扩展mqe">6.1 多查询扩展（MQE）</a></li><li class="depth-2"><a href="#62-假设文档嵌入hyde" data-for="62-假设文档嵌入hyde">6.2 假设文档嵌入（HyDE）</a></li><li class="depth-2"><a href="#63-统一扩展检索框架" data-for="63-统一扩展检索框架">6.3 统一扩展检索框架</a></li><li class="depth-1"><a href="#7-ragtool-api" data-for="7-ragtool-api">7. RAGTool API</a></li><li class="depth-2"><a href="#支持的操作" data-for="支持的操作">支持的操作</a></li><li class="depth-2"><a href="#关键参数" data-for="关键参数">关键参数</a></li><li class="depth-1"><a href="#8-实际应用智能文档问答助手" data-for="8-实际应用智能文档问答助手">8. 实际应用：智能文档问答助手</a></li><li class="depth-2"><a href="#系统组件" data-for="系统组件">系统组件</a></li><li class="depth-2"><a href="#工作流程" data-for="工作流程">工作流程</a></li><li class="depth-2"><a href="#记忆集成" data-for="记忆集成">记忆集成</a></li><li class="depth-1"><a href="#9-关键技术亮点" data-for="9-关键技术亮点">9. 关键技术亮点</a></li><li class="depth-2"><a href="#91-优势" data-for="91-优势">9.1 优势</a></li><li class="depth-2"><a href="#92-设计原则" data-for="92-设计原则">9.2 设计原则</a></li><li class="depth-1"><a href="#10-未来方向" data-for="10-未来方向">10. 未来方向</a></li><li class="depth-1"><a href="#11-学习建议" data-for="11-学习建议">11. 学习建议</a></li><li class="depth-1"><a href="#总结" data-for="总结">总结</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>
