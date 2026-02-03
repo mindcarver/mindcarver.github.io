@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>早停在验证集提前触发</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="早停在验证集提前触发"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="早停在验证集提前触发"/><meta name="twitter:description" content="早停在验证集提前触发 问题描述 在实际训练机器学习模型时，经常会遇到早停机制在训练初期就触发的情况。这通常意味着模型在验证集上几乎没有有效提升，是模型质量差的强烈信号。 典型表现 Epoch 1: Val IC = 0.038 Epoch 2: Val IC = 0.0385 Early stopping triggered at epoch 2 关键观察： 早停在极早期（第 1-3 轮）触发 验证集 IC &lt; 0.05（低于交易价值阈值） Rank IC 接近 0（排序能力极弱） 早停机制的工作原理 正常训练过程（好的模型） Epoch 1: Val IC = 0.02 ← 开始学习 ..."/><meta property="og:description" content="早停在验证集提前触发 问题描述 在实际训练机器学习模型时，经常会遇到早停机制在训练初期就触发的情况。这通常意味着模型在验证集上几乎没有有效提升，是模型质量差的强烈信号。 典型表现 Epoch 1: Val IC = 0.038 Epoch 2: Val IC = 0.0385 Early stopping triggered at epoch 2 关键观察： 早停在极早期（第 1-3 轮）触发 验证集 IC &lt; 0.05（低于交易价值阈值） Rank IC 接近 0（排序能力极弱） 早停机制的工作原理 正常训练过程（好的模型） Epoch 1: Val IC = 0.02 ← 开始学习 ..."/><meta property="og:image:alt" content="早停在验证集提前触发 问题描述 在实际训练机器学习模型时，经常会遇到早停机制在训练初期就触发的情况。这通常意味着模型在验证集上几乎没有有效提升，是模型质量差的强烈信号。 典型表现 Epoch 1: Val IC = 0.038 Epoch 2: Val IC = 0.0385 Early stopping triggered at epoch 2 关键观察： 早停在极早期（第 1-3 轮）触发 验证集 IC &lt; 0.05（低于交易价值阈值） Rank IC 接近 0（排序能力极弱） 早停机制的工作原理 正常训练过程（好的模型） Epoch 1: Val IC = 0.02 ← 开始学习 ..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/quant/mlqt/早停在验证集提前触发"/><meta property="twitter:url" content="https://https//mindcarver.top/quant/mlqt/早停在验证集提前触发"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="早停在验证集提前触发 问题描述 在实际训练机器学习模型时，经常会遇到早停机制在训练初期就触发的情况。这通常意味着模型在验证集上几乎没有有效提升，是模型质量差的强烈信号。 典型表现 Epoch 1: Val IC = 0.038 Epoch 2: Val IC = 0.0385 Early stopping triggered at epoch 2 关键观察： 早停在极早期（第 1-3 轮）触发 验证集 IC &lt; 0.05（低于交易价值阈值） Rank IC 接近 0（排序能力极弱） 早停机制的工作原理 正常训练过程（好的模型） Epoch 1: Val IC = 0.02 ← 开始学习 ..."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="quant/mlqt/早停在验证集提前触发"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div><div class="profile-description"><p>深山中的匠心，专注于区块链开发与量化研究。相信最深刻的创新来自专注与坚持。</p></div><div class="profile-skills"><div class="skill-group"><span class="skill-icon">🔗</span><div><strong>区块链</strong><p class="skill-detail">智能合约 · DeFi · ZK证明</p></div></div><div class="skill-group"><span class="skill-icon">🤖</span><div><strong>机器学习</strong><p class="skill-detail">PyTorch · 时序预测 · 交易策略</p></div></div><div class="skill-group"><span class="skill-icon">📈</span><div><strong>量化交易</strong><p class="skill-detail">统计套利 · 风险管理 · MEV</p></div></div></div><div class="profile-links"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-link"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>GitHub</a></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-451"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-451" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../quant/">quant</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../quant/mlqt/">mlqt</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>早停在验证集提前触发</a></div></nav><h1 class="article-title">早停在验证集提前触发</h1><p show-comma="true" class="content-meta"><time datetime="2026-02-03T10:46:32.296Z">2026年2月03日</time><span>16分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="早停在验证集提前触发">早停在验证集提前触发<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#早停在验证集提前触发" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="问题描述">问题描述<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题描述" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在实际训练机器学习模型时，经常会遇到<strong>早停机制在训练初期就触发</strong>的情况。这通常意味着模型在验证集上几乎没有有效提升，是模型质量差的强烈信号。</p>
+<h3 id="典型表现">典型表现<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#典型表现" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>Epoch 1: Val IC = 0.038
+Epoch 2: Val IC = 0.0385
+Early stopping triggered at epoch 2
+</code></pre>
+<p><strong>关键观察：</strong></p>
+<ul>
+<li>早停在极早期（第 1-3 轮）触发</li>
+<li>验证集 IC &lt; 0.05（低于交易价值阈值）</li>
+<li>Rank IC 接近 0（排序能力极弱）</li>
+</ul>
+<hr/>
+<h2 id="早停机制的工作原理">早停机制的工作原理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#早停机制的工作原理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="正常训练过程好的模型">正常训练过程（好的模型）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#正常训练过程好的模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>Epoch 1:  Val IC = 0.02    ← 开始学习
+Epoch 2:  Val IC = 0.03    ← 性能提升
+Epoch 3:  Val IC = 0.04    ← 继续提升
+Epoch 4:  Val IC = 0.045   ← 轻微提升
+Epoch 5:  Val IC = 0.045   ← 停滞（早停可能在后面触发）
+...
+Epoch 20: Val IC = 0.045   ← 连续 15 轮未提升，触发早停
+</code></pre>
+<p><strong>特点：</strong></p>
+<ul>
+<li>训练前期持续提升</li>
+<li>中期进入平台期</li>
+<li>后期触发早停（这是正常的）</li>
+</ul>
+<h3 id="问题训练过程早停提前触发">问题训练过程（早停提前触发）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题训练过程早停提前触发" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>Epoch 1:  Val IC = 0.038   ← 第一次评估
+Epoch 2:  Val IC = 0.0385  ← 几乎没变化
+Early stopping triggered at epoch 2  ← Patience=1，立即触发
+</code></pre>
+<p><strong>特点：</strong></p>
+<ul>
+<li>从一开始就没有明显的学习过程</li>
+<li>验证集性能在噪声级别波动</li>
+<li>早停极早期触发（这是异常的）</li>
+</ul>
+<hr/>
+<h2 id="为什么早停在第-2-轮触发说明验证集无效">为什么”早停在第 2 轮触发”说明验证集无效<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#为什么早停在第-2-轮触发说明验证集无效" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="早停触发条件">早停触发条件<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#早停触发条件" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>早停机制的核心逻辑：</p>
+<pre><code>早停触发条件：
+如果连续 patience 个 epoch 验证性能未提升:
+    停止训练
+    恢复到验证集性能最好的模型
+</code></pre>
+<h3 id="具体分析">具体分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#具体分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>假设 Patience = 1（允许 1 轮不提升）：</p>
+<p><strong>正常情况：</strong></p>
+<pre><code>Epoch 1: Val IC = 0.02
+Epoch 2: Val IC = 0.025   ← 提升 0.005，counter 重置为 0
+Epoch 3: Val IC = 0.028   ← 提升 0.003，counter 重置为 0
+Epoch 4: Val IC = 0.027   ← 下降，counter = 1
+Epoch 5: Val IC = 0.026   ← 继续下降，counter = 2
+Epoch 6: Val IC = 0.025   ← counter = 3 ≥ Patience，触发早停
+</code></pre>
+<p><strong>问题情况：</strong></p>
+<pre><code>Epoch 1: Val IC = 0.038
+Epoch 2: Val IC = 0.0385  ← 提升 0.0005（在噪声范围内），counter 重置为 0
+Epoch 3: Val IC = 0.0375  ← 下降，counter = 1
+Epoch 4: Val IC = 0.0375  ← 未提升，counter = 2 ≥ Patience，触发早停
+</code></pre>
+<p><strong>关键区别：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>场景</th><th>提升幅度</th><th>说明</th></tr></thead><tbody><tr><td>正常</td><td>0.005 - 0.02</td><td>显著提升，模型在学习</td></tr><tr><td>问题</td><td>&lt; 0.001</td><td>噪声级提升，模型没学到东西</td></tr></tbody></table></div>
+<h3 id="ic-00385-的含义">IC 0.0385 的含义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#ic-00385-的含义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>绝对值判断：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>IC 范围</th><th>因子质量</th><th>说明</th></tr></thead><tbody><tr><td>> 0.1</td><td>优秀</td><td>强预测能力</td></tr><tr><td>0.05 - 0.1</td><td>良好</td><td>明显预测能力</td></tr><tr><td>0.02 - 0.05</td><td>一般</td><td>一定预测能力</td></tr><tr><td>&lt; 0.02</td><td>较差</td><td>预测能力弱</td></tr><tr><td>&lt; 0</td><td>无效</td><td>预测方向错误</td></tr></tbody></table></div>
+<p><strong>0.0385 的位置：</strong></p>
+<ul>
+<li>处于 0.02 - 0.05 的下限</li>
+<li>接近”较差”的边界</li>
+<li>即使是最终结果，交易价值也有限</li>
+</ul>
+<p><strong>结合 Rank IC = 0.0082：</strong></p>
+<ul>
+<li>Rank IC 接近 0，说明排序能力极弱</li>
+<li>两个指标都偏低，说明模型整体质量差</li>
+</ul>
+<hr/>
+<h2 id="早停提前触发的根本原因">早停提前触发的根本原因<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#早停提前触发的根本原因" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="1-特征质量问题">1. 特征质量问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-特征质量问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>表现：</strong></p>
+<ul>
+<li>特征与目标变量相关性低</li>
+<li>特征包含大量噪声</li>
+<li>特征缺失值比例过高</li>
+</ul>
+<p><strong>为什么导致早停：</strong></p>
+<pre><code>特征质量差 → 模型无法学到有效规律 → 验证集性能不提升 → 早停触发
+</code></pre>
+<p><strong>验证方法：</strong></p>
+<ul>
+<li>计算特征与目标的相关系数</li>
+<li>检查特征重要性分布</li>
+<li>分析特征缺失值统计</li>
+</ul>
+<h3 id="2-数据泄露">2. 数据泄露<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-数据泄露" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>问题场景：</strong></p>
+<pre><code>训练集：使用 t+1 期的数据预测 t 期收益
+验证集：使用 t+1 期的数据预测 t 期收益
+</code></pre>
+<p><strong>为什么导致早停：</strong></p>
+<pre><code>数据泄露（训练集） → 训练集 IC 很高 → 
+验证集没有未来数据 → 验证集 IC 很低 → 
+训练集和验证集差距大 → 验证集无法提升 → 早停触发
+</code></pre>
+<p><strong>典型表现：</strong></p>
+<ul>
+<li>训练集 IC > 0.1（非常好）</li>
+<li>验证集 IC &lt; 0.03（很差）</li>
+<li>差距 > 0.07（严重过拟合）</li>
+</ul>
+<h3 id="3-样本量不足">3. 样本量不足<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-样本量不足" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>表现：</strong></p>
+<ul>
+<li>训练样本 &lt; 1000</li>
+<li>特征数量 > 样本数量</li>
+<li>样本分布不均</li>
+</ul>
+<p><strong>为什么导致早停：</strong></p>
+<pre><code>样本量小 → 模型无法学到稳定规律 → 
+验证集样本随机性大 → 性能波动在噪声级别 → 
+无法持续提升 → 早停触发
+</code></pre>
+<p><strong>判断标准：</strong></p>
+<ul>
+<li>特征数 / 样本数 > 0.1（过拟合风险高）</li>
+<li>训练集 IC 标准差 > 0.03（不稳定）</li>
+</ul>
+<h3 id="4-目标变量与特征关系弱">4. 目标变量与特征关系弱<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-目标变量与特征关系弱" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>表现：</strong></p>
+<ul>
+<li>真实世界不存在可预测关系</li>
+<li>目标变量接近随机游走</li>
+<li>特征维度与真实因子不匹配</li>
+</ul>
+<p><strong>为什么导致早停：</strong></p>
+<pre><code>关系弱 → 即使最优模型也只能达到 IC=0.02 → 
+训练初期就接近理论上限 → 
+无法持续提升 → 早停触发
+</code></pre>
+<p><strong>判断方法：</strong></p>
+<ul>
+<li>检查目标变量的可预测性</li>
+<li>分析历史数据的 IC 分布</li>
+<li>对比简单基准模型</li>
+</ul>
+<h3 id="5-模型配置不当">5. 模型配置不当<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-模型配置不当" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>常见问题：</strong></p>
+<ul>
+<li>学习率过大或过小</li>
+<li>正则化过强（权重被压缩）</li>
+<li>模型容量不足（无法拟合）</li>
+</ul>
+<p><strong>为什么导致早停：</strong></p>
+<pre><code>配置不当 → 梯度更新失效或过小 → 
+模型参数无法有效优化 → 
+验证集性能停滞 → 早停触发
+</code></pre>
+<hr/>
+<h2 id="如何诊断早停提前触发问题">如何诊断早停提前触发问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#如何诊断早停提前触发问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="第-1-步检查训练-验证差距">第 1 步：检查训练-验证差距<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第-1-步检查训练-验证差距" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 计算差距
+gap = Train_IC - Valid_IC
+
+# 判断标准
+if gap > 0.07:
+    print(&quot;严重过拟合：检查数据泄露&quot;)
+elif gap > 0.03:
+    print(&quot;轻微过拟合：增加正则化&quot;)
+elif gap &lt; 0.01:
+    print(&quot;拟合正常，可能是特征质量差&quot;)
+</code></pre>
+<h3 id="第-2-步分析-ic-时序分布">第 2 步：分析 IC 时序分布<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第-2-步分析-ic-时序分布" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 正常情况
+Normal_IC = [0.01, 0.02, 0.03, 0.04, 0.045, ...]
+# 趋势：稳步上升，后期平稳
+
+# 问题情况
+Bad_IC = [0.038, 0.0385, 0.037, 0.037, 0.036, ...]
+# 趋势：波动在噪声级别（±0.002）
+</code></pre>
+<h3 id="第-3-步检查特征质量">第 3 步：检查特征质量<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第-3-步检查特征质量" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 特征相关性分析
+correlation_matrix = df[features + [target]].corr()
+weak_features = correlation_matrix[abs(correlation_matrix) &lt; 0.1]
+print(f&quot;弱相关特征占比: {len(weak_features) / len(features):.2%}&quot;)
+</code></pre>
+<h3 id="第-4-步验证数据划分">第 4 步：验证数据划分<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第-4-步验证数据划分" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 检查时间序列划分
+if max(train_date) >= min(val_date):
+    print(&quot;警告：存在时间重叠，可能有数据泄露&quot;)
+</code></pre>
+<h3 id="第-5-步对比基准模型">第 5 步：对比基准模型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第-5-步对比基准模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 简单基准：线性回归
+baseline = LinearRegression()
+baseline.fit(X_train, y_train)
+baseline_ic = calculate_ic(baseline.predict(X_val), y_val)
+
+# 复杂模型：XGBoost
+model = XGBRegressor()
+model.fit(X_train, y_train)
+model_ic = calculate_ic(model.predict(X_val), y_val)
+
+# 如果复杂模型还不如基准模型
+if model_ic &lt;= baseline_ic:
+    print(&quot;模型配置可能有问题&quot;)
+</code></pre>
+<hr/>
+<h2 id="解决方案">解决方案<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#解决方案" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="方案-1改善特征工程">方案 1：改善特征工程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-1改善特征工程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>目标：</strong> 提升特征质量</p>
+<p><strong>具体方法：</strong></p>
+<ol>
+<li>
+<p><strong>特征筛选</strong></p>
+<ul>
+<li>移除低相关性特征（|correlation| &lt; 0.05）</li>
+<li>使用特征重要性筛选 Top 50%</li>
+<li>移除共线性强的特征</li>
+</ul>
+</li>
+<li>
+<p><strong>特征变换</strong></p>
+<ul>
+<li>对数变换：<code>log(x + 1)</code></li>
+<li>标准化：<code>(x - mean) / std</code></li>
+<li>分位数变换：<code>rank(x) / len(x)</code></li>
+</ul>
+</li>
+<li>
+<p><strong>特征构造</strong></p>
+<ul>
+<li>滚动统计：移动平均、波动率</li>
+<li>交叉特征：<code>feature_A * feature_B</code></li>
+<li>领域特征：技术指标、财务比率</li>
+</ul>
+</li>
+</ol>
+<h3 id="方案-2修复数据泄露">方案 2：修复数据泄露<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-2修复数据泄露" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>检查清单：</strong></p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled/> 训练集是否包含未来信息？</li>
+<li class="task-list-item"><input type="checkbox" disabled/> 特征计算是否使用了未来数据？</li>
+<li class="task-list-item"><input type="checkbox" disabled/> 验证集是否与训练集时间重叠？</li>
+</ul>
+<p><strong>修复方法：</strong></p>
+<pre><code># 正确的时间序列划分
+train_data = data[data['date'] &lt; '2024-01-01']
+val_data = data[(data['date'] >= '2024-01-01') &amp; 
+                      (data['date'] &lt; '2024-07-01')]
+test_data = data[data['date'] >= '2024-07-01']
+
+# 特征计算时注意时间
+# 错误：使用 t+1 期的收益
+df['return'] = df['price'].pct_change().shift(-1)  # ❌
+
+# 正确：使用 t 期的收益
+df['return'] = df['price'].pct_change().shift(1)  # ✓
+</code></pre>
+<h3 id="方案-3增加样本量">方案 3：增加样本量<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-3增加样本量" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>方法：</strong></p>
+<ol>
+<li>
+<p><strong>扩展时间范围</strong></p>
+<ul>
+<li>从 2 年扩展到 5 年</li>
+<li>包含更多市场周期</li>
+</ul>
+</li>
+<li>
+<p><strong>增加标的</strong></p>
+<ul>
+<li>从 500 只股票扩展到 3000 只</li>
+<li>覆盖更多行业和市值</li>
+</ul>
+</li>
+<li>
+<p><strong>数据增强</strong></p>
+<ul>
+<li>时间窗口采样（不同起点）</li>
+<li>添加噪声（谨慎使用）</li>
+</ul>
+</li>
+</ol>
+<h3 id="方案-4优化模型配置">方案 4：优化模型配置<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-4优化模型配置" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>调整 Patience：</strong></p>
+<pre><code># 从小到大的调参策略
+for patience in [5, 10, 20, 50]:
+    early_stop = EarlyStopping(patience=patience)
+    model.fit(X_train, y_train, 
+              validation_data=(X_val, y_val),
+              callbacks=[early_stop])
+    
+    # 观察验证集 IC 是否提升
+    print(f&quot;Patience={patience}, Best Val IC={best_val_ic}&quot;)
+</code></pre>
+<p><strong>调整学习率：</strong></p>
+<pre><code># 学习率搜索
+learning_rates = [0.001, 0.01, 0.1, 1.0]
+for lr in learning_rates:
+    model = XGBRegressor(learning_rate=lr)
+    model.fit(X_train, y_train)
+    val_ic = calculate_ic(model.predict(X_val), y_val)
+    print(f&quot;LR={lr}, Val IC={val_ic}&quot;)
+</code></pre>
+<p><strong>增加正则化：</strong></p>
+<pre><code># L2 正则化
+model = XGBRegressor(
+    reg_alpha=0.1,   # L1
+    reg_lambda=1.0    # L2
+)
+</code></pre>
+<h3 id="方案-5重新定义问题">方案 5：重新定义问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-5重新定义问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>问题本质：</strong></p>
+<ul>
+<li>如果目标变量本身不可预测，无论怎么优化模型都无法提升 IC</li>
+</ul>
+<p><strong>应对方法：</strong></p>
+<ol>
+<li>
+<p><strong>设定合理期望</strong></p>
+<ul>
+<li>量化因子 IC > 0.05 就不错了</li>
+<li>不要期望 IC > 0.1（非常困难）</li>
+</ul>
+</li>
+<li>
+<p><strong>调整评估标准</strong></p>
+<ul>
+<li>不只看 IC，还要看稳定性（ICIR）</li>
+<li>关注分组收益的多空收益</li>
+<li>考虑交易成本后的实际收益</li>
+</ul>
+</li>
+<li>
+<p><strong>寻找其他机会</strong></p>
+<ul>
+<li>更换特征（从技术指标转向基本面）</li>
+<li>更换模型（从线性模型转向非线性）</li>
+<li>更换策略（从预测收益转向预测波动）</li>
+</ul>
+</li>
+</ol>
+<hr/>
+<h2 id="实战案例分析">实战案例分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实战案例分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="案例-1数据泄露导致早停">案例 1：数据泄露导致早停<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#案例-1数据泄露导致早停" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>情况：</strong></p>
+<pre><code>Train IC:  0.15 (很高)
+Valid IC:  0.02  (很低)
+Epoch 1:    早停触发
+</code></pre>
+<p><strong>问题诊断：</strong></p>
+<pre><code># 检查特征计算时间
+# 发现某特征使用 t+1 期的价格
+df['future_price_ma5'] = df['price'].rolling(5).mean().shift(-1)  # ❌ 数据泄露
+
+# 修复：使用 t 期及之前的数据
+df['price_ma5'] = df['price'].rolling(5).mean().shift(1)  # ✓
+</code></pre>
+<p><strong>修复后：</strong></p>
+<pre><code>Train IC:  0.045 (合理)
+Valid IC:  0.04  (合理)
+Epoch 20:   早停触发（正常）
+</code></pre>
+<h3 id="案例-2特征质量差导致早停">案例 2：特征质量差导致早停<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#案例-2特征质量差导致早停" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>情况：</strong></p>
+<pre><code>Train IC:  0.025 (低)
+Valid IC:  0.022 (低)
+Epoch 2:    早停触发
+</code></pre>
+<p><strong>问题诊断：</strong></p>
+<pre><code># 检查特征相关性
+correlations = df[features].corrwith(df['target'])
+print(correlations.sort_values())
+
+# 输出：
+# volume_change: 0.008  (太低)
+# price_std:     0.003  (太低)
+# turnover:       -0.001 (太低)
+</code></pre>
+<p><strong>优化方案：</strong></p>
+<ol>
+<li>移除相关性 &lt; 0.02 的特征</li>
+<li>构造新特征（技术指标、财务指标）</li>
+<li>使用特征工程工具（如 FeatureTools）</li>
+</ol>
+<p><strong>优化后：</strong></p>
+<pre><code>Train IC:  0.05 (提升)
+Valid IC:  0.048 (提升)
+Epoch 15:   早停触发（合理）
+</code></pre>
+<h3 id="案例-3样本量不足导致早停">案例 3：样本量不足导致早停<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#案例-3样本量不足导致早停" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>情况：</strong></p>
+<pre><code>样本数：    500
+特征数：    120
+Train IC:  0.06  (还可以)
+Valid IC:  0.01  (很差)
+Epoch 3:    早停触发
+</code></pre>
+<p><strong>问题诊断：</strong></p>
+<pre><code># 检查过拟合风险
+overfitting_risk = n_features / n_samples  # 120 / 500 = 0.24 > 0.1
+print(f&quot;过拟合风险: {overfitting_risk:.2%}&quot;)
+</code></pre>
+<p><strong>优化方案：</strong></p>
+<ol>
+<li>特征筛选：从 120 降到 30</li>
+<li>增加正则化：reg_lambda=10</li>
+<li>收集更多数据：扩展到 5 年数据</li>
+</ol>
+<p><strong>优化后：</strong></p>
+<pre><code>样本数：    2000
+特征数：    30
+Train IC:  0.055 (稳定)
+Valid IC:  0.05  (稳定)
+Epoch 25:   早停触发（正常）
+</code></pre>
+<hr/>
+<h2 id="最佳实践">最佳实践<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#最佳实践" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="1-从简单模型开始">1. 从简单模型开始<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-从简单模型开始" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 先用线性回归建立基线
+linear_baseline = LinearRegression()
+linear_baseline.fit(X_train, y_train)
+linear_val_ic = calculate_ic(linear_baseline.predict(X_val), y_val)
+
+print(f&quot;线性基线 Valid IC: {linear_val_ic}&quot;)
+
+# 如果复杂模型不如线性基线，说明有问题
+</code></pre>
+<h3 id="2-监控多个指标">2. 监控多个指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-监控多个指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 不要只看 IC，还要看
+metrics = {
+    'Valid IC': calculate_ic(pred, y_val),
+    'Rank IC': calculate_rank_ic(pred, y_val),
+    'Train-Valid Gap': train_ic - valid_ic,
+    'ICIR': calculate_icir(ic_series)
+}
+</code></pre>
+<h3 id="3-设置合理的-patience">3. 设置合理的 Patience<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-设置合理的-patience" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 根据数据量调整
+n_samples = len(X_train)
+
+if n_samples &lt; 1000:
+    patience = 20    # 小样本，需要更长时间学习
+elif n_samples &lt; 10000:
+    patience = 10    # 中等样本
+else:
+    patience = 5     # 大样本，快速收敛
+</code></pre>
+<h3 id="4-保存完整训练日志">4. 保存完整训练日志<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-保存完整训练日志" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 记录每个 epoch 的详细指标
+training_log = []
+for epoch in range(max_epochs):
+    train_loss = model.train_on_batch(...)
+    val_ic = model.evaluate(X_val, y_val)
+    
+    training_log.append({
+        'epoch': epoch,
+        'train_loss': train_loss,
+        'val_ic': val_ic,
+        'best_val_ic': max([log['val_ic'] for log in training_log])
+    })
+    
+    if early_stop.triggered:
+        print(f&quot;早停在 Epoch {epoch}&quot;)
+        print(f&quot;最佳 Valid IC: {best_val_ic}&quot;)
+        break
+</code></pre>
+<h3 id="5-定期重新评估模型">5. 定期重新评估模型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-定期重新评估模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code># 每月重新训练和评估
+for month in ['2024-01', '2024-02', '2024-03', ...]:
+    train_data = data[data['month'] &lt; month]
+    val_data = data[data['month'] == month]
+    
+    model.fit(train_data)
+    month_ic = calculate_ic(model.predict(val_data), val_data['target'])
+    
+    # 如果 IC 持续下降，模型可能需要重构
+    if month_ic &lt; 0.03:
+        print(f&quot;警告：{month} 月份 IC = {month_ic}，模型性能衰退&quot;)
+</code></pre>
+<hr/>
+<h2 id="总结">总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="早停提前触发--问题信号">早停提前触发 = 问题信号<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#早停提前触发--问题信号" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>记住这句话：</strong></p>
+<blockquote>
+<p>“早停在训练极早期（第 1-3 轮）触发，且验证集 IC &lt; 0.05，说明模型在验证集上几乎没有有效提升”</p>
+</blockquote>
+<h3 id="快速诊断清单">快速诊断清单<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#快速诊断清单" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>检查项</th><th>正常范围</th><th>异常信号</th></tr></thead><tbody><tr><td>训练集 IC</td><td>0.02 - 0.1</td><td>> 0.1（过拟合）</td></tr><tr><td>验证集 IC</td><td>0.02 - 0.1</td><td>&lt; 0.02（学习失败）</td></tr><tr><td>Train-Valid 差距</td><td>&lt; 0.03</td><td>> 0.07（严重过拟合）</td></tr><tr><td>早停轮次</td><td>> 10</td><td>&lt; 3（提前触发）</td></tr><tr><td>特征相关性</td><td>> 0.05</td><td>&lt; 0.01（特征差）</td></tr></tbody></table></div>
+<h3 id="应对策略">应对策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#应对策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>先怀疑数据问题</strong>（特征、泄露、样本量）</li>
+<li><strong>再优化模型配置</strong>（学习率、正则化、Patience）</li>
+<li><strong>最后接受现实</strong>（目标变量不可预测）</li>
+</ol>
+<h3 id="核心原则">核心原则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心原则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p><strong>不要盲目追求复杂的模型</strong></p>
+</blockquote>
+<blockquote>
+<p>如果简单的线性模型能达到 IC=0.03，而复杂的 XGBoost 只能 IC=0.025，那么：</p>
+<ul>
+<li>线性模型是合理的</li>
+<li>XGBoost 过拟合了</li>
+<li>应该用线性模型或改进特征</li>
+</ul>
+</blockquote></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-218" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#早停在验证集提前触发" data-for="早停在验证集提前触发">早停在验证集提前触发</a></li><li class="depth-1"><a href="#问题描述" data-for="问题描述">问题描述</a></li><li class="depth-2"><a href="#典型表现" data-for="典型表现">典型表现</a></li><li class="depth-1"><a href="#早停机制的工作原理" data-for="早停机制的工作原理">早停机制的工作原理</a></li><li class="depth-2"><a href="#正常训练过程好的模型" data-for="正常训练过程好的模型">正常训练过程（好的模型）</a></li><li class="depth-2"><a href="#问题训练过程早停提前触发" data-for="问题训练过程早停提前触发">问题训练过程（早停提前触发）</a></li><li class="depth-1"><a href="#为什么早停在第-2-轮触发说明验证集无效" data-for="为什么早停在第-2-轮触发说明验证集无效">为什么”早停在第 2 轮触发”说明验证集无效</a></li><li class="depth-2"><a href="#早停触发条件" data-for="早停触发条件">早停触发条件</a></li><li class="depth-2"><a href="#具体分析" data-for="具体分析">具体分析</a></li><li class="depth-2"><a href="#ic-00385-的含义" data-for="ic-00385-的含义">IC 0.0385 的含义</a></li><li class="depth-1"><a href="#早停提前触发的根本原因" data-for="早停提前触发的根本原因">早停提前触发的根本原因</a></li><li class="depth-2"><a href="#1-特征质量问题" data-for="1-特征质量问题">1. 特征质量问题</a></li><li class="depth-2"><a href="#2-数据泄露" data-for="2-数据泄露">2. 数据泄露</a></li><li class="depth-2"><a href="#3-样本量不足" data-for="3-样本量不足">3. 样本量不足</a></li><li class="depth-2"><a href="#4-目标变量与特征关系弱" data-for="4-目标变量与特征关系弱">4. 目标变量与特征关系弱</a></li><li class="depth-2"><a href="#5-模型配置不当" data-for="5-模型配置不当">5. 模型配置不当</a></li><li class="depth-1"><a href="#如何诊断早停提前触发问题" data-for="如何诊断早停提前触发问题">如何诊断早停提前触发问题</a></li><li class="depth-2"><a href="#第-1-步检查训练-验证差距" data-for="第-1-步检查训练-验证差距">第 1 步：检查训练-验证差距</a></li><li class="depth-2"><a href="#第-2-步分析-ic-时序分布" data-for="第-2-步分析-ic-时序分布">第 2 步：分析 IC 时序分布</a></li><li class="depth-2"><a href="#第-3-步检查特征质量" data-for="第-3-步检查特征质量">第 3 步：检查特征质量</a></li><li class="depth-2"><a href="#第-4-步验证数据划分" data-for="第-4-步验证数据划分">第 4 步：验证数据划分</a></li><li class="depth-2"><a href="#第-5-步对比基准模型" data-for="第-5-步对比基准模型">第 5 步：对比基准模型</a></li><li class="depth-1"><a href="#解决方案" data-for="解决方案">解决方案</a></li><li class="depth-2"><a href="#方案-1改善特征工程" data-for="方案-1改善特征工程">方案 1：改善特征工程</a></li><li class="depth-2"><a href="#方案-2修复数据泄露" data-for="方案-2修复数据泄露">方案 2：修复数据泄露</a></li><li class="depth-2"><a href="#方案-3增加样本量" data-for="方案-3增加样本量">方案 3：增加样本量</a></li><li class="depth-2"><a href="#方案-4优化模型配置" data-for="方案-4优化模型配置">方案 4：优化模型配置</a></li><li class="depth-2"><a href="#方案-5重新定义问题" data-for="方案-5重新定义问题">方案 5：重新定义问题</a></li><li class="depth-1"><a href="#实战案例分析" data-for="实战案例分析">实战案例分析</a></li><li class="depth-2"><a href="#案例-1数据泄露导致早停" data-for="案例-1数据泄露导致早停">案例 1：数据泄露导致早停</a></li><li class="depth-2"><a href="#案例-2特征质量差导致早停" data-for="案例-2特征质量差导致早停">案例 2：特征质量差导致早停</a></li><li class="depth-2"><a href="#案例-3样本量不足导致早停" data-for="案例-3样本量不足导致早停">案例 3：样本量不足导致早停</a></li><li class="depth-1"><a href="#最佳实践" data-for="最佳实践">最佳实践</a></li><li class="depth-2"><a href="#1-从简单模型开始" data-for="1-从简单模型开始">1. 从简单模型开始</a></li><li class="depth-2"><a href="#2-监控多个指标" data-for="2-监控多个指标">2. 监控多个指标</a></li><li class="depth-2"><a href="#3-设置合理的-patience" data-for="3-设置合理的-patience">3. 设置合理的 Patience</a></li><li class="depth-2"><a href="#4-保存完整训练日志" data-for="4-保存完整训练日志">4. 保存完整训练日志</a></li><li class="depth-2"><a href="#5-定期重新评估模型" data-for="5-定期重新评估模型">5. 定期重新评估模型</a></li><li class="depth-1"><a href="#总结" data-for="总结">总结</a></li><li class="depth-2"><a href="#早停提前触发--问题信号" data-for="早停提前触发--问题信号">早停提前触发 = 问题信号</a></li><li class="depth-2"><a href="#快速诊断清单" data-for="快速诊断清单">快速诊断清单</a></li><li class="depth-2"><a href="#应对策略" data-for="应对策略">应对策略</a></li><li class="depth-2"><a href="#核心原则" data-for="核心原则">核心原则</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>
