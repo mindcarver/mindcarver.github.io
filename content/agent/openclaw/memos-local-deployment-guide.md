@@ -129,17 +129,17 @@ OPENAI_API_KEY=dummy-key-for-local-memos
 }
 ```
 
-| 参数                    | 默认值            | 说明                                                |
-| ----------------------- | ----------------- | --------------------------------------------------- |
-| `userId`                | `"openclaw-user"` | 用户标识                                            |
-| `memCubeId`             | 同 userId         | 记忆空间 ID，用于隔离不同用户的记忆                 |
-| `memoryLimitNumber`     | 5                 | 回回时返回的记忆条数                                |
-| `preferenceLimitNumber` | 6                 | 回回时返回的偏好条数                                |
-| `maxMessageChars`       | 20000             | 单条消息截断长度                                    |
-| `includeAssistant`      | true              | 保存记忆时是否包含助手回复                          |
+| 参数                      | 默认值               | 说明                                      |
+| ----------------------- | ----------------- | --------------------------------------- |
+| `userId`                | `"openclaw-user"` | 用户标识                                    |
+| `memCubeId`             | 同 userId          | 记忆空间 ID，用于隔离不同用户的记忆                     |
+| `memoryLimitNumber`     | 5                 | 回回时返回的记忆条数                              |
+| `preferenceLimitNumber` | 6                 | 回回时返回的偏好条数                              |
+| `maxMessageChars`       | 20000             | 单条消息截断长度                                |
+| `includeAssistant`      | true              | 保存记忆时是否包含助手回复                           |
 | `captureStrategy`       | `"last_turn"`     | `last_turn` 只存最后一轮，`full_session` 存整个会话 |
-| `timeoutMs`             | 5000              | API 请求超时（毫秒）                                |
-| `retries`               | 1                 | 请求失败重试次数                                    |
+| `timeoutMs`             | 5000              | API 请求超时（毫秒）                            |
+| `retries`               | 1                 | 请求失败重试次数                                |
 
 ---
 
