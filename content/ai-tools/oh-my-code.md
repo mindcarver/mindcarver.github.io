@@ -739,7 +739,7 @@ curl -s <installation-guide-url>
 # 然后按照指南手动配置
 ```
 
-> 安全警告：`ohmyopencode.com` 不是官方站点。Oh My OpenCode 是免费开源的，请到 GitHub 官方仓库下载，请勿在第三方站点输入支付信息。
+> 安全警告：Oh My OpenCode 是免费开源的，请到官方仓库下载，请勿在第三方站点输入支付信息。
 
 ### 卸载
 
