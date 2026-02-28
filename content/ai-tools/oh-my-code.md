@@ -8,12 +8,14 @@
 
 1. [核心概念](#核心概念)
 2. [两种工作模式](#两种工作模式)
-3. [命令详解](#命令详解)
-4. [Agent 系统](#agent-系统)
-5. [技能系统](#技能系统)
-6. [实用技巧](#实用技巧)
-7. [配置文件](#配置文件)
-8. [常见场景](#常见场景)
+3. [核心特性](#核心特性)
+4. [命令详解](#命令详解)
+5. [Agent 系统](#agent-系统)
+6. [技能系统](#技能系统)
+7. [实用技巧](#实用技巧)
+8. [配置文件](#配置文件)
+9. [常见场景](#常见场景)
+10. [安装与卸载](#安装与卸载)
 
 ---
 
@@ -139,6 +141,186 @@ Prometheus 生成详细计划并保存到：
 # 或指定特定计划
 /start-work 支付流程计划
 ```
+
+---
+
+## 核心特性
+
+### 🚪 IntentGate — 意图门
+
+真正行动前先分析用户真实意图，避免字面误解。
+
+```
+用户输入 → IntentGate 分析 → 真实意图 → 合适的 Agent
+         "优化登录"           "重写登录组件"    Frontend Architect
+```
+
+**核心能力：**
+- 🔍 深入分析用户请求背后的真实需求
+- 🎯 区分表面需求 vs 深层需求
+- 🚫 避免字面理解导致的错误行动
+- 📋 智能任务分类和路由
+
+---
+
+### 🔗 Hash-Anchored Edit Tool — 哈希锚定编辑
+
+解决 "Harness Problem" 的核心创新。每行代码带有内容哈希标签：
+
+```javascript
+11#VK| function hello() {
+22#XJ|   return "world";
+33#MB| }
+```
+
+**核心优势：**
+- ✅ 内容哈希验证每次修改
+- 🚫 零 stale-line 错误
+- 🔒 文件变更后自动拒绝编辑
+- 📈 成功率提升：6.7% → 68.3%
+
+**工作原理：**
+```
+1. Agent 读取文件 → 每行获得哈希标签 (LINE#ID)
+2. 编辑时引用标签 → 验证内容是否匹配
+3. 哈希不匹配 → 拒绝编辑，重新读取
+4. 哈希匹配 → 安全应用修改
+```
+
+---
+
+### 🛠️ LSP + AST-Grep — IDE 级精度
+
+| 功能 | 命令 | 用途 |
+|------|------|------|
+| **LSP 重命名** | `lsp_rename` | 跨文件符号重命名 |
+| **LSP 跳转** | `lsp_goto_definition` | 跳转到定义 |
+| **LSP 查找引用** | `lsp_find_references` | 查找所有引用 |
+| **LSP 诊断** | `lsp_diagnostics` | 预构建错误检查 |
+| **AST-Grep** | `ast_grep` | 模式感知的代码搜索 |
+
+**支持语言：** 25+ 种主流编程语言
+
+---
+
+### 🧠 Background Agents — 后台并行专家
+
+同时发射 5+ 个专家 Agent 并行工作：
+
+```
+┌─────────────────────────────────────┐
+│  Sisyphus (主控)                     │
+└──────┬───────────────────────────────┘
+       │
+       ├─→ Explore (代码搜索) ──────┐
+       ├─→ Librarian (文档查找) ────┤
+       ├─→ Oracle (架构审查) ───────┤ → 并行执行
+       ├─→ Hephaestus (代码实现) ───┤   上下文精简
+       └─→ Metis (计划咨询) ─────────┘   结果汇总
+```
+
+**核心优势：**
+- ⚡ 上下文保持精简
+- 🔄 结果准备好后汇总
+- 🚀 多倍效率提升
+
+---
+
+### 📚 Built-in MCPs — 内置 MCP 服务器
+
+| MCP | 功能 | 用途 |
+|-----|------|------|
+| **Exa** | Web 搜索 | 实时信息检索 |
+| **Context7** | 官方文档 | 技术文档查询 |
+| **Grep.app** | GitHub 搜索 | 开源代码搜索 |
+
+**始终在线**，无需额外配置。
+
+---
+
+### 🔌 Skill-Embedded MCPs — 技能嵌入式 MCP
+
+MCP 服务器不再占用上下文窗口：
+
+```
+传统方式:               技能嵌入式方式:
+┌─────────────┐         ┌─────────────┐
+│ Agent Context │         │ Agent Context │
+├─────────────┤         ├─────────────┤
+│ Work Task    │         │ Work Task    │
+│ + MCP Server │  ❌     │              │  ✅
+│ (huge)       │         │ Skill → MCP  │
+└─────────────┘         └─────────────┘
+```
+
+**核心优势：**
+- 🎯 按需启动 MCP
+- 📦 任务范围限定
+- 🗑️ 完成后自动清理
+
+---
+
+### ✅ Todo Enforcer — 任务强制执行器
+
+Agent 空闲？系统自动把它拉回任务：
+
+```
+Agent 进入空闲状态
+       ↓
+Todo Enforcer 检测到
+       ↓
+自动重新激活 Agent
+       ↓
+回到任务直到完成
+```
+
+**保证：** 任务必须完成，绝不半途而废。
+
+---
+
+### 💬 Comment Checker — 注释检查器
+
+确保代码注释干净专业：
+
+```
+❌ AI 生成的冗余注释:
+// This function returns the sum of two numbers
+function add(a, b) { return a + b; }
+
+✅ 经过 Comment Checker:
+function add(a, b) { return a + b; }
+```
+
+**核心能力：**
+- 🚫 移除 AI 生成的废话注释
+- ✅ 保留有价值的说明
+- 📖 让代码读起来像资深开发者写的
+
+---
+
+### 🖥️ Tmux Integration — 完整交互终端
+
+Agent 停留在会话中，支持所有交互式工具：
+
+| 功能 | 支持 |
+|------|------|
+| **REPLs** | Python, Node, IRB... |
+| **Debuggers** | gdb, lldb... |
+| **TUI Apps** | htop, vim, tmux... |
+| **Interactive Shell** | 全部支持 |
+
+---
+
+### 🤖 Agent 分类映射
+
+Agent 不选模型，选任务类型：
+
+| Category | 用途 | 自动映射模型 |
+|----------|------|-------------|
+| `visual-engineering` | 前端、UI/UX、设计 | 创意模型 |
+| `deep` | 自主研究 + 执行 | 推理模型 |
+| `quick` | 单文件修改、拼写 | 快速模型 |
+| `ultrabrain` | 复杂逻辑、架构决策 | 智慧模型 |
 
 ---
 
@@ -538,6 +720,28 @@ Sisyphus 分析任务范围 → 涉及 src/components/Button
 
 ---
 
+#### Metis — 计划顾问
+
+| 属性 | 描述 |
+|------|------|
+| 默认模型 | claude-opus-4-6 / kimi-k2.5 / glm-5 |
+| 角色定位 | 计划顾问 |
+
+**核心特点：**
+- 📋 **计划咨询** — 审查和优化执行计划
+- 🔄 **迭代改进** — 持续完善计划细节
+- 🎯 **可行性评估** — 评估计划执行难度
+- 📊 **资源评估** — 分析所需资源
+
+**适合：**
+- 审查 Prometheus 生成的计划
+- 优化执行步骤
+- 识别潜在风险
+
+**调用：** Prometheus 自动调用，或 `@metis`
+
+---
+
 ### 子 Agent (学科专家)
 
 #### Oracle — 只读咨询顾问
@@ -608,6 +812,25 @@ Sisyphus 分析任务范围 → 涉及 src/components/Button
 - 跨层级的模式发现
 
 **调用：** `@explore`
+
+---
+
+#### Multimodal Looker — 多模态观察者
+
+| 属性 | 描述 |
+|------|------|
+| 能力 | 图像/视觉内容理解 |
+| 用途 | 截图分析、UI 审查、图表理解 |
+
+**核心特点：**
+- 👁️ **图像理解** — 分析截图和设计稿
+- 🎨 **UI 审查** — 视觉设计评估
+- 📊 **图表分析** — 数据可视化内容理解
+
+**适合：**
+- 分析网页截图
+- 审查 UI 设计
+- 理解图表内容
 
 ---
 
@@ -883,3 +1106,100 @@ ulw 优化首页加载速度，目标 LCP < 2s
 3. **研究性问题** → 并行启动 `Explore` + `Librarian`
 4. **困难 Bug** → 先自己试，2 次失败后咨询 `Oracle`
 5. **架构决策** → 直接咨询 `Oracle`
+
+---
+
+## 安装与卸载
+
+### 安装
+
+**推荐方式（让 Agent 帮你安装）：**
+
+将以下提示词粘贴给任何 LLM Agent（Claude Code, Cursor, AmpCode 等）：
+
+```
+Install and configure oh-my-opencode by following the instructions here:
+https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/refs/heads/dev/docs/guide/installation.md
+```
+
+**手动安装（不推荐，容易出错）：**
+
+```bash
+# 获取安装指南
+curl -s https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/refs/heads/dev/docs/guide/installation.md
+
+# 然后按照指南手动配置（不推荐）
+```
+
+> ⚠️ **安全警告**: `ohmyopencode.com` 不是官方站点！
+> - Oh My OpenCode 是**免费开源**的
+> - 官方下载: https://github.com/code-yeongyu/oh-my-opencode/releases
+> - 请勿在第三方站点输入支付信息
+
+### 卸载
+
+**步骤 1：从 OpenCode 配置中移除插件**
+
+编辑 `~/.config/opencode/opencode.json`（或 `opencode.jsonc`），从 `plugin` 数组中删除 `"oh-my-opencode"`：
+
+```bash
+# 使用 jq 自动处理
+jq '.plugin = [.plugin[] | select(. != "oh-my-opencode")]' \
+    ~/.config/opencode/opencode.json > /tmp/oc.json && \
+    mv /tmp/oc.json ~/.config/opencode/opencode.json
+```
+
+**步骤 2：删除配置文件（可选）**
+
+```bash
+# 删除用户配置
+rm -f ~/.config/opencode/oh-my-opencode.json ~/.config/opencode/oh-my-opencode.jsonc
+
+# 删除项目配置（如果存在）
+rm -f .opencode/oh-my-opencode.json .opencode/oh-my-opencode.jsonc
+```
+
+**步骤 3：验证卸载**
+
+```bash
+opencode --version
+# 插件应该不再加载
+```
+
+---
+
+## 模型推荐
+
+### 经济实惠组合
+
+即使只用以下订阅，ultrawork 也能很好地工作：
+
+| 服务 | 订阅 | 价格 |
+|------|------|------|
+| ChatGPT | Subscription | $20/月 |
+| Kimi Code | Subscription | $0.99/月（首月） |
+| GLM Coding | Plan | $10/月 |
+
+> 💡 如果你符合按 Token 付费的条件，使用 Kimi 和 Gemini 模型不会花费太多。
+
+### Agent-模型映射
+
+| Agent | 推荐模型 | 特点 |
+|-------|----------|------|
+| Sisyphus | claude-opus-4-6 / kimi-k2.5 / glm-5 | 强大编排能力 |
+| Hephaestus | gpt-5.3-codex | 代码实现专家 |
+| Prometheus | claude-opus-4-6 / kimi-k2.5 / glm-5 | 深度规划思考 |
+| Oracle | 高质量推理模型 | 架构分析 |
+| Librarian | 便宜模型 | 文档搜索 |
+| Explore | 免费模型 | 代码库搜索 |
+
+### 多模型支持
+
+Oh My OpenCode 不锁定任何单一提供商：
+
+- 🤖 **Claude / Kimi / GLM** — 用于编排
+- 🧠 **GPT** — 用于推理
+- ⚡ **Minimax** — 用于速度
+- 🎨 **Gemini** — 用于创意
+
+**未来不是选择单一赢家——而是协调所有模型。**
