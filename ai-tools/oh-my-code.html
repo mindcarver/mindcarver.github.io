@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>oh-my-code</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="oh-my-code"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="oh-my-code"/><meta name="twitter:description" content="Oh My OpenCode 使用指南 把单一的 AI 编程助手变成一个自律的 AI 开发军团 目录 核心概念 两种工作模式 核心特性 命令详解 Agent 系统 技能系统 实用技巧 配置文件 常见场景 安装与卸载 核心概念 什么是 Oh My OpenCode？ Oh My OpenCode 是 OpenCode 的插件，通过多 Agent 协作系统，将单一的 AI 编程助手升级为具备高度自主性的 AI 开发军团。 关键词：ultrawork / ulw 在提示词中加入 ultrawork 或 ulw，即可触发全自动工作模式： 能力说明自动探索分析代码库结构和依赖关系自动计划拆解任务，制定执..."/><meta property="og:description" content="Oh My OpenCode 使用指南 把单一的 AI 编程助手变成一个自律的 AI 开发军团 目录 核心概念 两种工作模式 核心特性 命令详解 Agent 系统 技能系统 实用技巧 配置文件 常见场景 安装与卸载 核心概念 什么是 Oh My OpenCode？ Oh My OpenCode 是 OpenCode 的插件，通过多 Agent 协作系统，将单一的 AI 编程助手升级为具备高度自主性的 AI 开发军团。 关键词：ultrawork / ulw 在提示词中加入 ultrawork 或 ulw，即可触发全自动工作模式： 能力说明自动探索分析代码库结构和依赖关系自动计划拆解任务，制定执..."/><meta property="og:image:alt" content="Oh My OpenCode 使用指南 把单一的 AI 编程助手变成一个自律的 AI 开发军团 目录 核心概念 两种工作模式 核心特性 命令详解 Agent 系统 技能系统 实用技巧 配置文件 常见场景 安装与卸载 核心概念 什么是 Oh My OpenCode？ Oh My OpenCode 是 OpenCode 的插件，通过多 Agent 协作系统，将单一的 AI 编程助手升级为具备高度自主性的 AI 开发军团。 关键词：ultrawork / ulw 在提示词中加入 ultrawork 或 ulw，即可触发全自动工作模式： 能力说明自动探索分析代码库结构和依赖关系自动计划拆解任务，制定执..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/ai-tools/oh-my-code"/><meta property="twitter:url" content="https://https//mindcarver.top/ai-tools/oh-my-code"/><link rel="icon" href="../static/icon.png"/><meta name="description" content="Oh My OpenCode 使用指南 把单一的 AI 编程助手变成一个自律的 AI 开发军团 目录 核心概念 两种工作模式 核心特性 命令详解 Agent 系统 技能系统 实用技巧 配置文件 常见场景 安装与卸载 核心概念 什么是 Oh My OpenCode？ Oh My OpenCode 是 OpenCode 的插件，通过多 Agent 协作系统，将单一的 AI 编程助手升级为具备高度自主性的 AI 开发军团。 关键词：ultrawork / ulw 在提示词中加入 ultrawork 或 ulw，即可触发全自动工作模式： 能力说明自动探索分析代码库结构和依赖关系自动计划拆解任务，制定执..."/><meta name="generator" content="Quartz"/><link href="../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiL2hvbWUvcnVubmVyL3dvcmsvbWluZGNhcnZlci5naXRodWIuaW8vbWluZGNhcnZlci5naXRodWIuaW8vcXVhcnR6L2NvbXBvbmVudHMvc3R5bGVzIiwic291cmNlcyI6WyJtZXJtYWlkLmlubGluZS5zY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFHRjtFQUNFOzs7QUFLRjtFQUNFO0VBQ0E7OztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFOztBQUdGO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBOztBQUdGO0VBQ0U7RUFDQTs7QUFJSjtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTs7QUFJRjtFQUNFO0VBQ0E7RUFDQSIsInNvdXJjZXNDb250ZW50IjpbIi5leHBhbmQtYnV0dG9uIHtcbiAgcG9zaXRpb246IGFic29sdXRlO1xuICBkaXNwbGF5OiBmbGV4O1xuICBmbG9hdDogcmlnaHQ7XG4gIHBhZGRpbmc6IDAuNHJlbTtcbiAgbWFyZ2luOiAwLjNyZW07XG4gIHJpZ2h0OiAwOyAvLyBOT1RFOiByaWdodCB3aWxsIGJlIHNldCBpbiBtZXJtYWlkLmlubGluZS50c1xuICBjb2xvcjogdmFyKC0tZ3JheSk7XG4gIGJvcmRlci1jb2xvcjogdmFyKC0tZGFyayk7XG4gIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgYm9yZGVyOiAxcHggc29saWQ7XG4gIGJvcmRlci1yYWRpdXM6IDVweDtcbiAgb3BhY2l0eTogMDtcbiAgdHJhbnNpdGlvbjogMC4ycztcblxuICAmID4gc3ZnIHtcbiAgICBmaWxsOiB2YXIoLS1saWdodCk7XG4gICAgZmlsdGVyOiBjb250cmFzdCgwLjMpO1xuICB9XG5cbiAgJjpob3ZlciB7XG4gICAgY3Vyc29yOiBwb2ludGVyO1xuICAgIGJvcmRlci1jb2xvcjogdmFyKC0tc2Vjb25kYXJ5KTtcbiAgfVxuXG4gICY6Zm9jdXMge1xuICAgIG91dGxpbmU6IDA7XG4gIH1cbn1cblxucHJlIHtcbiAgJjpob3ZlciA+IC5leHBhbmQtYnV0dG9uIHtcbiAgICBvcGFjaXR5OiAxO1xuICAgIHRyYW5zaXRpb246IDAuMnM7XG4gIH1cbn1cblxuI21lcm1haWQtY29udGFpbmVyIHtcbiAgcG9zaXRpb246IGZpeGVkO1xuICBjb250YWluOiBsYXlvdXQ7XG4gIHotaW5kZXg6IDk5OTtcbiAgbGVmdDogMDtcbiAgdG9wOiAwO1xuICB3aWR0aDogMTAwdnc7XG4gIGhlaWdodDogMTAwdmg7XG4gIG92ZXJmbG93OiBoaWRkZW47XG4gIGRpc3BsYXk6IG5vbmU7XG4gIGJhY2tkcm9wLWZpbHRlcjogYmx1cig0cHgpO1xuICBiYWNrZ3JvdW5kOiByZ2JhKDAsIDAsIDAsIDAuNSk7XG5cbiAgJi5hY3RpdmUge1xuICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcbiAgfVxuXG4gICYgPiAjbWVybWFpZC1zcGFjZSB7XG4gICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICBiYWNrZ3JvdW5kLWNvbG9yOiB2YXIoLS1saWdodCk7XG4gICAgYm9yZGVyLXJhZGl1czogNXB4O1xuICAgIHBvc2l0aW9uOiBmaXhlZDtcbiAgICB0b3A6IDUwJTtcbiAgICBsZWZ0OiA1MCU7XG4gICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7XG4gICAgaGVpZ2h0OiA4MHZoO1xuICAgIHdpZHRoOiA4MHZ3O1xuICAgIG92ZXJmbG93OiBoaWRkZW47XG5cbiAgICAmID4gLm1lcm1haWQtY29udGVudCB7XG4gICAgICBwb3NpdGlvbjogcmVsYXRpdmU7XG4gICAgICB0cmFuc2Zvcm0tb3JpZ2luOiAwIDA7XG4gICAgICB0cmFuc2l0aW9uOiB0cmFuc2Zvcm0gMC4xcyBlYXNlO1xuICAgICAgb3ZlcmZsb3c6IHZpc2libGU7XG4gICAgICBtaW4taGVpZ2h0OiAyMDBweDtcbiAgICAgIG1pbi13aWR0aDogMjAwcHg7XG5cbiAgICAgIHByZSB7XG4gICAgICAgIG1hcmdpbjogMDtcbiAgICAgICAgYm9yZGVyOiBub25lO1xuICAgICAgfVxuXG4gICAgICBzdmcge1xuICAgICAgICBtYXgtd2lkdGg6IG5vbmU7XG4gICAgICAgIGhlaWdodDogYXV0bztcbiAgICAgIH1cbiAgICB9XG5cbiAgICAmID4gLm1lcm1haWQtY29udHJvbHMge1xuICAgICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgICAgYm90dG9tOiAyMHB4O1xuICAgICAgcmlnaHQ6IDIwcHg7XG4gICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgZ2FwOiA4cHg7XG4gICAgICBwYWRkaW5nOiA4cHg7XG4gICAgICBiYWNrZ3JvdW5kOiB2YXIoLS1saWdodCk7XG4gICAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgICAgYm9yZGVyLXJhZGl1czogNnB4O1xuICAgICAgYm94LXNoYWRvdzogMCAycHggNHB4IHJnYmEoMCwgMCwgMCwgMC4xKTtcbiAgICAgIHotaW5kZXg6IDI7XG5cbiAgICAgIC5tZXJtYWlkLWNvbnRyb2wtYnV0dG9uIHtcbiAgICAgICAgZGlzcGxheTogZmxleDtcbiAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjtcbiAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XG4gICAgICAgIHdpZHRoOiAzMnB4O1xuICAgICAgICBoZWlnaHQ6IDMycHg7XG4gICAgICAgIHBhZGRpbmc6IDA7XG4gICAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgICAgY29sb3I6IHZhcigtLWRhcmspO1xuICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7XG4gICAgICAgIGN1cnNvcjogcG9pbnRlcjtcbiAgICAgICAgZm9udC1zaXplOiAxNnB4O1xuICAgICAgICBmb250LWZhbWlseTogdmFyKC0tYm9keUZvbnQpO1xuICAgICAgICB0cmFuc2l0aW9uOiBhbGwgMC4ycyBlYXNlO1xuXG4gICAgICAgICY6aG92ZXIge1xuICAgICAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICAgIH1cblxuICAgICAgICAmOmFjdGl2ZSB7XG4gICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKDFweCk7XG4gICAgICAgIH1cblxuICAgICAgICAvLyBTdHlsZSB0aGUgcmVzZXQgYnV0dG9uIGRpZmZlcmVudGx5XG4gICAgICAgICY6bnRoLWNoaWxkKDIpIHtcbiAgICAgICAgICB3aWR0aDogYXV0bztcbiAgICAgICAgICBwYWRkaW5nOiAwIDEycHg7XG4gICAgICAgICAgZm9udC1zaXplOiAxNHB4O1xuICAgICAgICB9XG4gICAgICB9XG4gICAgfVxuICB9XG59XG4iXX0= */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="ai-tools/oh-my-code"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-37"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-37" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../ai-tools/">ai tools</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>oh my code</a></div></nav><h1 class="article-title">oh-my-code</h1><p show-comma="true" class="content-meta"><time datetime="2026-03-03T07:52:08.171Z">2026年3月03日</time><span>19分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="oh-my-opencode-使用指南">Oh My OpenCode 使用指南<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#oh-my-opencode-使用指南" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p>把单一的 AI 编程助手变成一个自律的 AI 开发军团</p>
+</blockquote>
+<hr/>
+<h2 id="目录">目录<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#目录" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ol>
+<li><a href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5" class="internal alias">核心概念</a></li>
+<li><a href="#%E4%B8%A4%E7%A7%8D%E5%B7%A5%E4%BD%9C%E6%A8%A1%E5%BC%8F" class="internal alias">两种工作模式</a></li>
+<li><a href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7" class="internal alias">核心特性</a></li>
+<li><a href="#%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3" class="internal alias">命令详解</a></li>
+<li><a href="#agent-%E7%B3%BB%E7%BB%9F" class="internal alias">Agent 系统</a></li>
+<li><a href="#%E6%8A%80%E8%83%BD%E7%B3%BB%E7%BB%9F" class="internal alias">技能系统</a></li>
+<li><a href="#%E5%AE%9E%E7%94%A8%E6%8A%80%E5%B7%A7" class="internal alias">实用技巧</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6" class="internal alias">配置文件</a></li>
+<li><a href="#%E5%B8%B8%E8%A7%81%E5%9C%BA%E6%99%AF" class="internal alias">常见场景</a></li>
+<li><a href="#%E5%AE%89%E8%A3%85%E4%B8%8E%E5%8D%B8%E8%BD%BD" class="internal alias">安装与卸载</a></li>
+</ol>
+<hr/>
+<h2 id="核心概念">核心概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="什么是-oh-my-opencode">什么是 Oh My OpenCode？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#什么是-oh-my-opencode" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Oh My OpenCode 是 OpenCode 的插件，通过多 Agent 协作系统，将单一的 AI 编程助手升级为具备高度自主性的 AI 开发军团。</p>
+<h3 id="关键词ultrawork--ulw">关键词：<code>ultrawork</code> / <code>ulw</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#关键词ultrawork--ulw" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在提示词中加入 <code>ultrawork</code> 或 <code>ulw</code>，即可触发全自动工作模式：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>能力</th><th>说明</th></tr></thead><tbody><tr><td>自动探索</td><td>分析代码库结构和依赖关系</td></tr><tr><td>自动计划</td><td>拆解任务，制定执行步骤</td></tr><tr><td>自动分配</td><td>调用专家 Agent 处理各自专长</td></tr><tr><td>自动验证</td><td>运行测试和诊断确保质量</td></tr><tr><td>持续迭代</td><td>任务未完成则自动优化直到完成</td></tr></tbody></table></div>
+<hr/>
+<h2 id="两种工作模式">两种工作模式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#两种工作模式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="ultrawork-模式">Ultrawork 模式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#ultrawork-模式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>适合快速任务、明确目标、信任 AI 自主决策的场景。</p>
+<p>在提示词中加入 <code>ulw</code> 或 <code>ultrawork</code>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 功能开发</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 添加用户认证功能到我的</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> Next.js</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 应用</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># Bug 修复</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 修复所有测试失败</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 代码重构</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 重构登录页面，添加更好的</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> UI</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 性能优化</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 优化数据库查询性能</span></span></code></pre></figure>
+<p><strong>工作流程：</strong></p>
+<pre><code>用户输入 ulw 任务
+    ↓
+Sisyphus 接收，分析意图
+    ↓
+自动探索代码库模式
+    ↓
+并行调用专家 Agent (Hephaestus, Oracle, Librarian...)
+    ↓
+验证结果（测试、诊断）
+    ↓
+未完成？继续迭代
+    ↓
+100% 完成 → 结束
+</code></pre>
+<h3 id="prometheus-模式">Prometheus 模式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#prometheus-模式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>适合复杂项目、关键生产变更、需要文档化决策的场景。</p>
+<p><strong>执行步骤：</strong></p>
+<ol>
+<li>
+<p><strong>进入 Prometheus 模式</strong></p>
+<p>在 OpenCode TUI 中按 Tab 键</p>
+</li>
+<li>
+<p><strong>描述工作</strong></p>
+<pre><code>我要为电商系统添加完整的支付流程，支持多种支付方式
+</code></pre>
+</li>
+<li>
+<p><strong>接受采访</strong></p>
+<p>Prometheus 会通过问题来明确需求：</p>
+<pre><code>Prometheus: 需要支持哪些支付方式？
+你: 支付宝、微信支付、信用卡
+
+Prometheus: 是否需要支付失败重试机制？
+你: 是的，最多重试 3 次
+
+Prometheus: 订单状态如何流转？
+你: 待支付 → 已支付 → 发货中 → 已完成
+</code></pre>
+</li>
+<li>
+<p><strong>确认计划</strong></p>
+<p>Prometheus 生成详细计划并保存到 <code>.sisyphus/plans/支付流程计划.md</code></p>
+<p>计划包含：</p>
+<ul>
+<li>任务列表</li>
+<li>验收标准</li>
+<li>风险评估</li>
+<li>技术选型建议</li>
+</ul>
+</li>
+<li>
+<p><strong>执行计划</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 执行 Prometheus 生成的计划</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/start-work</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 或指定特定计划</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/start-work</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 支付流程计划</span></span></code></pre></figure>
+</li>
+</ol>
+<hr/>
+<h2 id="核心特性">核心特性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心特性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="intentgate--意图门">IntentGate — 意图门<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#intentgate--意图门" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>真正行动前先分析用户真实意图，避免字面误解。</p>
+<pre><code>用户输入 → IntentGate 分析 → 真实意图 → 合适的 Agent
+     &quot;优化登录&quot;        &quot;重写登录组件&quot;   Frontend Architect
+</code></pre>
+<p><strong>功能：</strong></p>
+<ul>
+<li>深入分析用户请求背后的真实需求</li>
+<li>区分表面需求 vs 深层需求</li>
+<li>避免字面理解导致的错误行动</li>
+<li>智能任务分类和路由</li>
+</ul>
+<h3 id="hash-anchored-edit-tool--哈希锚定编辑">Hash-Anchored Edit Tool — 哈希锚定编辑<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#hash-anchored-edit-tool--哈希锚定编辑" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>每行代码带有内容哈希标签，解决编辑失效问题：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="javascript" data-theme="github-light github-dark"><code data-language="javascript" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">11</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">#</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">VK</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> hello</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() {</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">22</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">#</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">XJ</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">   return</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;world&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">33</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">#</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">MB</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> }</span></span></code></pre></figure>
+<p><strong>优势：</strong></p>
+<ul>
+<li>内容哈希验证每次修改</li>
+<li>零 stale-line 错误</li>
+<li>文件变更后自动拒绝编辑</li>
+<li>成功率从 6.7% 提升到 68.3%</li>
+</ul>
+<p><strong>工作原理：</strong></p>
+<ol>
+<li>Agent 读取文件，每行获得哈希标签 (LINE#ID)</li>
+<li>编辑时引用标签，验证内容是否匹配</li>
+<li>哈希不匹配则拒绝编辑，重新读取</li>
+<li>哈希匹配则安全应用修改</li>
+</ol>
+<h3 id="lsp--ast-grep">LSP + AST-Grep<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#lsp--ast-grep" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>功能</th><th>命令</th><th>用途</th></tr></thead><tbody><tr><td>LSP 重命名</td><td><code>lsp_rename</code></td><td>跨文件符号重命名</td></tr><tr><td>LSP 跳转</td><td><code>lsp_goto_definition</code></td><td>跳转到定义</td></tr><tr><td>LSP 查找引用</td><td><code>lsp_find_references</code></td><td>查找所有引用</td></tr><tr><td>LSP 诊断</td><td><code>lsp_diagnostics</code></td><td>预构建错误检查</td></tr><tr><td>AST-Grep</td><td><code>ast_grep</code></td><td>模式感知的代码搜索</td></tr></tbody></table></div>
+<p>支持 25+ 种主流编程语言。</p>
+<h3 id="background-agents--后台并行专家">Background Agents — 后台并行专家<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#background-agents--后台并行专家" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>同时发射多个专家 Agent 并行工作：</p>
+<pre><code>Sisyphus (主控)
+    ├─→ Explore (代码搜索)
+    ├─→ Librarian (文档查找)
+    ├─→ Oracle (架构审查)
+    ├─→ Hephaestus (代码实现)
+    └─→ Metis (计划咨询)
+</code></pre>
+<p><strong>优势：</strong></p>
+<ul>
+<li>上下文保持精简</li>
+<li>结果准备好后汇总</li>
+<li>效率多倍提升</li>
+</ul>
+<h3 id="built-in-mcps">Built-in MCPs<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#built-in-mcps" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>MCP</th><th>功能</th><th>用途</th></tr></thead><tbody><tr><td>Exa</td><td>Web 搜索</td><td>实时信息检索</td></tr><tr><td>Context7</td><td>官方文档</td><td>技术文档查询</td></tr><tr><td>Grep.app</td><td>GitHub 搜索</td><td>开源代码搜索</td></tr></tbody></table></div>
+<p>始终在线，无需额外配置。</p>
+<h3 id="skill-embedded-mcps">Skill-Embedded MCPs<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#skill-embedded-mcps" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>MCP 服务器不再占用上下文窗口。技能按需启动自己的 MCP，完成后自动清理。</p>
+<h3 id="todo-enforcer">Todo Enforcer<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#todo-enforcer" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Agent 空闲时，系统自动把它拉回任务，确保任务完成。</p>
+<h3 id="comment-checker">Comment Checker<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#comment-checker" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>移除 AI 生成的冗余注释，保留有价值的说明。</p>
+<p><strong>示例：</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="javascript" data-theme="github-light github-dark"><code data-language="javascript" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 之前 (AI 生成的冗余注释)</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// This function returns the sum of two numbers</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> add</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">a</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">b</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> a </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> b; }</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 之后 (经过 Comment Checker)</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> add</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">a</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">b</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) { </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> a </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> b; }</span></span></code></pre></figure>
+<h3 id="tmux-integration">Tmux Integration<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#tmux-integration" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Agent 停留在会话中，支持所有交互式工具：REPLs (Python, Node, IRB)、Debuggers (gdb, lldb)、TUI Apps (htop, vim, tmux)。</p>
+<h3 id="agent-分类映射">Agent 分类映射<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-分类映射" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Agent 不选模型，选任务类型：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>Category</th><th>用途</th><th>自动映射模型</th></tr></thead><tbody><tr><td><code>visual-engineering</code></td><td>前端、UI/UX、设计</td><td>创意模型</td></tr><tr><td><code>deep</code></td><td>自主研究 + 执行</td><td>推理模型</td></tr><tr><td><code>quick</code></td><td>单文件修改、拼写</td><td>快速模型</td></tr><tr><td><code>ultrabrain</code></td><td>复杂逻辑、架构决策</td><td>智慧模型</td></tr></tbody></table></div>
+<hr/>
+<h2 id="命令详解">命令详解<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#命令详解" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="核心命令">核心命令<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心命令" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>命令</th><th>功能</th><th>示例</th></tr></thead><tbody><tr><td><code>ulw</code> / <code>ultrawork</code></td><td>全自动工作模式</td><td><code>ulw 添加认证</code></td></tr><tr><td><code>/start-work</code></td><td>执行 Prometheus 计划</td><td><code>/start-work</code></td></tr><tr><td><code>/init-deep</code></td><td>生成项目上下文文件</td><td><code>/init-deep</code></td></tr><tr><td><code>/ulw-loop</code></td><td>Ultrawork 持续循环</td><td><code>/ulw-loop &quot;构建 API&quot;</code></td></tr><tr><td><code>/ralph-loop</code></td><td>自引用开发循环</td><td><code>/ralph-loop &quot;重构模块&quot;</code></td></tr><tr><td><code>/cancel-ralph</code></td><td>取消 Ralph Loop</td><td><code>/cancel-ralph</code></td></tr></tbody></table></div>
+<h3 id="init-deep--深度初始化"><code>/init-deep</code> — 深度初始化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#init-deep--深度初始化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在项目中生成层级化的 <code>AGENTS.md</code> 文件系统。</p>
+<p><strong>工作原理：</strong></p>
+<p><code>/init-deep</code> 遍历项目目录结构，在每个关键层级创建 <code>AGENTS.md</code> 文件：</p>
+<pre><code>项目根目录 AGENTS.md → 项目整体架构、技术栈、全局规范
+        ↓
+src/AGENTS.md → 模块职责、依赖关系、编码约定
+        ↓
+src/components/AGENTS.md → 组件设计模式、通信约定
+</code></pre>
+<p><strong>用法：</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 基础用法</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/init-deep</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 强制创建新文件</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/init-deep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --create-new</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 限制深度</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/init-deep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --max-depth=3</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 排除目录</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/init-deep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --exclude=node_modules,dist,.git</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 仅更新已有文件</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/init-deep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --update-only</span></span></code></pre></figure>
+<p><strong>生成的文件结构：</strong></p>
+<pre><code>my-project/
+├── AGENTS.md              # 项目全局上下文
+├── src/
+│   ├── AGENTS.md          # 模块级上下文
+│   └── components/
+│       └── AGENTS.md      # 组件级上下文
+</code></pre>
+<p><strong>何时使用：</strong></p>
+<p>适合新项目初始化、接手遗留项目、大型重构前、团队协作项目。</p>
+<p>不适合简单单文件脚本、临时测试项目、个人熟悉的小项目。</p>
+<p><strong>不同项目类型策略：</strong></p>
+<ul>
+<li>前端项目：<code>/init-deep --max-depth=4</code>，重点关注 components、lib、hooks</li>
+<li>后端项目：<code>/init-deep --max-depth=5</code>，重点关注 controllers、services、models、routes</li>
+<li>Monorepo：<code>/init-deep</code>，为每个 package 单独生成 AGENTS.md</li>
+</ul>
+<h3 id="ulw-loop--持续工作循环"><code>/ulw-loop</code> — 持续工作循环<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#ulw-loop--持续工作循环" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>让 AI 持续工作直到任务 100% 完成。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ulw-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;实现完整的用户管理系统&quot;</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ulw-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;重构所有旧代码&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --max-iterations=50</span></span></code></pre></figure>
+<h3 id="ralph-loop--自引用循环"><code>/ralph-loop</code> — 自引用循环<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#ralph-loop--自引用循环" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>更智能的循环，AI 会自我评估和改进。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 开始循环</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ralph-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;构建一个博客系统&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 设置最大迭代次数</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ralph-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;优化性能&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --max-iterations=100</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 停止循环</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/cancel-ralph</span></span></code></pre></figure>
+<hr/>
+<h2 id="agent-系统">Agent 系统<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-系统" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="主-agent">主 Agent<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主-agent" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="sisyphus--主指挥官">Sisyphus — 主指挥官<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#sisyphus--主指挥官" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>默认模型</td><td>claude-opus-4-6 / kimi-k2.5 / glm-5</td></tr><tr><td>思考预算</td><td>32,000 tokens</td></tr><tr><td>角色定位</td><td>主编排者</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>意图门：真正行动前先分析用户真实意图</li>
+<li>编排大师：调度专家团队</li>
+<li>激进并行：同时发射多个 Agent 并行工作</li>
+<li>Todo 强制执行：确保任务必须完成</li>
+<li>绝不半途而废：任务完成前绝不停止</li>
+</ul>
+<h4 id="hephaestus--自主深度工作者">Hephaestus — 自主深度工作者<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#hephaestus--自主深度工作者" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>默认模型</td><td>gpt-5.3-codex</td></tr><tr><td>角色定位</td><td>工匠</td></tr><tr><td>运行模式</td><td>完全自主</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>只需给目标，不给具体做法</li>
+<li>自动探索，理解代码库模式</li>
+<li>从头到尾独立执行</li>
+<li>专注于单一复杂任务</li>
+</ul>
+<h4 id="prometheus--战略规划师">Prometheus — 战略规划师<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#prometheus--战略规划师" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>默认模型</td><td>claude-opus-4-6 / kimi-k2.5 / glm-5</td></tr><tr><td>思考预算</td><td>32,000+ tokens</td></tr><tr><td>角色定位</td><td>规划者</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>面试模式：采访用户，深挖需求</li>
+<li>生成工作计划：产出计划文件</li>
+<li>只规划不实现：系统层面禁止修改代码</li>
+<li>集成研究 Agent：自动调用专家收集信息</li>
+</ul>
+<p><strong>触发方式：</strong> <code>/start-work</code> 命令或按 <code>[Tab]</code> 键</p>
+<h4 id="metis--计划顾问">Metis — 计划顾问<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#metis--计划顾问" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>默认模型</td><td>claude-opus-4-6 / kimi-k2.5 / glm-5</td></tr><tr><td>角色定位</td><td>计划顾问</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>审查和优化执行计划</li>
+<li>迭代改进计划细节</li>
+<li>评估计划执行难度</li>
+<li>分析所需资源</li>
+</ul>
+<p><strong>调用：</strong> Prometheus 自动调用，或 <code>@metis</code></p>
+<h3 id="子-agent">子 Agent<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#子-agent" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="oracle--只读咨询顾问">Oracle — 只读咨询顾问<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#oracle--只读咨询顾问" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>成本</td><td>昂贵</td></tr><tr><td>权限</td><td>只读，不修改文件</td></tr><tr><td>模型选择</td><td>高质量推理模型</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>深度架构分析</li>
+<li>只读咨询，不给建议</li>
+<li>安全/性能审查</li>
+<li>困难调试（2 次以上修复失败后）</li>
+</ul>
+<p><strong>调用：</strong> <code>@oracle</code></p>
+<p><strong>适合：</strong></p>
+<ul>
+<li>复杂架构决策咨询</li>
+<li>完成重要工作后的自我审查</li>
+<li>困难 Bug 的诊断（多次尝试失败后）</li>
+<li>多系统权衡分析</li>
+</ul>
+<h4 id="librarian--参考文献搜索员">Librarian — 参考文献搜索员<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#librarian--参考文献搜索员" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>成本</td><td>便宜</td></tr><tr><td>搜索范围</td><td>外部资源</td></tr><tr><td>工具</td><td>GitHub CLI, Context7, Web Search</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>搜索外部资源：官方文档、OSS 实现、API 示例</li>
+<li>多仓库分析</li>
+<li>最佳实践查找</li>
+<li>后台并行</li>
+</ul>
+<p><strong>调用：</strong> <code>@librarian</code></p>
+<h4 id="explore--上下文-grep">Explore — 上下文 Grep<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#explore--上下文-grep" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>成本</td><td>免费</td></tr><tr><td>搜索范围</td><td>当前代码库</td></tr><tr><td>定位</td><td>代码模式发现</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>上下文感知搜索</li>
+<li>跨层级的代码模式识别</li>
+<li>后台并行</li>
+<li>多角度搜索</li>
+</ul>
+<p><strong>调用：</strong> <code>@explore</code></p>
+<h4 id="multimodal-looker--多模态观察者">Multimodal Looker — 多模态观察者<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#multimodal-looker--多模态观察者" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>属性</th><th>描述</th></tr></thead><tbody><tr><td>能力</td><td>图像/视觉内容理解</td></tr><tr><td>用途</td><td>截图分析、UI 审查、图表理解</td></tr></tbody></table></div>
+<p><strong>特点：</strong></p>
+<ul>
+<li>分析截图和设计稿</li>
+<li>视觉设计评估</li>
+<li>数据可视化内容理解</li>
+</ul>
+<h3 id="agent-调用语法">Agent 调用语法<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-调用语法" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>使用 <code>@agent-name</code> 直接调用专家 Agent：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 让 Oracle 审查架构</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">@oracle</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 审查这个设计并提议架构方案</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 让 Librarian 查找实现模式</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">@librarian</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 这个功能是如何实现的？找找类似模式</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 让 Explore 搜索文件</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">@explore</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 找所有支付相关的文件</span></span></code></pre></figure>
+<hr/>
+<h2 id="技能系统">技能系统<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#技能系统" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="内置技能">内置技能<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#内置技能" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>技能</th><th>功能</th><th>使用场景</th></tr></thead><tbody><tr><td><code>playwright</code></td><td>浏览器自动化</td><td>网页测试、截图、交互</td></tr><tr><td><code>agent-browser</code></td><td>Agent 专用浏览器</td><td>爬虫、表单填写</td></tr><tr><td><code>git-master</code></td><td>Git 专家</td><td>原子提交、rebase 操作</td></tr><tr><td><code>frontend-ui-ux</code></td><td>UI/UX 设计</td><td>前端界面设计</td></tr></tbody></table></div>
+<h3 id="agent-browser-使用示例"><code>agent-browser</code> 使用示例<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-browser-使用示例" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 打开网页</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> open</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">网</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">址</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 获取页面快照（带元素引用）</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> snapshot</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> -i</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 输出: textbox &quot;Email&quot; [ref=e1], button &quot;Submit&quot; [ref=e3]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 填写表单</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> fill</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> @e1</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;user@example.com&quot;</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> fill</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> @e2</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;password123&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 点击按钮</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> click</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> @e3</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 等待加载完成</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> wait</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --load</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> networkidle</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 截图</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> screenshot</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> result.png</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 关闭浏览器</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">agent-browser</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> close</span></span></code></pre></figure>
+<h3 id="禁用特定技能">禁用特定技能<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#禁用特定技能" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>编辑配置文件 <code>~/.config/opencode/oh-my-opencode.json</code>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="json" data-theme="github-light github-dark"><code data-language="json" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">{</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">  &quot;disabled_skills&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: [</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;playwright&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;agent-browser&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></figure>
+<hr/>
+<h2 id="实用技巧">实用技巧<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实用技巧" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="组合使用">组合使用<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#组合使用" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 精密 + 快速：先用 Prometheus 规划，再用 ulw 执行</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">[按 Tab] → Prometheus 计划 → /start-work</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 快速迭代：直接 ulw</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 实现登录功能</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 长期项目：ralph-loop</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ralph-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;构建一个完整的 SaaS&quot;</span></span></code></pre></figure>
+<h3 id="项目初始化工作流">项目初始化工作流<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#项目初始化工作流" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> my-project</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/init-deep</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 添加基础功能</span></span></code></pre></figure>
+<h3 id="处理复杂任务">处理复杂任务<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#处理复杂任务" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 使用 Prometheus 模式</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">[按 Tab] 进入 Prometheus</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 描述复杂需求</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 回答采访问题</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 查看生成的计划</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> .sisyphus/plans/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">*</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">.md</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> /start-work</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 执行</span></span></code></pre></figure>
+<h3 id="快速修复-bug">快速修复 Bug<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#快速修复-bug" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 修复登录页面的验证问题</span></span></code></pre></figure>
+<h3 id="重构代码">重构代码<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#重构代码" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ralph-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;重构整个用户模块，提升性能&quot;</span></span></code></pre></figure>
+<hr/>
+<h2 id="配置文件">配置文件<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#配置文件" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="文件位置">文件位置<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#文件位置" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>文件</th><th>位置</th><th>作用</th></tr></thead><tbody><tr><td>主配置</td><td><code>~/.config/opencode/opencode.json</code></td><td>MCP、插件配置</td></tr><tr><td>Agent配置</td><td><code>~/.config/opencode/oh-my-opencode.json</code></td><td>模型映射</td></tr><tr><td>项目配置</td><td><code>.opencode/oh-my-opencode.json</code></td><td>项目级覆盖</td></tr><tr><td>计划文件</td><td><code>.sisyphus/plans/*.md</code></td><td>Prometheus 生成的计划</td></tr></tbody></table></div>
+<hr/>
+<h2 id="常见场景">常见场景<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见场景" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="新功能开发">新功能开发<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#新功能开发" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 添加用户评论功能，支持回复和点赞</span></span></code></pre></figure>
+<h3 id="bug-修复">Bug 修复<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#bug-修复" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 修复支付页面在</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> Safari</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 上的显示问题</span></span></code></pre></figure>
+<h3 id="性能优化">性能优化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#性能优化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">ulw</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 优化首页加载速度，目标</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> LCP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 2s</span></span></code></pre></figure>
+<h3 id="代码重构">代码重构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#代码重构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">/ralph-loop</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;把所有 callback 改成 async/await&quot;</span></span></code></pre></figure>
+<h3 id="复杂项目">复杂项目<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#复杂项目" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">[Tab] → Prometheus 模式</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;构建一个完整的电商后台&quot;</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> 回答问题</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">  →</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> /start-work</span></span></code></pre></figure>
+<hr/>
+<h2 id="快速参考">快速参考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#快速参考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="命令速查表">命令速查表<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#命令速查表" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>模式</th><th>触发方式</th><th>适用场景</th></tr></thead><tbody><tr><td>Ultrawork</td><td><code>ulw &lt;任务></code></td><td>快速开发、明确目标</td></tr><tr><td>Prometheus</td><td><code>[Tab]</code> 键</td><td>复杂项目、需要规划</td></tr><tr><td>持续循环</td><td><code>/ulw-loop &quot;&lt;任务>&quot;</code></td><td>长期任务、需要迭代</td></tr><tr><td>自引用循环</td><td><code>/ralph-loop &quot;&lt;任务>&quot;</code></td><td>自我优化、智能改进</td></tr></tbody></table></div>
+<h3 id="agent-速查表">Agent 速查表<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-速查表" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>Agent</th><th>擅长</th><th>调用方式</th></tr></thead><tbody><tr><td>Sisyphus</td><td>总指挥</td><td>自动触发</td></tr><tr><td>Hephaestus</td><td>代码实现</td><td>自动调用</td></tr><tr><td>Prometheus</td><td>需求规划</td><td><code>[Tab]</code> 键</td></tr><tr><td>Oracle</td><td>架构审查</td><td><code>@oracle</code></td></tr><tr><td>Librarian</td><td>模式查找</td><td><code>@librarian</code></td></tr><tr><td>Explore</td><td>文件搜索</td><td><code>@explore</code></td></tr></tbody></table></div>
+<h3 id="委托决策表">委托决策表<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#委托决策表" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>需求类型</th><th>委托给</th><th>触发条件</th></tr></thead><tbody><tr><td>架构决策</td><td>Oracle</td><td>多系统权衡、不熟悉模式</td></tr><tr><td>自我审查</td><td>Oracle</td><td>完成重要实现后</td></tr><tr><td>困难调试</td><td>Oracle</td><td>2 次以上修复失败后</td></tr><tr><td>外部文档/库研究</td><td>Librarian</td><td>不熟悉的包/库</td></tr><tr><td>代码库探索</td><td>Explore</td><td>找现有结构、模式</td></tr></tbody></table></div>
+<h3 id="协作流程">协作流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#协作流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>用户请求复杂功能
+    ↓
+Sisyphus (主编排者)
+  → 意图门：分析真实意图
+  → 决定：需要规划，启动 Prometheus
+    ↓
+Prometheus (规划师)
+  → 并行启动 Explore (搜代码模式)
+  → 并行启动 Librarian (搜外部文档)
+  → 咨询 Oracle (架构建议)
+    ↓
+Momus (审核员)
+  → 审核计划：通过/拒绝
+    ↓
+Sisyphus/Hephaestus (执行)
+  → 按计划实现代码
+</code></pre>
+<h3 id="最佳实践">最佳实践<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#最佳实践" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>日常开发 → 直接用 <code>ulw</code> 命令</li>
+<li>复杂新功能 → 先 <code>/start-work</code> 让 Prometheus 规划</li>
+<li>研究性问题 → 并行启动 <code>Explore</code> + <code>Librarian</code></li>
+<li>困难 Bug → 先自己试，2 次失败后咨询 <code>Oracle</code></li>
+<li>架构决策 → 直接咨询 <code>Oracle</code></li>
+</ol>
+<hr/>
+<h2 id="安装与卸载">安装与卸载<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#安装与卸载" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="安装">安装<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#安装" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>推荐方式（让 Agent 帮你安装）：</strong></p>
+<p>将以下提示词粘贴给任何 LLM Agent（Claude Code, Cursor, AmpCode 等）：</p>
+<pre><code>Install and configure oh-my-opencode by following the installation guide
+</code></pre>
+<p><strong>手动安装（不推荐，容易出错）：</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 获取安装指南</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">curl</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> -s</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> &lt;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">installation-guide-ur</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">l</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 然后按照指南手动配置</span></span></code></pre></figure>
+<blockquote>
+<p>安全警告：Oh My OpenCode 是免费开源的，请到官方仓库下载，请勿在第三方站点输入支付信息。</p>
+</blockquote>
+<h3 id="卸载">卸载<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#卸载" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>步骤 1：从 OpenCode 配置中移除插件</strong></p>
+<p>编辑 <code>~/.config/opencode/opencode.json</code>（或 <code>opencode.jsonc</code>），从 <code>plugin</code> 数组中删除 <code>&quot;oh-my-opencode&quot;</code>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">jq</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> '.plugin = [.plugin[] | select(. != &quot;oh-my-opencode&quot;)]'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> \</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    ~/.config/opencode/opencode.json</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> /tmp/oc.json</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> &amp;&amp; </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    mv</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> /tmp/oc.json</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> ~/.config/opencode/opencode.json</span></span></code></pre></figure>
+<p><strong>步骤 2：删除配置文件（可选）</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 删除用户配置</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">rm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> ~/.config/opencode/oh-my-opencode.json</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> ~/.config/opencode/oh-my-opencode.jsonc</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 删除项目配置（如果存在）</span></span>
+<span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">rm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> .opencode/oh-my-opencode.json</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> .opencode/oh-my-opencode.jsonc</span></span></code></pre></figure>
+<p><strong>步骤 3：验证卸载</strong></p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="bash" data-theme="github-light github-dark"><code data-language="bash" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">opencode</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> --version</span></span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 插件应该不再加载</span></span></code></pre></figure>
+<hr/>
+<h2 id="模型推荐">模型推荐<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#模型推荐" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="经济实惠组合">经济实惠组合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经济实惠组合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>即使只用以下订阅，ultrawork 也能工作：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>服务</th><th>订阅</th><th>价格</th></tr></thead><tbody><tr><td>ChatGPT</td><td>Subscription</td><td>$20/月</td></tr><tr><td>Kimi Code</td><td>Subscription</td><td>$0.99/月（首月）</td></tr><tr><td>GLM Coding</td><td>Plan</td><td>$10/月</td></tr></tbody></table></div>
+<p>如果你符合按 Token 付费的条件，使用 Kimi 和 Gemini 模型成本更低。</p>
+<h3 id="agent-模型映射">Agent-模型映射<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-模型映射" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>Agent</th><th>推荐模型</th><th>特点</th></tr></thead><tbody><tr><td>Sisyphus</td><td>claude-opus-4-6 / kimi-k2.5 / glm-5</td><td>编排能力</td></tr><tr><td>Hephaestus</td><td>gpt-5.3-codex</td><td>代码实现</td></tr><tr><td>Prometheus</td><td>claude-opus-4-6 / kimi-k2.5 / glm-5</td><td>规划思考</td></tr><tr><td>Oracle</td><td>高质量推理模型</td><td>架构分析</td></tr><tr><td>Librarian</td><td>便宜模型</td><td>文档搜索</td></tr><tr><td>Explore</td><td>免费模型</td><td>代码库搜索</td></tr></tbody></table></div>
+<h3 id="多模型支持">多模型支持<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#多模型支持" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Oh My OpenCode 不锁定任何单一提供商：</p>
+<ul>
+<li>Claude / Kimi / GLM — 用于编排</li>
+<li>GPT — 用于推理</li>
+<li>Minimax — 用于速度</li>
+<li>Gemini — 用于创意</li>
+</ul>
+<p>未来不是选择单一赢家，而是协调所有模型。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-10" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#oh-my-opencode-使用指南" data-for="oh-my-opencode-使用指南">Oh My OpenCode 使用指南</a></li><li class="depth-1"><a href="#目录" data-for="目录">目录</a></li><li class="depth-1"><a href="#核心概念" data-for="核心概念">核心概念</a></li><li class="depth-2"><a href="#什么是-oh-my-opencode" data-for="什么是-oh-my-opencode">什么是 Oh My OpenCode？</a></li><li class="depth-2"><a href="#关键词ultrawork--ulw" data-for="关键词ultrawork--ulw">关键词：ultrawork / ulw</a></li><li class="depth-1"><a href="#两种工作模式" data-for="两种工作模式">两种工作模式</a></li><li class="depth-2"><a href="#ultrawork-模式" data-for="ultrawork-模式">Ultrawork 模式</a></li><li class="depth-2"><a href="#prometheus-模式" data-for="prometheus-模式">Prometheus 模式</a></li><li class="depth-1"><a href="#核心特性" data-for="核心特性">核心特性</a></li><li class="depth-2"><a href="#intentgate--意图门" data-for="intentgate--意图门">IntentGate — 意图门</a></li><li class="depth-2"><a href="#hash-anchored-edit-tool--哈希锚定编辑" data-for="hash-anchored-edit-tool--哈希锚定编辑">Hash-Anchored Edit Tool — 哈希锚定编辑</a></li><li class="depth-2"><a href="#lsp--ast-grep" data-for="lsp--ast-grep">LSP + AST-Grep</a></li><li class="depth-2"><a href="#background-agents--后台并行专家" data-for="background-agents--后台并行专家">Background Agents — 后台并行专家</a></li><li class="depth-2"><a href="#built-in-mcps" data-for="built-in-mcps">Built-in MCPs</a></li><li class="depth-2"><a href="#skill-embedded-mcps" data-for="skill-embedded-mcps">Skill-Embedded MCPs</a></li><li class="depth-2"><a href="#todo-enforcer" data-for="todo-enforcer">Todo Enforcer</a></li><li class="depth-2"><a href="#comment-checker" data-for="comment-checker">Comment Checker</a></li><li class="depth-2"><a href="#tmux-integration" data-for="tmux-integration">Tmux Integration</a></li><li class="depth-2"><a href="#agent-分类映射" data-for="agent-分类映射">Agent 分类映射</a></li><li class="depth-1"><a href="#命令详解" data-for="命令详解">命令详解</a></li><li class="depth-2"><a href="#核心命令" data-for="核心命令">核心命令</a></li><li class="depth-2"><a href="#init-deep--深度初始化" data-for="init-deep--深度初始化">/init-deep — 深度初始化</a></li><li class="depth-2"><a href="#ulw-loop--持续工作循环" data-for="ulw-loop--持续工作循环">/ulw-loop — 持续工作循环</a></li><li class="depth-2"><a href="#ralph-loop--自引用循环" data-for="ralph-loop--自引用循环">/ralph-loop — 自引用循环</a></li><li class="depth-1"><a href="#agent-系统" data-for="agent-系统">Agent 系统</a></li><li class="depth-2"><a href="#主-agent" data-for="主-agent">主 Agent</a></li><li class="depth-2"><a href="#子-agent" data-for="子-agent">子 Agent</a></li><li class="depth-2"><a href="#agent-调用语法" data-for="agent-调用语法">Agent 调用语法</a></li><li class="depth-1"><a href="#技能系统" data-for="技能系统">技能系统</a></li><li class="depth-2"><a href="#内置技能" data-for="内置技能">内置技能</a></li><li class="depth-2"><a href="#agent-browser-使用示例" data-for="agent-browser-使用示例">agent-browser 使用示例</a></li><li class="depth-2"><a href="#禁用特定技能" data-for="禁用特定技能">禁用特定技能</a></li><li class="depth-1"><a href="#实用技巧" data-for="实用技巧">实用技巧</a></li><li class="depth-2"><a href="#组合使用" data-for="组合使用">组合使用</a></li><li class="depth-2"><a href="#项目初始化工作流" data-for="项目初始化工作流">项目初始化工作流</a></li><li class="depth-2"><a href="#处理复杂任务" data-for="处理复杂任务">处理复杂任务</a></li><li class="depth-2"><a href="#快速修复-bug" data-for="快速修复-bug">快速修复 Bug</a></li><li class="depth-2"><a href="#重构代码" data-for="重构代码">重构代码</a></li><li class="depth-1"><a href="#配置文件" data-for="配置文件">配置文件</a></li><li class="depth-2"><a href="#文件位置" data-for="文件位置">文件位置</a></li><li class="depth-1"><a href="#常见场景" data-for="常见场景">常见场景</a></li><li class="depth-2"><a href="#新功能开发" data-for="新功能开发">新功能开发</a></li><li class="depth-2"><a href="#bug-修复" data-for="bug-修复">Bug 修复</a></li><li class="depth-2"><a href="#性能优化" data-for="性能优化">性能优化</a></li><li class="depth-2"><a href="#代码重构" data-for="代码重构">代码重构</a></li><li class="depth-2"><a href="#复杂项目" data-for="复杂项目">复杂项目</a></li><li class="depth-1"><a href="#快速参考" data-for="快速参考">快速参考</a></li><li class="depth-2"><a href="#命令速查表" data-for="命令速查表">命令速查表</a></li><li class="depth-2"><a href="#agent-速查表" data-for="agent-速查表">Agent 速查表</a></li><li class="depth-2"><a href="#委托决策表" data-for="委托决策表">委托决策表</a></li><li class="depth-2"><a href="#协作流程" data-for="协作流程">协作流程</a></li><li class="depth-2"><a href="#最佳实践" data-for="最佳实践">最佳实践</a></li><li class="depth-1"><a href="#安装与卸载" data-for="安装与卸载">安装与卸载</a></li><li class="depth-2"><a href="#安装" data-for="安装">安装</a></li><li class="depth-2"><a href="#卸载" data-for="卸载">卸载</a></li><li class="depth-1"><a href="#模型推荐" data-for="模型推荐">模型推荐</a></li><li class="depth-2"><a href="#经济实惠组合" data-for="经济实惠组合">经济实惠组合</a></li><li class="depth-2"><a href="#agent-模型映射" data-for="agent-模型映射">Agent-模型映射</a></li><li class="depth-2"><a href="#多模型支持" data-for="多模型支持">多模型支持</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../postscript.js" type="module" data-persist="true"></script></html>
