@@ -1,5 +1,8 @@
 
 
+## 优化点
+- 任何里面涉及大量计算的可以考虑并行或者专门优化的库
+
 # 研究prompt
 ```
   - 研究主题
@@ -333,7 +336,47 @@
 ```
 
 
+
+## 时间划分的思考
+![[Pasted image 20260314103244.png]]
+
+
+## 参数部分
+
+![[Pasted image 20260314104729.png]]
+
+> 建议：  首轮不要一上来做超宽暴力搜索，而是先用平衡网格做 coarse search，确认大致有效区间，再对shortlist 用窄网格做 fine search。
+
+
+
+## 允许字段与禁止字段
+![[Pasted image 20260314105148.png]]
+
 ## data ready
+
+**核心问题**
+
+  原始数据能否被转换为共享、可审计、可复用的数据基础层。
+
+  
+**为什么必须独立于信号研究**
+
+团队最常见的伪发现之一，就是把数据问题误当成 alpha。缺失、对齐、去重、开收盘标签混用、补值语义不清，这些都足以制造“看起来有结构”的结果。把 `Data Ready` 单独成阶段，是为了强制团队先解决这些问题，再允许研究信号。
+
+  
+
+**必做事项**  
+
+- 对齐统一时间栅格。
+
+- 保留缺失与脏数据语义，不得静默吞掉。
+
+- 生成 QC 汇总。
+
+- 审计基础腿和核心资产的覆盖。
+
+- 输出可复用 rolling statistics 或缓存。
+
 
 【layer0要】
 
@@ -349,14 +392,260 @@
 
 
 
+产生的文件：
+```markdown 
+顶层说明和审计文件
+
+  - data_contract.md：这一层最核心的“数据契约”。它定义了时间轴语义、研究窗口、去缺失规则、禁止
+    forward-fill、以及三个数值产物目录各自应该有哪些列。
+  - dataset_manifest.json：机器可读的清单文件。它记录这次产物对应的 config、time_split、
+    universe、retry_record 的路径和哈希，以及生成时间、grid 边界、文件数量、状态告警，作用是复
+    现和审计。
+  - validation_report.md：校验报告。它说明 schema、时间栅格一致性、基准腿覆盖、pair 对齐、
+    manifest 完整性这些检查是否通过；这里的结论是 CONDITIONAL PASS。
+  - data_ready_gate_decision.md：阶段 gate 决策。它回答“这一层能不能进入下一阶段”，这里的答案
+    是可以进入 02_signal_ready，但要带着缺失率偏高的保留意见继续。
+  - data_contract.md 和 validation_report.md 的区别是：前者定义“应该长什么样”，后者记录“这次实
+    际有没有做到”。
+
+  Universe 和准入相关文件
+
+  - universe_fixed.csv：本轮正式冻结下来的 30 个 symbol 清单。每一行都带了角色、候选顺序、纳入
+    阶段和纳入原因，相当于“本次研究到底研究哪些币”的正式名单。
+  - universe_summary.md：对 universe_fixed.csv 的文字总结，解释为什么这一步没有删币，以及当前
+    universe 的主要风险提示。
+  - universe_exclusions.csv：本阶段被排除的 symbol 列表。现在只有表头，表示这次 Data Ready 没
+    有新增排除对象。
+  - universe_exclusions.md：对上面那个空排除表的解释，说明不是数据都很好，而是 Mandate 没冻结
+    数值覆盖阈值，所以不能在这一步临时改 universe。
+
+  规则说明文件
+
+  - dedupe_rule.md：原始秒线去重规则说明。这里明确主键是 (symbol, open_time)，重复记录取
+    created_at 最新值；这决定了后面 dense grid 的真实缺失语义。
+  - qc_report.parquet：每个 symbol 一行的质量总表，字段是 missing_rate、stale_rate、
+    outlier_rate、usable_rate_288/864 等，用来快速判断哪些币虽然进了 universe，但数据质量偏差
+    很大。
+    
+    三个数值子目录
+
+  - aligned_bars/*.parquet：每个文件对应一个 symbol 的基础秒级对齐结果，比如 aligned_bars/
+    BTCUSDT.parquet、aligned_bars/ETHUSDT.parquet。里面是 dense 1s 时间轴上的原始基础列：ts、
+    close、volume、r，再加 flag_missing / flag_bad_price / flag_stale / flag_outlier。它回答的
+    是“这一秒这个币的基础 bar 和质量状态是什么”。
+  - rolling_stats/*.parquet：每个文件对应一个 symbol 的滚动统计结果，比如 rolling_stats/
+    BTCUSDT.parquet。它是在 aligned_bars 之上预计算的单币统计缓存，当前固定窗口是 288 和 864
+    秒，包含 mu_r_*、std_r_*、valid_count_*、flag_low_sample_*。它回答的是“到这一秒为止，这个
+    币最近一段时间的收益统计是什么”。
+  - pair_stats/*.parquet：每个文件对应一个 ALT-BTC 配对，比如 pair_stats/
+    ETHUSDT_BTCUSDT.parquet、pair_stats/SOLUSDT_BTCUSDT.parquet。里面是配对层的滚动统计缓存，
+    字段包括 corr0_*、alpha_*、beta_*、eps_*、z_eps_*、valid_count_*。它回答的是“这个 ALT 相对
+    BTCUSDT 的同步相关、回归残差和残差 z-score 是什么”。
+
+  这三个目录里“每个文件”的具体含义
+
+  - aligned_bars 下的每一个文件，都是“某个 symbol 的标准化基础 bar 底表”。
+  - rolling_stats 下的每一个文件，都是“同一个 symbol 的单币滚动统计缓存”。
+  - pair_stats 下的每一个文件，都是“某个 ALT 相对 BTCUSDT 的双边统计缓存”。
+  - pair_stats 只有 29 个文件，没有 BTCUSDT_BTCUSDT.parquet，因为 BTCUSDT 在这里是基准腿，不会
+    自己和自己配对。
+```
 
 
 
 
+## siganal ready 
+  
+
+**核心问题**
+
+  
+
+研究对象是否已经被定义成统一、可复现、可比较的信号字段合同。
+
+  
+
+**为什么不能直接从数据跳到 Train**
+
+  
+
+如果没有独立的信号层，团队就很容易在不同阶段对“同一个信号”用不同计算方式或不同时间标签解释。到最后即使结果看起来一致，实际比较的也不是同一个对象。
+
+  
+
+**必做事项**
+
+  
+
+- 固定信号字段定义。
+
+- 固定主时间标签与未来收益对齐方式。
+
+- 生成每个对象的信号时序和覆盖报告。
+
+- 为后续 `Train` 和 `Test` 提供统一字段合同。
+
+  
+
+**必备输出**
+
+  
+
+- `timeseries/`
+
+- `symbol_summary.parquet`
+
+- `signal_coverage.*`
+
+- `signal_fields_contract.md`
+
+- `signal_gate_decision.md` 或等价的 `signal_ready.md`
+
+  
+
+**晋级标准**
+
+  
+
+团队能够明确回答“后续所有阶段到底在用哪个字段、哪个标签、哪个参数身份”。
+
+  
+
+**额外要求**
+
+  
+
+如果一条研究线只有 `timeseries/`、`signal_fields_contract.md`、`signal_coverage.*`，但没有单独的阶段结论或 gate 文档，那么它更准确的表述应是：
+
+  
+
+- “已经产出 signal layer artifacts”
+
+  
+
+而不是：
+
+  
+
+- “已经正式关闭 `Signal Ready` 阶段”
+
+  
+
+因为前者代表“信号结果已经落盘”，后者代表“阶段门禁已经被正式记录并允许晋级”。两者不能混用。
+
+  
+
+**明确禁止**
+
+  
+
+- 在 `Train` 里边算边改信号定义。
+
+- 不记录参数身份，只靠文件名猜是哪组参数。
+
+- 把信号可用性问题留给 `Test` 才发现。
+
+  
+
+**失败后的允许动作**
+
+  
+
+- 允许修正信号实现、字段命名、标签对齐。
+
+- 如果要改变研究信号的机制定义，则必须回退到 `Mandate` 或开新谱系。
 
 
 
 
+【疑难问题：】
+```
+full-grid 前有个硬成本要你确认：当前单组 02_signal_ready
+  实测约 3.5G，其中单组 timeseries 约 2.25G、对应 _raw 约 1.17G；按 mandate 全量合法组合算，一
+  共是 264 个 param_id，用现有实现直接外推，磁盘大约会到 ~600G，串行计算时间大约 > 1 天。你还
+  要我按 full-grid 继续做，还是改成先做一批 search_batch
+```
+
+
+
+# train 
+```markdown
+  
+
+**核心问题**
+
+  
+
+如何在不接触未来窗口的前提下，把尺子定下来。
+
+  
+
+**为什么它只能负责“定尺子”**
+
+  
+
+`Train` 的职责是校准，不是验收。它应该冻结阈值、分位切点、质量过滤、波动分层和候选参数范围，而不应该宣布哪一组已经“成功”。一旦 `Train` 开始承担“宣布胜利”的角色，后面的 `Test` 就会沦为走流程。
+
+  
+
+**必做事项**
+
+  
+
+- 冻结分位阈值。
+
+- 冻结 regime 切点。
+
+- 做信号可研究性过滤。
+
+- 在必要时做参数粗筛，但只排除荒谬区间。
+
+- 记录完整参数 ledger。
+
+  
+
+**必备输出**
+
+  
+
+- `train_thresholds.*`
+
+- `train_quality.*`
+
+- `train_param_ledger.csv`
+
+- `train_rejects.csv`
+
+  
+
+**晋级标准**
+
+  
+
+后续 `Test` 能拿着一套已经冻结的尺子去验证，而不是一边验证一边重估。
+
+  
+
+**明确禁止**
+
+  
+
+- 根据 `test` 结果回头重算 `train` 阈值。
+
+- 在 `train` 用收益最大化方式选最终策略参数。
+
+- 只保留通过的参数，不保留被淘汰的搜索轨迹。
+
+  
+
+**失败后的允许动作**
+
+  
+
+- 允许修训练内的质量门槛或冻结逻辑。
+
+- 如果修复动作需要借用 `test` 或 `backtest` 的信息，视为污染，必须整体回退。
+```
 
 
 
