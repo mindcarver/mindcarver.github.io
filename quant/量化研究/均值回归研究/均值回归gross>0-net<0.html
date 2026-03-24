@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>均值回归gross>0 net&lt;0</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="均值回归gross>0 net&lt;0"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="均值回归gross>0 net&lt;0"/><meta name="twitter:description" content="这是均值回归里最常见、也最致命的问题之一。 你看到的是： 方向上对了：信号有效，说明“超涨后回落”这件事统计上存在 交易上死了：利润太薄，gross &lt; 0 或 net &lt; 0，说明这类“有效”不够赚钱，不足以覆盖摩擦和尾部损失 这本质上说明： 你抓到的是“存在均值回归”，但没抓到“足够强、足够快、足够可交易的均值回归”。 下面我直接按研究框架拆开。 1."/><meta property="og:description" content="这是均值回归里最常见、也最致命的问题之一。 你看到的是： 方向上对了：信号有效，说明“超涨后回落”这件事统计上存在 交易上死了：利润太薄，gross &lt; 0 或 net &lt; 0，说明这类“有效”不够赚钱，不足以覆盖摩擦和尾部损失 这本质上说明： 你抓到的是“存在均值回归”，但没抓到“足够强、足够快、足够可交易的均值回归”。 下面我直接按研究框架拆开。 1."/><meta property="og:image:alt" content="这是均值回归里最常见、也最致命的问题之一。 你看到的是： 方向上对了：信号有效，说明“超涨后回落”这件事统计上存在 交易上死了：利润太薄，gross &lt; 0 或 net &lt; 0，说明这类“有效”不够赚钱，不足以覆盖摩擦和尾部损失 这本质上说明： 你抓到的是“存在均值回归”，但没抓到“足够强、足够快、足够可交易的均值回归”。 下面我直接按研究框架拆开。 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/quant/量化研究/均值回归研究/均值回归gross>0-net&lt;0"/><meta property="twitter:url" content="https://https//mindcarver.top/quant/量化研究/均值回归研究/均值回归gross>0-net&lt;0"/><link rel="icon" href="../../../static/icon.png"/><meta name="description" content="这是均值回归里最常见、也最致命的问题之一。 你看到的是： 方向上对了：信号有效，说明“超涨后回落”这件事统计上存在 交易上死了：利润太薄，gross &lt; 0 或 net &lt; 0，说明这类“有效”不够赚钱，不足以覆盖摩擦和尾部损失 这本质上说明： 你抓到的是“存在均值回归”，但没抓到“足够强、足够快、足够可交易的均值回归”。 下面我直接按研究框架拆开。 1."/><meta name="generator" content="Quartz"/><link href="../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="quant/量化研究/均值回归研究/均值回归gross>0-net&lt;0"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-500" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../quant/">quant</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../quant/量化研究/">量化研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../quant/量化研究/均值回归研究/">均值回归研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>均值回归gross>0 net&lt;0</a></div></nav><h1 class="article-title">均值回归gross>0 net&lt;0</h1><p show-comma="true" class="content-meta"><time datetime="2026-03-24T09:21:16.644Z">2026年3月24日</time><span>19分钟阅读</span></p></div></div><article class="popover-hint"><p>这是<strong>均值回归里最常见、也最致命的问题之一</strong>。</p>
+<p>你看到的是：</p>
+<ul>
+<li>
+<p><strong>方向上对了</strong>：信号有效，说明“超涨后回落”这件事统计上存在</p>
+</li>
+<li>
+<p><strong>交易上死了</strong>：利润太薄，<code>gross &lt; 0</code> 或 <code>net &lt; 0</code>，说明这类“有效”<strong>不够赚钱，不足以覆盖摩擦和尾部损失</strong></p>
+</li>
+</ul>
+<p>这本质上说明：</p>
+<blockquote>
+<p><strong>你抓到的是“存在均值回归”，但没抓到“足够强、足够快、足够可交易的均值回归”。</strong></p>
+</blockquote>
+<p>下面我直接按研究框架拆开。</p>
+<hr/>
+<h1 id="1-先区分你到底遇到的是哪一种有效但不赚钱">1. 先区分：你到底遇到的是哪一种“有效但不赚钱”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-先区分你到底遇到的是哪一种有效但不赚钱" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>通常有 5 类。</p>
+<h2 id="a-回归存在但幅度太小">A. 回归存在，但幅度太小<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#a-回归存在但幅度太小" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如：</p>
+<ul>
+<li>
+<p>触发后未来 1h 平均确实下跌</p>
+</li>
+<li>
+<p>但是平均只跌 <code>0.03% ~ 0.08%</code></p>
+</li>
+<li>
+<p>而你的手续费 + 滑点 + funding + 冲击成本已经接近或超过这个数</p>
+</li>
+</ul>
+<p>这时会出现：</p>
+<ul>
+<li>
+<p><strong>命中率不低</strong></p>
+</li>
+<li>
+<p><strong>平均收益为正或接近 0</strong></p>
+</li>
+<li>
+<p>但 <code>gross</code> 很差，<code>net</code> 更差</p>
+</li>
+</ul>
+<p>本质：<br/>
+你抓到的是<strong>统计显著</strong>，不是<strong>经济显著</strong>。</p>
+<hr/>
+<h2 id="b-回归存在但速度太慢">B. 回归存在，但速度太慢<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#b-回归存在但速度太慢" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如：</p>
+<ul>
+<li>
+<p>超涨后最终会回落</p>
+</li>
+<li>
+<p>但不是你设定的 <code>1h/2h</code> 内完成</p>
+</li>
+<li>
+<p>而是 <code>6h~24h</code> 才慢慢修复</p>
+</li>
+</ul>
+<p>结果：</p>
+<ul>
+<li>
+<p>你用短 holding period 时赚不到</p>
+</li>
+<li>
+<p>持仓拉长后，又可能被中途继续上涨、funding、趋势延续拖死</p>
+</li>
+</ul>
+<p>本质：<br/>
+你抓到的是<strong>最终修复</strong>，不是<strong>可交易窗口内修复</strong>。</p>
+<hr/>
+<h2 id="c-小回归很多大亏损少数但致命">C. 小回归很多，大亏损少数但致命<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#c-小回归很多大亏损少数但致命" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是最典型的超涨做空失败模式。</p>
+<p>表现像这样：</p>
+<ul>
+<li>
+<p>大多数信号：小赚、小亏、来回震荡</p>
+</li>
+<li>
+<p>少数信号：遇到强趋势，价格继续挤空，单笔大亏</p>
+</li>
+<li>
+<p>结果均值可能看起来还行，但 PnL 分布被少数右尾趋势行情打穿</p>
+</li>
+</ul>
+<p>你会看到：</p>
+<ul>
+<li>
+<p>胜率可能还可以</p>
+</li>
+<li>
+<p>中位数收益可能不差</p>
+</li>
+<li>
+<p>但均值、总收益、夏普都不好</p>
+</li>
+<li>
+<p>最大回撤很差</p>
+</li>
+</ul>
+<p>本质：<br/>
+你做的是<strong>捡小钱，扛大趋势</strong>。</p>
+<hr/>
+<h2 id="d-你在错误的状态里做均值回归">D. 你在“错误的状态”里做均值回归<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#d-你在错误的状态里做均值回归" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如：</p>
+<ul>
+<li>
+<p>BTC 正在强趋势单边</p>
+</li>
+<li>
+<p>市场进入 risk-on / panic / short squeeze / breakout regime</p>
+</li>
+<li>
+<p>这时“超涨”不是过热，而是<strong>趋势加强信号</strong></p>
+</li>
+</ul>
+<p>结果：</p>
+<ul>
+<li>
+<p>静态看，历史上均值回归成立</p>
+</li>
+<li>
+<p>但分 regime 看，只有震荡阶段成立</p>
+</li>
+<li>
+<p>一旦进入趋势状态，做空超涨会持续亏损</p>
+</li>
+</ul>
+<p>本质：<br/>
+你的信号不是普适 alpha，而是<strong>条件 alpha</strong>。</p>
+<hr/>
+<h2 id="e-触发太频繁信号密度高但质量低">E. 触发太频繁，信号密度高但质量低<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#e-触发太频繁信号密度高但质量低" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如：</p>
+<ul>
+<li>
+<p>z-score 门槛太低</p>
+</li>
+<li>
+<p>几乎每天很多次触发</p>
+</li>
+<li>
+<p>大量边缘信号被拿去交易</p>
+</li>
+</ul>
+<p>结果：</p>
+<ul>
+<li>
+<p>真正高质量的 extreme move 被稀释</p>
+</li>
+<li>
+<p>交易次数暴增</p>
+</li>
+<li>
+<p>成本吃掉一切</p>
+</li>
+</ul>
+<p>本质：<br/>
+你做成了一个<strong>高换手低边际优势策略</strong>。</p>
+<hr/>
+<h1 id="2-为什么信号有效不等于策略赚钱">2. 为什么“信号有效”不等于“策略赚钱”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-为什么信号有效不等于策略赚钱" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>因为从研究到交易，中间隔着 4 道坎：</p>
+<h2 id="第一道坎方向正确">第一道坎：方向正确<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第一道坎方向正确" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如你验证出：</p>
+<ul>
+<li>当 <code>z > 2</code> 时，未来 1h 平均收益为负</li>
+</ul>
+<p>这只能说明<strong>方向有偏</strong>。</p>
+<hr/>
+<h2 id="第二道坎幅度足够">第二道坎：幅度足够<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第二道坎幅度足够" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>你还得看：</p>
+<ul>
+<li>
+<p>平均负收益有多大？</p>
+</li>
+<li>
+<p>分位数如何？</p>
+</li>
+<li>
+<p>扣掉手续费后还有没有？</p>
+</li>
+</ul>
+<p>很多因子在这一步就死了。</p>
+<hr/>
+<h2 id="第三道坎分布可承受">第三道坎：分布可承受<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第三道坎分布可承受" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>你还得看：</p>
+<ul>
+<li>
+<p>是否大量小赚 + 少量大亏？</p>
+</li>
+<li>
+<p>是否右偏尾部很重？</p>
+</li>
+<li>
+<p>是否在趋势阶段大面积失效？</p>
+</li>
+</ul>
+<p>很多做空均值回归死在这里。</p>
+<hr/>
+<h2 id="第四道坎执行后仍然成立">第四道坎：执行后仍然成立<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第四道坎执行后仍然成立" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>你还得看：</p>
+<ul>
+<li>
+<p>吃单还是挂单？</p>
+</li>
+<li>
+<p>成交延迟后还有没有 edge？</p>
+</li>
+<li>
+<p>funding 和滑点吃掉多少？</p>
+</li>
+<li>
+<p>多信号重叠时怎么处理？</p>
+</li>
+</ul>
+<p>很多研究信号在回测里有效，但一加执行层就没了。</p>
+<hr/>
+<h1 id="3-对-btc-超涨做空最常见的根因是什么">3. 对 BTC 超涨做空，最常见的根因是什么<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-对-btc-超涨做空最常见的根因是什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>如果是 <strong>BTC 本体</strong> 的均值回归做空，我会优先怀疑这几个问题：</p>
+<h2 id="31-你在做空强趋势中的超涨">3.1 你在做空“强趋势中的超涨”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-你在做空强趋势中的超涨" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>BTC 这种资产有很强的<strong>趋势延续性</strong>，尤其在：</p>
+<ul>
+<li>
+<p>突破关键位置</p>
+</li>
+<li>
+<p>宏观/ETF/政策驱动</p>
+</li>
+<li>
+<p>高波动扩散阶段</p>
+</li>
+<li>
+<p>空头回补阶段</p>
+</li>
+</ul>
+<p>这时“涨多了”不是做空理由，反而可能是继续上涨的证据。</p>
+<p>所以：</p>
+<blockquote>
+<p><strong>超涨 ≠ 该做空</strong></p>
+<p>在趋势资产里，超涨经常只是“趋势强”。</p>
+</blockquote>
+<hr/>
+<h2 id="32-你定义的是统计超涨不是交易性超涨">3.2 你定义的是“统计超涨”，不是“交易性超涨”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-你定义的是统计超涨不是交易性超涨" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如你用：</p>
+<ul>
+<li>
+<p>rolling z-score</p>
+</li>
+<li>
+<p>偏离均线</p>
+</li>
+<li>
+<p>短周期乖离</p>
+</li>
+</ul>
+<p>这些能定义“偏离”，但不一定定义“可回归的偏离”。</p>
+<p>因为偏离可能来自两种不同来源：</p>
+<ul>
+<li>
+<p><strong>噪声性拉伸</strong> → 容易回归</p>
+</li>
+<li>
+<p><strong>信息性重定价</strong> → 不该回归</p>
+</li>
+</ul>
+<p>策略失败往往是因为你没把这两者分开。</p>
+<hr/>
+<h2 id="33-做空端天然更难">3.3 做空端天然更难<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-做空端天然更难" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>做空均值回归比做多均值回归更难，尤其在 BTC 上。</p>
+<p>因为：</p>
+<ul>
+<li>
+<p>BTC 长期有正 drift</p>
+</li>
+<li>
+<p>强涨阶段 squeeze 明显</p>
+</li>
+<li>
+<p>上涨 often fast and convex</p>
+</li>
+<li>
+<p>做空还要承受 funding、挤仓、跳涨</p>
+</li>
+</ul>
+<p>所以同样是均值回归：</p>
+<ul>
+<li>
+<p><strong>超跌做多</strong> 往往比 <strong>超涨做空</strong> 更自然</p>
+</li>
+<li>
+<p><strong>做空端</strong> 通常需要更强过滤条件</p>
+</li>
+</ul>
+<hr/>
+<h2 id="34-你的-alpha-太浅成本太高">3.4 你的 alpha 太浅，成本太高<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#34-你的-alpha-太浅成本太高" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果你的单笔期望只有几个 bps：</p>
+<ul>
+<li>
+<p>手续费先吃一层</p>
+</li>
+<li>
+<p>滑点再吃一层</p>
+</li>
+<li>
+<p>funding 再吃一层</p>
+</li>
+<li>
+<p>高频触发再放大损耗</p>
+</li>
+</ul>
+<p>最后一定 <code>net &lt; 0</code>，甚至 <code>gross &lt; 0</code>。</p>
+<p>注意：</p>
+<p>如果 <strong>gross 都已经 &lt; 0</strong>，问题通常已经不只是成本，而是<strong>信号本身的 payoff 结构就不对</strong>。</p>
+<p>这很重要。</p>
+<hr/>
+<h1 id="4-gross--0-和-net--0-分别代表什么">4. <code>gross &lt; 0</code> 和 <code>net &lt; 0</code> 分别代表什么<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-gross--0-和-net--0-分别代表什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="如果-gross--0-net--0">如果 <code>gross > 0, net &lt; 0</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#如果-gross--0-net--0" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>说明：</p>
+<ul>
+<li>
+<p>信号有边际优势</p>
+</li>
+<li>
+<p>但太薄</p>
+</li>
+<li>
+<p>被成本吃掉</p>
+</li>
+</ul>
+<p>这是“可优化”的状态。</p>
+<p>可以从：</p>
+<ul>
+<li>
+<p>降低换手</p>
+</li>
+<li>
+<p>提高阈值</p>
+</li>
+<li>
+<p>优化执行</p>
+</li>
+<li>
+<p>改持仓周期</p>
+</li>
+<li>
+<p>加过滤器</p>
+</li>
+</ul>
+<p>去救。</p>
+<hr/>
+<h2 id="如果-gross--0">如果 <code>gross &lt; 0</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#如果-gross--0" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>说明更严重：</p>
+<ul>
+<li>
+<p>扣成本前就不赚钱</p>
+</li>
+<li>
+<p>不是“太薄”，而是<strong>方向/结构/状态识别出了问题</strong></p>
+</li>
+</ul>
+<p>这时不要先优化手续费，应该先问：</p>
+<ol>
+<li>
+<p>你是不是在错误 regime 做了均值回归？</p>
+</li>
+<li>
+<p>你的标签 horizon 是否不对？</p>
+</li>
+<li>
+<p>你的信号是否只在少数样本有效？</p>
+</li>
+<li>
+<p>你的收益是否被尾部大亏摧毁？</p>
+</li>
+<li>
+<p>“超涨”是否其实代表动量延续？</p>
+</li>
+</ol>
+<hr/>
+<h1 id="5-你现在最该做的不是继续调参数而是做这-7-个诊断">5. 你现在最该做的，不是继续调参数，而是做这 7 个诊断<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-你现在最该做的不是继续调参数而是做这-7-个诊断" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<hr/>
+<h2 id="诊断-1看条件期望曲线而不是只看总体收益">诊断 1：看条件期望曲线，而不是只看总体收益<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-1看条件期望曲线而不是只看总体收益" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>你要看：</p>
+<ul>
+<li>
+<p>当 <code>z</code> 从 1.5、2、2.5、3、3.5 增加时</p>
+</li>
+<li>
+<p>未来 <code>h</code> 的平均收益如何变化</p>
+</li>
+</ul>
+<p>你要确认：</p>
+<ul>
+<li>
+<p>是不是越极端越有利？</p>
+</li>
+<li>
+<p>还是超过某阈值后反而进入趋势延续？</p>
+</li>
+</ul>
+<p>有时你会发现：</p>
+<ul>
+<li>
+<p><code>z=2</code> 有一点回归</p>
+</li>
+<li>
+<p><code>z=3+</code> 反而继续上涨</p>
+</li>
+</ul>
+<p>这说明 extreme move 不是过热，而是 breakout。</p>
+<hr/>
+<h2 id="诊断-2分-holding-horizon-看">诊断 2：分 holding horizon 看<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-2分-holding-horizon-看" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>分别看：</p>
+<ul>
+<li>
+<p>5m</p>
+</li>
+<li>
+<p>15m</p>
+</li>
+<li>
+<p>30m</p>
+</li>
+<li>
+<p>1h</p>
+</li>
+<li>
+<p>2h</p>
+</li>
+<li>
+<p>4h</p>
+</li>
+<li>
+<p>8h</p>
+</li>
+</ul>
+<p>很多均值回归信号只在某个特定 horizon 有效。</p>
+<p>常见情况：</p>
+<ul>
+<li>
+<p>很短 horizon 有一点回吐</p>
+</li>
+<li>
+<p>稍长 horizon 又继续趋势</p>
+</li>
+<li>
+<p>或者短期没反应，长一点才修复</p>
+</li>
+</ul>
+<p>如果你没找到正确 horizon，策略就会显得“有效但不赚钱”。</p>
+<hr/>
+<h2 id="诊断-3分-regime-看">诊断 3：分 regime 看<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-3分-regime-看" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>至少按下面拆：</p>
+<ul>
+<li>
+<p>高波动 / 低波动</p>
+</li>
+<li>
+<p>趋势 / 震荡</p>
+</li>
+<li>
+<p>BTC 在均线上方 / 下方</p>
+</li>
+<li>
+<p>ADX 高 / 低</p>
+</li>
+<li>
+<p>funding 高 / 低</p>
+</li>
+<li>
+<p>breakout 日 / normal 日</p>
+</li>
+</ul>
+<p>你经常会发现：</p>
+<ul>
+<li>
+<p>震荡市中超涨做空有效</p>
+</li>
+<li>
+<p>趋势市中持续亏钱</p>
+</li>
+</ul>
+<p>这说明正确做法不是“优化同一个策略”，而是：</p>
+<blockquote>
+<p><strong>均值回归只在某些 regime 开。</strong></p>
+</blockquote>
+<hr/>
+<h2 id="诊断-4看收益分布不只看均值">诊断 4：看收益分布，不只看均值<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-4看收益分布不只看均值" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>你要看每笔交易的：</p>
+<ul>
+<li>
+<p>均值</p>
+</li>
+<li>
+<p>中位数</p>
+</li>
+<li>
+<p>25/75 分位</p>
+</li>
+<li>
+<p>5/95 分位</p>
+</li>
+<li>
+<p>最大单笔亏损</p>
+</li>
+<li>
+<p>最大连续亏损</p>
+</li>
+<li>
+<p>MFE / MAE</p>
+</li>
+</ul>
+<p>特别重要的是：</p>
+<ul>
+<li>
+<p>是否中位数为正但均值为负？</p>
+</li>
+<li>
+<p>是否少数大亏吃掉大量小赚？</p>
+</li>
+</ul>
+<p>如果是，那么问题不是“信号不存在”，而是<strong>收益分布不可交易</strong>。</p>
+<hr/>
+<h2 id="诊断-5事件后路径分析">诊断 5：事件后路径分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-5事件后路径分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>不要只看 entry 到 exit 的最终收益。<br/>
+你要看触发后路径：</p>
+<ul>
+<li>
+<p>触发后先继续涨多少？</p>
+</li>
+<li>
+<p>多久开始回落？</p>
+</li>
+<li>
+<p>回落幅度多大？</p>
+</li>
+<li>
+<p>是否先 adverse excursion 很大，再慢慢修复？</p>
+</li>
+</ul>
+<p>如果路径是：</p>
+<ul>
+<li>
+<p>先涨 0.8%</p>
+</li>
+<li>
+<p>再跌 0.3%</p>
+</li>
+</ul>
+<p>那即使最后有一点回归，你的做空也很难活下来。</p>
+<hr/>
+<h2 id="诊断-6检查信号是否簇拥重复开仓">诊断 6：检查信号是否簇拥、重复开仓<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-6检查信号是否簇拥重复开仓" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>超涨信号常常连续触发：</p>
+<ul>
+<li>
+<p>t 触发一次</p>
+</li>
+<li>
+<p>t+1 再触发</p>
+</li>
+<li>
+<p>t+2 再触发</p>
+</li>
+</ul>
+<p>如果你每次都独立开仓，实际上是在<strong>同一段趋势里不断补空</strong>。</p>
+<p>这会造成：</p>
+<ul>
+<li>
+<p>过度交易</p>
+</li>
+<li>
+<p>风险堆叠</p>
+</li>
+<li>
+<p>gross 被拖垮</p>
+</li>
+</ul>
+<p>所以必须检查：</p>
+<ul>
+<li>
+<p>是否有 cool-down</p>
+</li>
+<li>
+<p>是否同方向只保留首个信号</p>
+</li>
+<li>
+<p>是否对重叠事件做去相关处理</p>
+</li>
+</ul>
+<hr/>
+<h2 id="诊断-7分解-edge-来源">诊断 7：分解 edge 来源<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#诊断-7分解-edge-来源" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>问自己：</p>
+<p>这个策略赚钱应该靠什么？</p>
+<p>是靠：</p>
+<ul>
+<li>
+<p>价格过冲后的机械回吐？</p>
+</li>
+<li>
+<p>流动性冲击后的恢复？</p>
+</li>
+<li>
+<p>funding 极端后的修复？</p>
+</li>
+<li>
+<p>短线情绪过热后的冷却？</p>
+</li>
+</ul>
+<p>如果你说不清楚，你就很难知道该加什么过滤器。</p>
+<hr/>
+<h1 id="6-对这种问题通常怎么修">6. 对这种问题，通常怎么修<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-对这种问题通常怎么修" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>下面不是“调参”，而是<strong>结构性修法</strong>。</p>
+<hr/>
+<h2 id="修法-1给均值回归加不可做空状态过滤器">修法 1：给均值回归加“不可做空状态过滤器”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-1给均值回归加不可做空状态过滤器" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如：</p>
+<ul>
+<li>
+<p>价格在长均线之上且斜率向上，不做空</p>
+</li>
+<li>
+<p>breakout 状态不做空</p>
+</li>
+<li>
+<p>ADX 高不做空</p>
+</li>
+<li>
+<p>大阳线放量突破不做空</p>
+</li>
+<li>
+<p>news/事件驱动窗口不做空</p>
+</li>
+</ul>
+<p>核心思想：</p>
+<blockquote>
+<p>先排除“超涨其实是趋势强化”的情况。</p>
+</blockquote>
+<hr/>
+<h2 id="修法-2只做更极端的样本">修法 2：只做更极端的样本<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-2只做更极端的样本" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果边缘信号太多，就提高阈值，比如：</p>
+<ul>
+<li>
+<p>只做 top 1% / 2% extreme</p>
+</li>
+<li>
+<p>只做 z > 3，而不是 z > 2</p>
+</li>
+<li>
+<p>只在多条件共振时开</p>
+</li>
+</ul>
+<p>但注意：</p>
+<p>阈值提高不一定更好。<br/>
+因为有时最极端的点恰恰是趋势确认点。</p>
+<p>所以必须<strong>分桶验证</strong>，不能拍脑袋。</p>
+<hr/>
+<h2 id="修法-3加入反转确认而不是裸空">修法 3：加入“反转确认”而不是裸空<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-3加入反转确认而不是裸空" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>不要一看到超涨就空，改成：</p>
+<ul>
+<li>
+<p>先出现超涨</p>
+</li>
+<li>
+<p>再等待反转确认</p>
+<ul>
+<li>
+<p>例如短周期动量转负</p>
+</li>
+<li>
+<p>高点回落破局部低点</p>
+</li>
+<li>
+<p>order flow 反转</p>
+</li>
+<li>
+<p>放量后衰竭</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>这样做会牺牲最早进场，但能减少“直接空在趋势继续启动点”的风险。</p>
+<hr/>
+<h2 id="修法-4把-btc-本体均值回归改成相对价值均值回归">修法 4：把 BTC 本体均值回归，改成相对价值均值回归<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-4把-btc-本体均值回归改成相对价值均值回归" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>BTC 绝对价格做空难，<br/>
+但<strong>相对偏离</strong>有时更合理，比如：</p>
+<ul>
+<li>
+<p>ALT 相对 BTC 的超涨</p>
+</li>
+<li>
+<p>BTC 相对某篮子的偏离</p>
+</li>
+<li>
+<p>perp 相对 spot / index 的短期偏离</p>
+</li>
+</ul>
+<p>因为相对偏离更可能是“错位”，而不是宏观趋势本身。</p>
+<hr/>
+<h2 id="修法-5做多超跌可能比做空超涨更好">修法 5：做多超跌可能比做空超涨更好<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-5做多超跌可能比做空超涨更好" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>很多市场里：</p>
+<ul>
+<li>
+<p>上涨趋势中，超跌做多 = 顺大势逆小势</p>
+</li>
+<li>
+<p>超涨做空 = 逆大势逆小势</p>
+</li>
+</ul>
+<p>两者难度完全不同。</p>
+<p>所以你应该单独比较：</p>
+<ul>
+<li>
+<p><code>OS long</code></p>
+</li>
+<li>
+<p><code>OB short</code></p>
+</li>
+</ul>
+<p>别默认它们对称。</p>
+<p>经常会发现：</p>
+<ul>
+<li>
+<p>做多端还有价值</p>
+</li>
+<li>
+<p>做空端完全不该做</p>
+</li>
+</ul>
+<hr/>
+<h2 id="修法-6把-exit-设计从固定持有改成路径敏感">修法 6：把 exit 设计从“固定持有”改成“路径敏感”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-6把-exit-设计从固定持有改成路径敏感" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>固定持有 <code>h</code> 很粗糙。<br/>
+均值回归更适合：</p>
+<ul>
+<li>
+<p>回归到中轴就走</p>
+</li>
+<li>
+<p>止损更紧</p>
+</li>
+<li>
+<p>时间止损</p>
+</li>
+<li>
+<p>反向动量出现就走</p>
+</li>
+</ul>
+<p>因为这类策略的 edge 往往来自<strong>快速修复</strong>，不是长期持有。</p>
+<hr/>
+<h2 id="修法-7降低交易频率只保留最干净样本">修法 7：降低交易频率，只保留最干净样本<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#修法-7降低交易频率只保留最干净样本" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是最有效的方法之一：</p>
+<ul>
+<li>
+<p>少做，但只做最强 setup</p>
+</li>
+<li>
+<p>不追求天天开仓</p>
+</li>
+<li>
+<p>接受信号稀疏</p>
+</li>
+</ul>
+<p>很多均值回归策略不是靠高频赚钱，而是靠<strong>低频高质量反转点</strong>赚钱。</p>
+<hr/>
+<h1 id="7-一个很重要的判断标准这策略还有没有救">7. 一个很重要的判断标准：这策略还有没有救？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-一个很重要的判断标准这策略还有没有救" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你可以用这个标准：</p>
+<h2 id="有救的情况">有救的情况<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#有救的情况" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>
+<p><code>gross > 0</code>，只是 <code>net &lt; 0</code></p>
+</li>
+<li>
+<p>分 regime 后某些子样本明显赚钱</p>
+</li>
+<li>
+<p>分桶后极端组明显更好</p>
+</li>
+<li>
+<p>MFE 明显大于成本，只是 exit 不好</p>
+</li>
+<li>
+<p>做多/做空其中一边有明显优势</p>
+</li>
+</ul>
+<p>这说明信号还有 alpha，只是结构没调好。</p>
+<hr/>
+<h2 id="很难救的情况">很难救的情况<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#很难救的情况" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>
+<p><code>gross &lt; 0</code></p>
+</li>
+<li>
+<p>各种 horizon 都不稳定</p>
+</li>
+<li>
+<p>分 regime 后也没清晰赚钱区域</p>
+</li>
+<li>
+<p>中位数、均值都差</p>
+</li>
+<li>
+<p>一赚钱就靠少数偶然样本</p>
+</li>
+<li>
+<p>做空端长期被趋势右尾打爆</p>
+</li>
+</ul>
+<p>这说明不是优化问题，而是：</p>
+<blockquote>
+<p><strong>这个“超涨做空”命题本身，在 BTC 上可能就不是一个好策略原型。</strong></p>
+</blockquote>
+<hr/>
+<h1 id="8-我对你这个现象的直觉判断">8. 我对你这个现象的直觉判断<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-我对你这个现象的直觉判断" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>从你这句话：</p>
+<blockquote>
+<p>总是会出现信号有效，利润很薄，gross &lt; 0, net &lt; 0</p>
+</blockquote>
+<p>我第一直觉不是手续费问题，而是下面这个组合：</p>
+<ol>
+<li>
+<p><strong>你确实抓到了局部回归</strong></p>
+</li>
+<li>
+<p><strong>但 BTC 超涨更多时候代表短期趋势强化</strong></p>
+</li>
+<li>
+<p><strong>回归幅度不够覆盖趋势延续造成的尾部亏损</strong></p>
+</li>
+<li>
+<p><strong>再叠加成本，结果彻底变负</strong></p>
+</li>
+</ol>
+<p>也就是：</p>
+<blockquote>
+<p><strong>这个信号更像“有统计现象”，不像“有交易价值的 alpha”。</strong></p>
+</blockquote>
+<hr/>
+<h1 id="9-你现在最该落地做的检查表">9. 你现在最该落地做的检查表<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-你现在最该落地做的检查表" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>按优先级：</p>
+<h3 id="第一组先判断是不是命题错了">第一组：先判断是不是命题错了<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第一组先判断是不是命题错了" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>
+<p>分 <code>OB short</code> 和 <code>OS long</code> 分别测</p>
+</li>
+<li>
+<p>分 horizon 测</p>
+</li>
+<li>
+<p>分 regime 测</p>
+</li>
+<li>
+<p>看收益分布和尾部亏损</p>
+</li>
+</ol>
+<h3 id="第二组判断是不是信号太浅">第二组：判断是不是信号太浅<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第二组判断是不是信号太浅" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol start="5">
+<li>
+<p>看不同 z-score 分桶的期望收益</p>
+</li>
+<li>
+<p>看成本前 edge 有多厚</p>
+</li>
+<li>
+<p>看事件后路径 MFE / MAE</p>
+</li>
+</ol>
+<h3 id="第三组判断是不是执行结构差">第三组：判断是不是执行结构差<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第三组判断是不是执行结构差" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol start="8">
+<li>
+<p>去掉重叠信号</p>
+</li>
+<li>
+<p>加冷却期</p>
+</li>
+<li>
+<p>改 exit，而不是只调 entry</p>
+</li>
+</ol>
+<hr/>
+<h1 id="10-最后给一句结论">10. 最后给一句结论<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-最后给一句结论" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你现在遇到的，不是异常，反而是<strong>均值回归研究进入真实交易阶段后的正常现象</strong>：</p>
+<blockquote>
+<p><strong>统计上的“会回归”，远远不够支持交易上的“值得做”。</strong></p>
+</blockquote>
+<p>对于 BTC 超涨做空，尤其要警惕：</p>
+<blockquote>
+<p><strong>你以为在做“过热回落”，实际上你常常是在做空“趋势确认”。</strong></p>
+</blockquote>
+<p>所以你下一步不该继续盲目调参数，而是要先回答三个问题：</p>
+<ol>
+<li>
+<p>这个信号在哪些 <strong>regime</strong> 下才成立？</p>
+</li>
+<li>
+<p>它的 edge 是不是足够厚，能覆盖成本和尾部？</p>
+</li>
+<li>
+<p>BTC 本体上，“超涨做空”这个命题是不是本来就弱于“超跌做多”或“相对偏离回归”？</p>
+</li>
+</ol>
+<p>你要的话，我下一条可以直接给你一份非常实用的内容：</p>
+<p><strong>《BTC 超涨做空 gross/net 为负的系统诊断框架》</strong><br/>
+我会按研究文档格式写成：</p>
+<ul>
+<li>
+<p>症状</p>
+</li>
+<li>
+<p>可能根因</p>
+</li>
+<li>
+<p>检验方法</p>
+</li>
+<li>
+<p>对应修法</p>
+</li>
+<li>
+<p>哪些现象说明该放弃这个方向</p>
+</li>
+</ul>
+<p>这样你可以直接拿去做研究排查。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-254" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#1-先区分你到底遇到的是哪一种有效但不赚钱" data-for="1-先区分你到底遇到的是哪一种有效但不赚钱">1. 先区分：你到底遇到的是哪一种“有效但不赚钱”</a></li><li class="depth-1"><a href="#a-回归存在但幅度太小" data-for="a-回归存在但幅度太小">A. 回归存在，但幅度太小</a></li><li class="depth-1"><a href="#b-回归存在但速度太慢" data-for="b-回归存在但速度太慢">B. 回归存在，但速度太慢</a></li><li class="depth-1"><a href="#c-小回归很多大亏损少数但致命" data-for="c-小回归很多大亏损少数但致命">C. 小回归很多，大亏损少数但致命</a></li><li class="depth-1"><a href="#d-你在错误的状态里做均值回归" data-for="d-你在错误的状态里做均值回归">D. 你在“错误的状态”里做均值回归</a></li><li class="depth-1"><a href="#e-触发太频繁信号密度高但质量低" data-for="e-触发太频繁信号密度高但质量低">E. 触发太频繁，信号密度高但质量低</a></li><li class="depth-0"><a href="#2-为什么信号有效不等于策略赚钱" data-for="2-为什么信号有效不等于策略赚钱">2. 为什么“信号有效”不等于“策略赚钱”</a></li><li class="depth-1"><a href="#第一道坎方向正确" data-for="第一道坎方向正确">第一道坎：方向正确</a></li><li class="depth-1"><a href="#第二道坎幅度足够" data-for="第二道坎幅度足够">第二道坎：幅度足够</a></li><li class="depth-1"><a href="#第三道坎分布可承受" data-for="第三道坎分布可承受">第三道坎：分布可承受</a></li><li class="depth-1"><a href="#第四道坎执行后仍然成立" data-for="第四道坎执行后仍然成立">第四道坎：执行后仍然成立</a></li><li class="depth-0"><a href="#3-对-btc-超涨做空最常见的根因是什么" data-for="3-对-btc-超涨做空最常见的根因是什么">3. 对 BTC 超涨做空，最常见的根因是什么</a></li><li class="depth-1"><a href="#31-你在做空强趋势中的超涨" data-for="31-你在做空强趋势中的超涨">3.1 你在做空“强趋势中的超涨”</a></li><li class="depth-1"><a href="#32-你定义的是统计超涨不是交易性超涨" data-for="32-你定义的是统计超涨不是交易性超涨">3.2 你定义的是“统计超涨”，不是“交易性超涨”</a></li><li class="depth-1"><a href="#33-做空端天然更难" data-for="33-做空端天然更难">3.3 做空端天然更难</a></li><li class="depth-1"><a href="#34-你的-alpha-太浅成本太高" data-for="34-你的-alpha-太浅成本太高">3.4 你的 alpha 太浅，成本太高</a></li><li class="depth-0"><a href="#4-gross--0-和-net--0-分别代表什么" data-for="4-gross--0-和-net--0-分别代表什么">4. gross &lt; 0 和 net &lt; 0 分别代表什么</a></li><li class="depth-1"><a href="#如果-gross--0-net--0" data-for="如果-gross--0-net--0">如果 gross > 0, net &lt; 0</a></li><li class="depth-1"><a href="#如果-gross--0" data-for="如果-gross--0">如果 gross &lt; 0</a></li><li class="depth-0"><a href="#5-你现在最该做的不是继续调参数而是做这-7-个诊断" data-for="5-你现在最该做的不是继续调参数而是做这-7-个诊断">5. 你现在最该做的，不是继续调参数，而是做这 7 个诊断</a></li><li class="depth-1"><a href="#诊断-1看条件期望曲线而不是只看总体收益" data-for="诊断-1看条件期望曲线而不是只看总体收益">诊断 1：看条件期望曲线，而不是只看总体收益</a></li><li class="depth-1"><a href="#诊断-2分-holding-horizon-看" data-for="诊断-2分-holding-horizon-看">诊断 2：分 holding horizon 看</a></li><li class="depth-1"><a href="#诊断-3分-regime-看" data-for="诊断-3分-regime-看">诊断 3：分 regime 看</a></li><li class="depth-1"><a href="#诊断-4看收益分布不只看均值" data-for="诊断-4看收益分布不只看均值">诊断 4：看收益分布，不只看均值</a></li><li class="depth-1"><a href="#诊断-5事件后路径分析" data-for="诊断-5事件后路径分析">诊断 5：事件后路径分析</a></li><li class="depth-1"><a href="#诊断-6检查信号是否簇拥重复开仓" data-for="诊断-6检查信号是否簇拥重复开仓">诊断 6：检查信号是否簇拥、重复开仓</a></li><li class="depth-1"><a href="#诊断-7分解-edge-来源" data-for="诊断-7分解-edge-来源">诊断 7：分解 edge 来源</a></li><li class="depth-0"><a href="#6-对这种问题通常怎么修" data-for="6-对这种问题通常怎么修">6. 对这种问题，通常怎么修</a></li><li class="depth-1"><a href="#修法-1给均值回归加不可做空状态过滤器" data-for="修法-1给均值回归加不可做空状态过滤器">修法 1：给均值回归加“不可做空状态过滤器”</a></li><li class="depth-1"><a href="#修法-2只做更极端的样本" data-for="修法-2只做更极端的样本">修法 2：只做更极端的样本</a></li><li class="depth-1"><a href="#修法-3加入反转确认而不是裸空" data-for="修法-3加入反转确认而不是裸空">修法 3：加入“反转确认”而不是裸空</a></li><li class="depth-1"><a href="#修法-4把-btc-本体均值回归改成相对价值均值回归" data-for="修法-4把-btc-本体均值回归改成相对价值均值回归">修法 4：把 BTC 本体均值回归，改成相对价值均值回归</a></li><li class="depth-1"><a href="#修法-5做多超跌可能比做空超涨更好" data-for="修法-5做多超跌可能比做空超涨更好">修法 5：做多超跌可能比做空超涨更好</a></li><li class="depth-1"><a href="#修法-6把-exit-设计从固定持有改成路径敏感" data-for="修法-6把-exit-设计从固定持有改成路径敏感">修法 6：把 exit 设计从“固定持有”改成“路径敏感”</a></li><li class="depth-1"><a href="#修法-7降低交易频率只保留最干净样本" data-for="修法-7降低交易频率只保留最干净样本">修法 7：降低交易频率，只保留最干净样本</a></li><li class="depth-0"><a href="#7-一个很重要的判断标准这策略还有没有救" data-for="7-一个很重要的判断标准这策略还有没有救">7. 一个很重要的判断标准：这策略还有没有救？</a></li><li class="depth-1"><a href="#有救的情况" data-for="有救的情况">有救的情况</a></li><li class="depth-1"><a href="#很难救的情况" data-for="很难救的情况">很难救的情况</a></li><li class="depth-0"><a href="#8-我对你这个现象的直觉判断" data-for="8-我对你这个现象的直觉判断">8. 我对你这个现象的直觉判断</a></li><li class="depth-0"><a href="#9-你现在最该落地做的检查表" data-for="9-你现在最该落地做的检查表">9. 你现在最该落地做的检查表</a></li><li class="depth-2"><a href="#第一组先判断是不是命题错了" data-for="第一组先判断是不是命题错了">第一组：先判断是不是命题错了</a></li><li class="depth-2"><a href="#第二组判断是不是信号太浅" data-for="第二组判断是不是信号太浅">第二组：判断是不是信号太浅</a></li><li class="depth-2"><a href="#第三组判断是不是执行结构差" data-for="第三组判断是不是执行结构差">第三组：判断是不是执行结构差</a></li><li class="depth-0"><a href="#10-最后给一句结论" data-for="10-最后给一句结论">10. 最后给一句结论</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../postscript.js" type="module" data-persist="true"></script></html>

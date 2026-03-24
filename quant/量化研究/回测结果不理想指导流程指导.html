@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>回测结果不理想指导流程指导</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="回测结果不理想指导流程指导"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="回测结果不理想指导流程指导"/><meta name="twitter:description" content="Backtest 失败后的标准处置 SOP 文档目的：为量化研究线在 05_backtest 结果不理想时，提供一套可审计、可复现、可治理的标准处置流程，避免“无方向优化”“回头调参”“静默改口径”。 适用范围：适用于具备明确谱系与阶段治理的研究线，尤其适用于如下 stage workflow： 00_mandate 01_data_ready 02_signal_ready 03_train_freeze 04_test_evidence 05_backtest 适用对象：Research、Quant Dev、Reviewer、PM / Risk / Model Governance。 1."/><meta property="og:description" content="Backtest 失败后的标准处置 SOP 文档目的：为量化研究线在 05_backtest 结果不理想时，提供一套可审计、可复现、可治理的标准处置流程，避免“无方向优化”“回头调参”“静默改口径”。 适用范围：适用于具备明确谱系与阶段治理的研究线，尤其适用于如下 stage workflow： 00_mandate 01_data_ready 02_signal_ready 03_train_freeze 04_test_evidence 05_backtest 适用对象：Research、Quant Dev、Reviewer、PM / Risk / Model Governance。 1."/><meta property="og:image:alt" content="Backtest 失败后的标准处置 SOP 文档目的：为量化研究线在 05_backtest 结果不理想时，提供一套可审计、可复现、可治理的标准处置流程，避免“无方向优化”“回头调参”“静默改口径”。 适用范围：适用于具备明确谱系与阶段治理的研究线，尤其适用于如下 stage workflow： 00_mandate 01_data_ready 02_signal_ready 03_train_freeze 04_test_evidence 05_backtest 适用对象：Research、Quant Dev、Reviewer、PM / Risk / Model Governance。 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/quant/量化研究/回测结果不理想指导流程指导"/><meta property="twitter:url" content="https://https//mindcarver.top/quant/量化研究/回测结果不理想指导流程指导"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="Backtest 失败后的标准处置 SOP 文档目的：为量化研究线在 05_backtest 结果不理想时，提供一套可审计、可复现、可治理的标准处置流程，避免“无方向优化”“回头调参”“静默改口径”。 适用范围：适用于具备明确谱系与阶段治理的研究线，尤其适用于如下 stage workflow： 00_mandate 01_data_ready 02_signal_ready 03_train_freeze 04_test_evidence 05_backtest 适用对象：Research、Quant Dev、Reviewer、PM / Risk / Model Governance。 1."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="quant/量化研究/回测结果不理想指导流程指导"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-499"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-499" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../quant/">quant</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../quant/量化研究/">量化研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>回测结果不理想指导流程指导</a></div></nav><h1 class="article-title">回测结果不理想指导流程指导</h1><p show-comma="true" class="content-meta"><time datetime="2026-03-24T09:21:16.644Z">2026年3月24日</time><span>19分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="backtest-失败后的标准处置-sop">Backtest 失败后的标准处置 SOP<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#backtest-失败后的标准处置-sop" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p><strong>文档目的</strong>：为量化研究线在 <code>05_backtest</code> 结果不理想时，提供一套可审计、可复现、可治理的标准处置流程，避免“无方向优化”“回头调参”“静默改口径”。</p>
+<p><strong>适用范围</strong>：适用于具备明确谱系与阶段治理的研究线，尤其适用于如下 stage workflow：</p>
+<ul>
+<li><code>00_mandate</code></li>
+<li><code>01_data_ready</code></li>
+<li><code>02_signal_ready</code></li>
+<li><code>03_train_freeze</code></li>
+<li><code>04_test_evidence</code></li>
+<li><code>05_backtest</code></li>
+</ul>
+<p><strong>适用对象</strong>：Research、Quant Dev、Reviewer、PM / Risk / Model Governance。</p>
+<hr/>
+<h2 id="1-核心原则">1. 核心原则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-核心原则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="11-backtest-是交易可行性审计层不是反向发明信号层">1.1 Backtest 是“交易可行性审计层”，不是“反向发明信号层”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-backtest-是交易可行性审计层不是反向发明信号层" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><code>05_backtest</code> 的职责是验证：</p>
+<ul>
+<li>上游已冻结的 Universe、参数、阈值、信号与执行规则，</li>
+<li>在真实费用、真实持仓语义、真实容量假设下，</li>
+<li>是否具备可交易性。</li>
+</ul>
+<p>它<strong>不负责</strong>：</p>
+<ul>
+<li>看到结果差后反向重写主信号；</li>
+<li>回头重估 <code>best_h</code>、whitelist、train/test cut；</li>
+<li>用账户级结果去倒推 signal formula。</li>
+</ul>
+<h3 id="12-失败先冻结再解释">1.2 失败先冻结，再解释<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-失败先冻结再解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>任何不理想 backtest，第一动作都不是“优化”，而是：</p>
+<ol>
+<li>冻结本次失败结果；</li>
+<li>做失败分类；</li>
+<li>明确 rollback stage；</li>
+<li>写 allowed / forbidden modifications；</li>
+<li>再决定是 <code>RETRY</code>、<code>RESEARCH_AGAIN</code>、<code>NO_GO</code> 还是 <code>CHILD_LINEAGE</code>。</li>
+</ol>
+<h3 id="13-只能在失败所属层修改">1.3 只能在“失败所属层”修改<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#13-只能在失败所属层修改" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>工程问题，在工程层修；</li>
+<li>执行问题，在执行层修；</li>
+<li>研究证据问题，回到 <code>03/04</code> 修；</li>
+<li>主问题变了，开新谱系。</li>
+</ul>
+<p>严禁跨层补丁式优化。</p>
+<h3 id="14-少量受控可解释的-retry">1.4 少量、受控、可解释的 retry<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#14-少量受控可解释的-retry" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>每次 retry 必须满足：</p>
+<ul>
+<li>有且仅有一个明确假设；</li>
+<li>有且仅有一组受控修改；</li>
+<li>有明确预期改善指标；</li>
+<li>同一失败类型的 controlled retry 不得无限持续。</li>
+</ul>
+<p>建议纪律：同一失败类型最多 <code>1–2</code> 次 controlled retry；再无改善，则升级为 <code>RESEARCH_AGAIN</code>、<code>NO_GO</code> 或 <code>CHILD_LINEAGE</code>。</p>
+<hr/>
+<h2 id="2-失败触发条件">2. 失败触发条件<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-失败触发条件" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>满足以下任一条件时，应触发本 SOP：</p>
+<ul>
+<li><code>05_backtest</code> 账户级 <code>net_pnl_sum &lt;= 0</code>，或 <code>total_return &lt;= 0</code>；</li>
+<li>毛利为正但净利为负，且费用显著吞噬 alpha；</li>
+<li>回撤、容量、换手、滑点表现明显超出项目容忍区间；</li>
+<li>双引擎语义不一致、复算不一致、结果不可复现；</li>
+<li>样本外 / holdout / paper trading 与预期偏离过大；</li>
+<li>结果只能在狭窄参数点成立，缺乏稳健性。</li>
+</ul>
+<hr/>
+<h2 id="3-标准流程总览">3. 标准流程总览<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-标准流程总览" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="步骤-0冻结失败结果failure-freeze">步骤 0：冻结失败结果（Failure Freeze）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-0冻结失败结果failure-freeze" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h3 id="步骤-1正确性排查correctness-triage">步骤 1：正确性排查（Correctness Triage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-1正确性排查correctness-triage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h3 id="步骤-2统计证据排查evidence-triage">步骤 2：统计证据排查（Evidence Triage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-2统计证据排查evidence-triage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h3 id="步骤-3经济性与执行排查economics--execution-triage">步骤 3：经济性与执行排查（Economics / Execution Triage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-3经济性与执行排查economics--execution-triage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h3 id="步骤-4主假设复审thesis-review">步骤 4：主假设复审（Thesis Review）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-4主假设复审thesis-review" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h3 id="步骤-5决策分流decision-fork">步骤 5：决策分流（Decision Fork）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-5决策分流decision-fork" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h3 id="步骤-6受控回退或停线rollback--stop--new-lineage">步骤 6：受控回退或停线（Rollback / Stop / New Lineage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#步骤-6受控回退或停线rollback--stop--new-lineage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<hr/>
+<h2 id="4-步骤-0冻结失败结果">4. 步骤 0：冻结失败结果<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-步骤-0冻结失败结果" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="41-必须冻结的内容">4.1 必须冻结的内容<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#41-必须冻结的内容" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>一旦 backtest 失败，必须生成 failure package，至少包括：</p>
+<ul>
+<li><code>lineage_id</code></li>
+<li><code>run_id</code></li>
+<li>代码版本 / commit hash</li>
+<li>数据版本 / 数据时间范围</li>
+<li>Universe 版本</li>
+<li>参数版本</li>
+<li>时间切分方式</li>
+<li>手续费 / 滑点 / 借券 / 资金规模假设</li>
+<li>撮合语义 / 引擎版本</li>
+<li>账户级关键结果</li>
+<li>stage aggregate 结果</li>
+<li>已知异常与未决问题</li>
+</ul>
+<h3 id="42-推荐产物">4.2 推荐产物<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#42-推荐产物" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>建议固定输出以下文件：</p>
+<ol>
+<li><code>failure_freeze.md</code></li>
+<li><code>repro_manifest.json</code></li>
+<li><code>failure_classification.md</code></li>
+<li><code>rollback_decision.yaml</code></li>
+<li><code>retry_plan.md</code>（仅当决策为 <code>RETRY</code> 时）</li>
+</ol>
+<h3 id="43-failure-freeze-最小模板">4.3 Failure Freeze 最小模板<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#43-failure-freeze-最小模板" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="yaml" data-theme="github-light github-dark"><code data-language="yaml" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">lineage_id</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;lineage></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">run_id</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;run></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">stage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">05_backtest</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">status</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">failed_frozen</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">code_version</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;git_sha></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">data_version</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;data_tag></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">universe_version</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;universe_tag></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">parameter_version</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;param_tag></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">execution_semantics</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;description></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">fee_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;description></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">slippage_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;description></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">capital_assumption</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;description></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">key_results</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">  gross_pnl_sum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">  fee_paid_sum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">  net_pnl_sum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">  total_return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">  max_drawdown</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">  turnover</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">known_issues</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">open_questions</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span></code></pre></figure>
+<hr/>
+<h2 id="5-步骤-1正确性排查correctness-triage">5. 步骤 1：正确性排查（Correctness Triage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-步骤-1正确性排查correctness-triage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这一步先回答“结果对不对”，而不是“结果赚不赚”。</p>
+<h3 id="51-检查清单">5.1 检查清单<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-检查清单" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="a-可复现性">A. 可复现性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#a-可复现性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>同一配置重跑，结果是否一致；</li>
+<li>固定种子 / 固定输入后，输出是否稳定；</li>
+<li>关键汇总文件与逐笔成交是否一致。</li>
+</ul>
+<h4 id="b-双引擎--交叉引擎一致性">B. 双引擎 / 交叉引擎一致性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#b-双引擎--交叉引擎一致性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>至少使用两套回测或执行语义进行交叉验证；</li>
+<li>检查 <code>semantic_gap</code> 或等价字段；</li>
+<li>若两引擎结果方向相反或偏差巨大，优先归类为工程问题。</li>
+</ul>
+<h4 id="c-时间与因果关系">C. 时间与因果关系<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#c-时间与因果关系" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>信号是否使用了未来信息；</li>
+<li><code>T</code> 信号与 <code>T+1</code> 收益是否正确对齐；</li>
+<li>标准化窗口、回归窗口、持仓窗口是否存在泄漏。</li>
+</ul>
+<h4 id="d-数据质量">D. 数据质量<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#d-数据质量" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>对齐是否正确；</li>
+<li>缺失、停牌、异常值、复权、退市、可交易性过滤是否正确；</li>
+<li>Pair / spread / hedge leg 的单位是否一致。</li>
+</ul>
+<h4 id="e-执行状态机正确性">E. 执行状态机正确性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#e-执行状态机正确性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>entry / exit / stop / cancel 的状态机是否正确；</li>
+<li><code>cross_only</code> 是否被实现成 <code>stateful cross_only</code>；</li>
+<li><code>max_hold</code>、<code>stop</code>、<code>mean_reached</code> 等 close reason 是否符合合同。</li>
+</ul>
+<h4 id="f-成本与单位边界">F. 成本与单位边界<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#f-成本与单位边界" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>stage aggregate 的单位是否与账户级单位明确区分；</li>
+<li>手续费是否按真实名义仓位计算；</li>
+<li>单腿 / 双腿费用是否与 contract 一致。</li>
+</ul>
+<h3 id="52-判定标准">5.2 判定标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-判定标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>若此步发现：</p>
+<ul>
+<li>结果不可复现；</li>
+<li>双引擎语义不一致；</li>
+<li>存在未来函数；</li>
+<li>数据错位；</li>
+<li>单位换算错误；</li>
+<li>成本模型实现错误；</li>
+</ul>
+<p>则归类为：</p>
+<h2 id="eng_fail"><code>ENG_FAIL</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#eng_fail" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="53-eng_fail-处理规则">5.3 <code>ENG_FAIL</code> 处理规则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#53-eng_fail-处理规则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>rollback_stage</strong>：缺陷所在 stage（通常为 <code>01_data_ready</code>、<code>02_signal_ready</code> 或 <code>05_backtest</code> 实现层）</li>
+<li><strong>决策</strong>：<code>RETRY</code></li>
+<li><strong>允许修改</strong>：数据链路、状态机、撮合逻辑、费用逻辑、实现 bug</li>
+<li><strong>禁止修改</strong>：Universe、信号表达式、上游冻结对象、研究主问题</li>
+</ul>
+<hr/>
+<h2 id="6-步骤-2统计证据排查evidence-triage">6. 步骤 2：统计证据排查（Evidence Triage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-步骤-2统计证据排查evidence-triage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>只有 correctness 通过后，才检查“信号统计上到底还在不在”。</p>
+<h3 id="61-检查目标">6.1 检查目标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-检查目标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><code>04_test_evidence</code> 的核心结论是否真的稳健；</li>
+<li>当前 backtest 失败，是不是 earlier-stage 证据本来就弱，只是到 <code>05</code> 才暴露；</li>
+<li>是否存在严重 multiple testing / data snooping；</li>
+<li>上游 freeze discipline 是否被破坏。</li>
+</ul>
+<h3 id="62-检查清单">6.2 检查清单<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-检查清单" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="a-结构证据是否稳定">A. 结构证据是否稳定<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#a-结构证据是否稳定" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>主假设对应的 test metrics 是否在 test / holdout 上稳定；</li>
+<li>不是只在 train 或少量片段上成立；</li>
+<li>不是只靠极端样本支撑。</li>
+</ul>
+<h4 id="b-样本外纪律是否被破坏">B. 样本外纪律是否被破坏<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#b-样本外纪律是否被破坏" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>阈值、白名单、<code>best_h</code> 是否只用 train 冻结；</li>
+<li>backtest 阶段是否出现“看了结果再回头改 freeze 对象”的行为；</li>
+<li>是否在同一份 OOS 上反复调参。</li>
+</ul>
+<h4 id="c-稳健性">C. 稳健性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#c-稳健性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>相邻参数是否不是断崖式失效；</li>
+<li>不同时间切片、不同 regime、不同 symbol bucket 是否大致一致；</li>
+<li>不应只有一个窄点好看。</li>
+</ul>
+<h4 id="d-研究问题是否发生漂移">D. 研究问题是否发生漂移<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#d-研究问题是否发生漂移" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>当前线是否还在回答原 Mandate 的主问题；</li>
+<li>还是已经变成另一个问题，只是名字没换。</li>
+</ul>
+<h3 id="63-判定标准">6.3 判定标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-判定标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>若此步发现：</p>
+<ul>
+<li><code>04_test_evidence</code> 本身就不稳；</li>
+<li>样本外纪律被破坏；</li>
+<li><code>best_h</code>、whitelist、threshold 在 <code>05</code> 被反向重估；</li>
+<li>backtest 的失败实质上是 research evidence 的失败；</li>
+</ul>
+<p>则归类为：</p>
+<h2 id="research_fail"><code>RESEARCH_FAIL</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#research_fail" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="64-research_fail-处理规则">6.4 <code>RESEARCH_FAIL</code> 处理规则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#64-research_fail-处理规则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>rollback_stage</strong>：<code>03_train_freeze</code> 或 <code>04_test_evidence</code></li>
+<li><strong>决策</strong>：<code>RESEARCH_AGAIN</code></li>
+<li><strong>允许修改</strong>：研究设计、证据口径、切片验证、稳健性验证、freeze discipline</li>
+<li><strong>禁止修改</strong>：在同一份 backtest / OOS 上继续调参直到好看</li>
+</ul>
+<hr/>
+<h2 id="7-步骤-3经济性与执行排查economics--execution-triage">7. 步骤 3：经济性与执行排查（Economics / Execution Triage）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-步骤-3经济性与执行排查economics--execution-triage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>若 correctness 正确、统计上仍有一定边，则进入经济性与执行层排查。</p>
+<h3 id="71-先拆-gross-与-net不要先看总收益">7.1 先拆 gross 与 net，不要先看总收益<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#71-先拆-gross-与-net不要先看总收益" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>至少拆以下指标：</p>
+<ul>
+<li><code>gross_pnl_sum</code></li>
+<li><code>fee_paid_sum</code></li>
+<li><code>slippage_sum</code></li>
+<li><code>net_pnl_sum</code></li>
+<li><code>gross/trade</code></li>
+<li><code>fee/trade</code></li>
+<li><code>net/trade</code></li>
+<li>turnover</li>
+<li>平均持仓时长</li>
+<li>close reason 分布</li>
+<li>容量 / 资金规模敏感性</li>
+</ul>
+<h3 id="72-重点检查项">7.2 重点检查项<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#72-重点检查项" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="a-信号有边但太薄">A. 信号有边，但太薄<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#a-信号有边但太薄" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>典型症状：</p>
+<ul>
+<li><code>gross > 0</code></li>
+<li><code>net &lt; 0</code></li>
+<li><code>gross/trade</code> 明显小于 <code>fee/trade</code></li>
+</ul>
+<h4 id="b-换手过高">B. 换手过高<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#b-换手过高" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>典型症状：</p>
+<ul>
+<li>交易次数很多；</li>
+<li>单笔利润很小；</li>
+<li>零成本或低成本表现尚可，但真实费率下崩掉。</li>
+</ul>
+<h4 id="c-持仓规则没有在消费主信号语义">C. 持仓规则没有在消费主信号语义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#c-持仓规则没有在消费主信号语义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>例如：</p>
+<ul>
+<li>研究主张是 mean reversion；</li>
+<li>但实盘执行几乎全部由 <code>max_hold</code> 退出；</li>
+<li>实际上变成了“事件 + 固定持有期”而不是“回归即退出”。</li>
+</ul>
+<h4 id="d-规模--容量不匹配">D. 规模 / 容量不匹配<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#d-规模--容量不匹配" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>例如：</p>
+<ul>
+<li>小 alpha 在小资金下可活；</li>
+<li>在正式 pair budget 下被成本吃掉；</li>
+<li>策略并非完全无效，而是在当前成本 / 容量假设下不可实施。</li>
+</ul>
+<h3 id="73-判定标准">7.3 判定标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#73-判定标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>若此步发现：</p>
+<ul>
+<li>信号方向基本正确或略有边；</li>
+<li>但交易成本、滑点、容量、换手、持有期规则吃掉了收益；</li>
+<li>或当前执行语义明显偏离研究语义；</li>
+</ul>
+<p>则归类为：</p>
+<h2 id="exec_fail"><code>EXEC_FAIL</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#exec_fail" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="74-exec_fail-处理规则">7.4 <code>EXEC_FAIL</code> 处理规则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#74-exec_fail-处理规则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>rollback_stage</strong>：通常仍为 <code>05_backtest</code>，必要时回退到 execution contract 设计层</li>
+<li><strong>决策</strong>：<code>RETRY</code></li>
+<li><strong>允许修改</strong>：
+<ul>
+<li>exit 语义</li>
+<li>entry 触发节奏</li>
+<li>cooldown / re-entry suppression</li>
+<li>持仓时长 / stop / take-profit 映射</li>
+<li>成本包络测试</li>
+<li>资金规模 / 容量分析</li>
+<li>订单执行与撮合假设</li>
+</ul>
+</li>
+<li><strong>禁止修改</strong>：
+<ul>
+<li>topicA whitelist</li>
+<li><code>best_h</code> 重估</li>
+<li>train/test 切分</li>
+<li>因 backtest 结果不好而回头改主信号</li>
+<li>将对侧信号静默加回</li>
+<li>事后增加 gate 美化收益</li>
+</ul>
+</li>
+</ul>
+<hr/>
+<h2 id="8-步骤-4主假设复审thesis-review">8. 步骤 4：主假设复审（Thesis Review）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-步骤-4主假设复审thesis-review" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>当 correctness 正确、实现无误、执行与成本也不能解释全部失败时，要回到更高层：</p>
+<h3 id="81-问四个问题">8.1 问四个问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#81-问四个问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>这个策略赚的是什么钱？</li>
+<li>这套机制是否仍然存在？</li>
+<li>它是不是只在狭窄历史片段上成立？</li>
+<li>市场结构、费用结构、拥挤度是否已经使原假设失效？</li>
+</ol>
+<h3 id="82-典型症状">8.2 典型症状<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#82-典型症状" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>不同时间段都不稳；</li>
+<li>稍微改参数就断崖失效；</li>
+<li>核心统计证据也弱；</li>
+<li>无法用成本或执行规则解释；</li>
+<li>研究主问题本身不成立，或已经不再值得投入。</li>
+</ul>
+<p>此时归类为：</p>
+<h2 id="thesis_fail"><code>THESIS_FAIL</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#thesis_fail" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="83-thesis_fail-处理规则">8.3 <code>THESIS_FAIL</code> 处理规则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#83-thesis_fail-处理规则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>rollback_stage</strong>：不再 rollback 原线</li>
+<li><strong>决策</strong>：<code>NO_GO</code></li>
+<li><strong>允许动作</strong>：停线、记录结论、沉淀负样本经验</li>
+<li><strong>禁止动作</strong>：继续在原线补丁式优化</li>
+</ul>
+<hr/>
+<h2 id="9-步骤-5决策分流decision-fork">9. 步骤 5：决策分流（Decision Fork）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-步骤-5决策分流decision-fork" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>每次失败处理后，只允许输出以下四种正式决策之一：</p>
+<h3 id="91-retry">9.1 <code>RETRY</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#91-retry" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用于：</p>
+<ul>
+<li><code>ENG_FAIL</code></li>
+<li><code>EXEC_FAIL</code></li>
+<li>且问题边界明确，可在受控范围内修复</li>
+</ul>
+<p>要求：</p>
+<ul>
+<li>写明 rollback stage</li>
+<li>写明 allowed modifications</li>
+<li>写明 forbidden modifications</li>
+<li>写明下一轮唯一核心假设</li>
+<li>写明预期改善指标</li>
+</ul>
+<h3 id="92-research_again">9.2 <code>RESEARCH_AGAIN</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#92-research_again" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用于：</p>
+<ul>
+<li><code>RESEARCH_FAIL</code></li>
+<li>backtest 失败只是更晚暴露 earlier-stage 证据不稳</li>
+</ul>
+<p>要求：</p>
+<ul>
+<li>回到 <code>03/04</code></li>
+<li>重新审视 train/test freeze discipline</li>
+<li>重做证据层，而不是继续拿 <code>05</code> 调参</li>
+</ul>
+<h3 id="93-no_go">9.3 <code>NO_GO</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#93-no_go" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用于：</p>
+<ul>
+<li><code>THESIS_FAIL</code></li>
+<li>或明确判断当前线不值得继续投入</li>
+</ul>
+<p>要求：</p>
+<ul>
+<li>明确停线理由</li>
+<li>记录可复用经验</li>
+<li>禁止隐性重启原线</li>
+</ul>
+<h3 id="94-child_lineage">9.4 <code>CHILD_LINEAGE</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#94-child_lineage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用于：</p>
+<ul>
+<li>研究主问题、交易语义、Universe 合同发生变化</li>
+<li>已不再是原题的小修小补</li>
+</ul>
+<p>典型例子：</p>
+<ul>
+<li>从“双边 OB/OS”转成“只做 3A 超涨回落”；</li>
+<li>从“结构诊断”转成“执行 alpha”；</li>
+<li>从“Universe only conditioning”转成“逐 bar gate conditioning”。</li>
+</ul>
+<p>要求：</p>
+<ul>
+<li>新命名</li>
+<li>新 mandate</li>
+<li>新 contract</li>
+<li>与原线清晰隔离</li>
+</ul>
+<hr/>
+<h2 id="10-失败分类与回退矩阵">10. 失败分类与回退矩阵<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-失败分类与回退矩阵" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>失败类型</th><th>典型症状</th><th style="text-align:right;">rollback stage</th><th>默认决策</th><th>允许修改</th><th>禁止修改</th></tr></thead><tbody><tr><td><code>ENG_FAIL</code></td><td>不可复现、未来函数、引擎不一致、单位错</td><td style="text-align:right;">缺陷所在 stage</td><td><code>RETRY</code></td><td>数据、实现、状态机、成本逻辑</td><td>主信号、Universe、freeze 对象</td></tr><tr><td><code>EXEC_FAIL</code></td><td>gross 有边，net 被成本/换手/退出吃掉</td><td style="text-align:right;"><code>05_backtest</code></td><td><code>RETRY</code></td><td>执行规则、退出映射、cooldown、容量/成本测试</td><td><code>best_h</code>、whitelist、signal formula</td></tr><tr><td><code>RESEARCH_FAIL</code></td><td><code>04_test_evidence</code> 不稳、样本外纪律破坏</td><td style="text-align:right;"><code>03/04</code></td><td><code>RESEARCH_AGAIN</code></td><td>证据层验证、切片、freeze discipline</td><td>在同一 OOS 上继续调参</td></tr><tr><td><code>THESIS_FAIL</code></td><td>机制不成立、广泛失效、脆弱</td><td style="text-align:right;">无</td><td><code>NO_GO</code></td><td>停线、沉淀结论</td><td>补丁式续命</td></tr><tr><td>研究主问题改变</td><td>研究题目或合同改变</td><td style="text-align:right;">新线</td><td><code>CHILD_LINEAGE</code></td><td>新谱系设计</td><td>污染原线</td></tr></tbody></table></div>
+<hr/>
+<h2 id="11-retry-的标准写法">11. Retry 的标准写法<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-retry-的标准写法" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>每次 retry 只能写成如下结构：</p>
+<h3 id="111-唯一核心假设">11.1 唯一核心假设<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#111-唯一核心假设" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>例如：</p>
+<ul>
+<li><code>当前失败主因是纯 hard exit，导致 mean reversion 语义没有被消费。</code></li>
+</ul>
+<h3 id="112-受控修改集">11.2 受控修改集<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#112-受控修改集" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>例如：</p>
+<ul>
+<li>只修改 exit 语义；</li>
+<li>不改 signal source；</li>
+<li>不改 Universe；</li>
+<li>不改 <code>best_h</code>；</li>
+<li>不回头改白名单。</li>
+</ul>
+<h3 id="113-预期改善指标">11.3 预期改善指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#113-预期改善指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>例如：</p>
+<ul>
+<li><code>mean_reached</code> 占比上升；</li>
+<li>平均持有时长下降；</li>
+<li><code>gross/trade</code> 上升；</li>
+<li><code>fee/gross</code> 比例下降；</li>
+<li>账户级 <code>net_pnl_sum</code> 改善。</li>
+</ul>
+<h3 id="114-retry-模板">11.4 Retry 模板<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#114-retry-模板" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="yaml" data-theme="github-light github-dark"><code data-language="yaml" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">decision_state</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">RETRY</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">failure_class</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">EXEC_FAIL</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">rollback_stage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">05_backtest</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">next_hypothesis</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">  当前失败主因是退出语义将均值回归策略退化为硬持有期事件交易。</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">allowed_modifications</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">exit_semantics</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">cooldown</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">reentry_suppression</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">execution_cost_envelope</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">forbidden_modifications</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">whitelist</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">best_h_reestimation</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">train_test_resplit</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">signal_formula_rewrite</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">expected_improvements</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">higher_mean_reached_ratio</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">lower_turnover</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">higher_gross_per_trade</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">lower_fee_to_gross_ratio</span></span></code></pre></figure>
+<hr/>
+<h2 id="12-禁止动作清单">12. 禁止动作清单<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-禁止动作清单" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>以下动作默认视为违规：</p>
+<ol>
+<li>因为 backtest 结果差，回头重估 <code>best_h</code></li>
+<li>在同一份 OOS / backtest 上反复挑参数直到好看</li>
+<li>在 <code>05</code> 阶段偷偷更换 Universe</li>
+<li>把对侧信号加回来，掩盖单边策略问题</li>
+<li>用新 gate、美化过滤器掩盖主信号经济性不足</li>
+<li>用 stage aggregate 替代账户级收益结论</li>
+<li>在 summary 文档中混淆单位边界</li>
+<li>不冻结失败版本，直接开始下一轮修改</li>
+</ol>
+<hr/>
+<h2 id="13-推荐的最小审计产物">13. 推荐的最小审计产物<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#13-推荐的最小审计产物" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="131-failure_classificationmd">13.1 <code>failure_classification.md</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#131-failure_classificationmd" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>建议固定写：</p>
+<ul>
+<li>本次失败属于哪一类</li>
+<li>证据是什么</li>
+<li>为什么不是其他失败类型</li>
+<li>rollback 到哪一层</li>
+<li>下一步允许改什么、不允许改什么</li>
+</ul>
+<h3 id="132-rollback_decisionyaml">13.2 <code>rollback_decision.yaml</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#132-rollback_decisionyaml" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="yaml" data-theme="github-light github-dark"><code data-language="yaml" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">decision_state</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">RETRY | RESEARCH_AGAIN | NO_GO | CHILD_LINEAGE</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">failure_class</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">ENG_FAIL | EXEC_FAIL | RESEARCH_FAIL | THESIS_FAIL</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">rollback_stage</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">01_data_ready | 02_signal_ready | 03_train_freeze | 04_test_evidence | 05_backtest | none</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">allowed_modifications</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">forbidden_modifications</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">  - </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">...</span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">owner</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;name></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">reviewer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&lt;name></span></span>
+<span data-line><span style="--shiki-light:#22863A;--shiki-dark:#85E89D;">signoff_required</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">true</span></span></code></pre></figure>
+<h3 id="133-retry_planmd">13.3 <code>retry_plan.md</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#133-retry_planmd" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>至少包括：</p>
+<ul>
+<li>本轮唯一假设</li>
+<li>修改项</li>
+<li>预期改善指标</li>
+<li>成功 / 失败判定标准</li>
+<li>最大 retry 次数</li>
+</ul>
+<hr/>
+<h2 id="14-将机构常见五阶段流程映射到本-sop">14. 将机构常见五阶段流程映射到本 SOP<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#14-将机构常见五阶段流程映射到本-sop" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="阶段一sanity-checks--attribution">阶段一：Sanity Checks &amp; Attribution<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#阶段一sanity-checks--attribution" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>映射到：</p>
+<ul>
+<li><code>步骤 0：冻结</code></li>
+<li><code>步骤 1：正确性排查</code></li>
+<li><code>步骤 3：成本 / 归因 / 容量排查</code></li>
+</ul>
+<h3 id="阶段二hypothesis-review">阶段二：Hypothesis Review<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#阶段二hypothesis-review" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>映射到：</p>
+<ul>
+<li><code>步骤 2：统计证据排查</code></li>
+<li><code>步骤 4：主假设复审</code></li>
+</ul>
+<h3 id="阶段三optimization--refinement">阶段三：Optimization &amp; Refinement<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#阶段三optimization--refinement" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>映射到：</p>
+<ul>
+<li>仅在 <code>RETRY</code> 条件下受控进行；</li>
+<li>必须限定在失败所属层；</li>
+<li>不是无限调参。</li>
+</ul>
+<h3 id="阶段四robustness-testing">阶段四：Robustness Testing<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#阶段四robustness-testing" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>映射到：</p>
+<ul>
+<li>retry 之后必须重新走未触碰样本的验证；</li>
+<li>检查参数高原而不是孤峰；</li>
+<li>检查 regime / time split / bucket 稳定性。</li>
+</ul>
+<h3 id="阶段五decision-fork">阶段五：Decision Fork<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#阶段五decision-fork" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>映射到：</p>
+<ul>
+<li><code>RETRY</code></li>
+<li><code>RESEARCH_AGAIN</code></li>
+<li><code>NO_GO</code></li>
+<li><code>CHILD_LINEAGE</code></li>
+</ul>
+<hr/>
+<h2 id="15-套用到你当前项目的落地建议">15. 套用到你当前项目的落地建议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#15-套用到你当前项目的落地建议" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>对当前 <code>topicA -> topicC-3A event_hardexit</code> 这条线，若已确认：</p>
+<ul>
+<li>双引擎一致；</li>
+<li>不是实现 bug；</li>
+<li>gross 为正但 net 为负；</li>
+<li>close reason 几乎全是 <code>max_hold</code>；</li>
+</ul>
+<p>则当前最合理的正式分类通常应写成：</p>
+<h2 id="exec_fail-primary"><code>EXEC_FAIL-primary</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#exec_fail-primary" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>建议写法：</p>
+<ul>
+<li><strong>rollback_stage</strong>：<code>05_backtest</code></li>
+<li><strong>decision_state</strong>：<code>RETRY</code></li>
+<li><strong>allowed_modifications</strong>：
+<ul>
+<li><code>exit semantics</code></li>
+<li><code>turnover suppression</code></li>
+<li><code>cooldown</code></li>
+<li><code>cost envelope</code></li>
+<li><code>sizing / capacity sensitivity</code></li>
+</ul>
+</li>
+<li><strong>forbidden_modifications</strong>：
+<ul>
+<li><code>topicA whitelist</code></li>
+<li><code>best_h re-estimation</code></li>
+<li><code>train/test resplit</code></li>
+<li>将 <code>OS</code> 重新并入正式执行</li>
+<li>事后添加 <code>topicD</code> gate 美化收益</li>
+</ul>
+</li>
+</ul>
+<p>下一轮 retry 的目标不应再写成“继续证明 OB 回落存在”，而应写成：</p>
+<p><code>验证当前失败是否主要由执行退出语义与交易经济学失配导致。</code></p>
+<hr/>
+<h2 id="16-最终结论模板">16. 最终结论模板<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#16-最终结论模板" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>每次 backtest 失败，最终结论建议固定为以下格式：</p>
+<h3 id="161-结论摘要">16.1 结论摘要<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#161-结论摘要" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>本次失败类型：</li>
+<li>主要证据：</li>
+<li>rollback stage：</li>
+<li>决策状态：</li>
+</ul>
+<h3 id="162-失败归因">16.2 失败归因<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#162-失败归因" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>是否为工程失败：</li>
+<li>是否为研究失败：</li>
+<li>是否为执行失败：</li>
+<li>是否为主假设失败：</li>
+</ul>
+<h3 id="163-允许修改--禁止修改">16.3 允许修改 / 禁止修改<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#163-允许修改--禁止修改" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>allowed modifications：</li>
+<li>forbidden modifications：</li>
+</ul>
+<h3 id="164-下一步动作">16.4 下一步动作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#164-下一步动作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>若 <code>RETRY</code>：唯一核心假设与指标</li>
+<li>若 <code>RESEARCH_AGAIN</code>：回退到 <code>03/04</code> 的具体任务</li>
+<li>若 <code>NO_GO</code>：停线与经验沉淀</li>
+<li>若 <code>CHILD_LINEAGE</code>：新线 mandate 的差异点</li>
+</ul>
+<hr/></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-253" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#backtest-失败后的标准处置-sop" data-for="backtest-失败后的标准处置-sop">Backtest 失败后的标准处置 SOP</a></li><li class="depth-1"><a href="#1-核心原则" data-for="1-核心原则">1. 核心原则</a></li><li class="depth-2"><a href="#11-backtest-是交易可行性审计层不是反向发明信号层" data-for="11-backtest-是交易可行性审计层不是反向发明信号层">1.1 Backtest 是“交易可行性审计层”，不是“反向发明信号层”</a></li><li class="depth-2"><a href="#12-失败先冻结再解释" data-for="12-失败先冻结再解释">1.2 失败先冻结，再解释</a></li><li class="depth-2"><a href="#13-只能在失败所属层修改" data-for="13-只能在失败所属层修改">1.3 只能在“失败所属层”修改</a></li><li class="depth-2"><a href="#14-少量受控可解释的-retry" data-for="14-少量受控可解释的-retry">1.4 少量、受控、可解释的 retry</a></li><li class="depth-1"><a href="#2-失败触发条件" data-for="2-失败触发条件">2. 失败触发条件</a></li><li class="depth-1"><a href="#3-标准流程总览" data-for="3-标准流程总览">3. 标准流程总览</a></li><li class="depth-2"><a href="#步骤-0冻结失败结果failure-freeze" data-for="步骤-0冻结失败结果failure-freeze">步骤 0：冻结失败结果（Failure Freeze）</a></li><li class="depth-2"><a href="#步骤-1正确性排查correctness-triage" data-for="步骤-1正确性排查correctness-triage">步骤 1：正确性排查（Correctness Triage）</a></li><li class="depth-2"><a href="#步骤-2统计证据排查evidence-triage" data-for="步骤-2统计证据排查evidence-triage">步骤 2：统计证据排查（Evidence Triage）</a></li><li class="depth-2"><a href="#步骤-3经济性与执行排查economics--execution-triage" data-for="步骤-3经济性与执行排查economics--execution-triage">步骤 3：经济性与执行排查（Economics / Execution Triage）</a></li><li class="depth-2"><a href="#步骤-4主假设复审thesis-review" data-for="步骤-4主假设复审thesis-review">步骤 4：主假设复审（Thesis Review）</a></li><li class="depth-2"><a href="#步骤-5决策分流decision-fork" data-for="步骤-5决策分流decision-fork">步骤 5：决策分流（Decision Fork）</a></li><li class="depth-2"><a href="#步骤-6受控回退或停线rollback--stop--new-lineage" data-for="步骤-6受控回退或停线rollback--stop--new-lineage">步骤 6：受控回退或停线（Rollback / Stop / New Lineage）</a></li><li class="depth-1"><a href="#4-步骤-0冻结失败结果" data-for="4-步骤-0冻结失败结果">4. 步骤 0：冻结失败结果</a></li><li class="depth-2"><a href="#41-必须冻结的内容" data-for="41-必须冻结的内容">4.1 必须冻结的内容</a></li><li class="depth-2"><a href="#42-推荐产物" data-for="42-推荐产物">4.2 推荐产物</a></li><li class="depth-2"><a href="#43-failure-freeze-最小模板" data-for="43-failure-freeze-最小模板">4.3 Failure Freeze 最小模板</a></li><li class="depth-1"><a href="#5-步骤-1正确性排查correctness-triage" data-for="5-步骤-1正确性排查correctness-triage">5. 步骤 1：正确性排查（Correctness Triage）</a></li><li class="depth-2"><a href="#51-检查清单" data-for="51-检查清单">5.1 检查清单</a></li><li class="depth-2"><a href="#52-判定标准" data-for="52-判定标准">5.2 判定标准</a></li><li class="depth-1"><a href="#eng_fail" data-for="eng_fail">ENG_FAIL</a></li><li class="depth-2"><a href="#53-eng_fail-处理规则" data-for="53-eng_fail-处理规则">5.3 ENG_FAIL 处理规则</a></li><li class="depth-1"><a href="#6-步骤-2统计证据排查evidence-triage" data-for="6-步骤-2统计证据排查evidence-triage">6. 步骤 2：统计证据排查（Evidence Triage）</a></li><li class="depth-2"><a href="#61-检查目标" data-for="61-检查目标">6.1 检查目标</a></li><li class="depth-2"><a href="#62-检查清单" data-for="62-检查清单">6.2 检查清单</a></li><li class="depth-2"><a href="#63-判定标准" data-for="63-判定标准">6.3 判定标准</a></li><li class="depth-1"><a href="#research_fail" data-for="research_fail">RESEARCH_FAIL</a></li><li class="depth-2"><a href="#64-research_fail-处理规则" data-for="64-research_fail-处理规则">6.4 RESEARCH_FAIL 处理规则</a></li><li class="depth-1"><a href="#7-步骤-3经济性与执行排查economics--execution-triage" data-for="7-步骤-3经济性与执行排查economics--execution-triage">7. 步骤 3：经济性与执行排查（Economics / Execution Triage）</a></li><li class="depth-2"><a href="#71-先拆-gross-与-net不要先看总收益" data-for="71-先拆-gross-与-net不要先看总收益">7.1 先拆 gross 与 net，不要先看总收益</a></li><li class="depth-2"><a href="#72-重点检查项" data-for="72-重点检查项">7.2 重点检查项</a></li><li class="depth-2"><a href="#73-判定标准" data-for="73-判定标准">7.3 判定标准</a></li><li class="depth-1"><a href="#exec_fail" data-for="exec_fail">EXEC_FAIL</a></li><li class="depth-2"><a href="#74-exec_fail-处理规则" data-for="74-exec_fail-处理规则">7.4 EXEC_FAIL 处理规则</a></li><li class="depth-1"><a href="#8-步骤-4主假设复审thesis-review" data-for="8-步骤-4主假设复审thesis-review">8. 步骤 4：主假设复审（Thesis Review）</a></li><li class="depth-2"><a href="#81-问四个问题" data-for="81-问四个问题">8.1 问四个问题</a></li><li class="depth-2"><a href="#82-典型症状" data-for="82-典型症状">8.2 典型症状</a></li><li class="depth-1"><a href="#thesis_fail" data-for="thesis_fail">THESIS_FAIL</a></li><li class="depth-2"><a href="#83-thesis_fail-处理规则" data-for="83-thesis_fail-处理规则">8.3 THESIS_FAIL 处理规则</a></li><li class="depth-1"><a href="#9-步骤-5决策分流decision-fork" data-for="9-步骤-5决策分流decision-fork">9. 步骤 5：决策分流（Decision Fork）</a></li><li class="depth-2"><a href="#91-retry" data-for="91-retry">9.1 RETRY</a></li><li class="depth-2"><a href="#92-research_again" data-for="92-research_again">9.2 RESEARCH_AGAIN</a></li><li class="depth-2"><a href="#93-no_go" data-for="93-no_go">9.3 NO_GO</a></li><li class="depth-2"><a href="#94-child_lineage" data-for="94-child_lineage">9.4 CHILD_LINEAGE</a></li><li class="depth-1"><a href="#10-失败分类与回退矩阵" data-for="10-失败分类与回退矩阵">10. 失败分类与回退矩阵</a></li><li class="depth-1"><a href="#11-retry-的标准写法" data-for="11-retry-的标准写法">11. Retry 的标准写法</a></li><li class="depth-2"><a href="#111-唯一核心假设" data-for="111-唯一核心假设">11.1 唯一核心假设</a></li><li class="depth-2"><a href="#112-受控修改集" data-for="112-受控修改集">11.2 受控修改集</a></li><li class="depth-2"><a href="#113-预期改善指标" data-for="113-预期改善指标">11.3 预期改善指标</a></li><li class="depth-2"><a href="#114-retry-模板" data-for="114-retry-模板">11.4 Retry 模板</a></li><li class="depth-1"><a href="#12-禁止动作清单" data-for="12-禁止动作清单">12. 禁止动作清单</a></li><li class="depth-1"><a href="#13-推荐的最小审计产物" data-for="13-推荐的最小审计产物">13. 推荐的最小审计产物</a></li><li class="depth-2"><a href="#131-failure_classificationmd" data-for="131-failure_classificationmd">13.1 failure_classification.md</a></li><li class="depth-2"><a href="#132-rollback_decisionyaml" data-for="132-rollback_decisionyaml">13.2 rollback_decision.yaml</a></li><li class="depth-2"><a href="#133-retry_planmd" data-for="133-retry_planmd">13.3 retry_plan.md</a></li><li class="depth-1"><a href="#14-将机构常见五阶段流程映射到本-sop" data-for="14-将机构常见五阶段流程映射到本-sop">14. 将机构常见五阶段流程映射到本 SOP</a></li><li class="depth-2"><a href="#阶段一sanity-checks--attribution" data-for="阶段一sanity-checks--attribution">阶段一：Sanity Checks &amp; Attribution</a></li><li class="depth-2"><a href="#阶段二hypothesis-review" data-for="阶段二hypothesis-review">阶段二：Hypothesis Review</a></li><li class="depth-2"><a href="#阶段三optimization--refinement" data-for="阶段三optimization--refinement">阶段三：Optimization &amp; Refinement</a></li><li class="depth-2"><a href="#阶段四robustness-testing" data-for="阶段四robustness-testing">阶段四：Robustness Testing</a></li><li class="depth-2"><a href="#阶段五decision-fork" data-for="阶段五decision-fork">阶段五：Decision Fork</a></li><li class="depth-1"><a href="#15-套用到你当前项目的落地建议" data-for="15-套用到你当前项目的落地建议">15. 套用到你当前项目的落地建议</a></li><li class="depth-1"><a href="#exec_fail-primary" data-for="exec_fail-primary">EXEC_FAIL-primary</a></li><li class="depth-1"><a href="#16-最终结论模板" data-for="16-最终结论模板">16. 最终结论模板</a></li><li class="depth-2"><a href="#161-结论摘要" data-for="161-结论摘要">16.1 结论摘要</a></li><li class="depth-2"><a href="#162-失败归因" data-for="162-失败归因">16.2 失败归因</a></li><li class="depth-2"><a href="#163-允许修改--禁止修改" data-for="163-允许修改--禁止修改">16.3 允许修改 / 禁止修改</a></li><li class="depth-2"><a href="#164-下一步动作" data-for="164-下一步动作">16.4 下一步动作</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>
