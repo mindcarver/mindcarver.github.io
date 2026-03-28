@@ -15,29 +15,29 @@
 ### 推荐学习顺序
 
 ```
-Week 1: 特征工程基础
+1. 特征工程
     ↓
-Week 2: LightGBM模型
+2. LightGBM模型
     ↓
-Week 3: 回测系统
+3. 回测系统
     ↓
-Week 5: LSTM深度学习
+4. LSTM深度学习
 ```
 
 ---
 
 ## 📖 课程内容
 
-### Week 1 - 特征工程 📊
+### 特征工程 📊
 
 系统讲解Qlib特征工程的核心概念与实践方法。
 
 **文档列表**:
-- [01-qlib特征工程全景概览](week1/01-qlib特征工程全景概览.md)
-- [02-horizon对齐详解](week1/02-horizon对齐详解.md)
-- [03-横截面标准化与中性化](week1/03-横截面标准化与中性化.md)
-- [04-相对强弱预测的量化思维](week1/04-相对强弱预测的量化思维.md)
-- [05-qlib特征工程实践指南](week1/05-qlib特征工程实践指南.md)
+- [01-qlib特征工程全景概览](特征工程/01-qlib特征工程全景概览.md)
+- [02-horizon对齐详解](特征工程/02-horizon对齐详解.md)
+- [03-横截面标准化与中性化](特征工程/03-横截面标准化与中性化.md)
+- [04-相对强弱预测的量化思维](特征工程/04-相对强弱预测的量化思维.md)
+- [05-qlib特征工程实践指南](特征工程/05-qlib特征工程实践指南.md)
 
 **学习目标**:
 - ✅ 理解Qlib特征工程的核心概念
@@ -50,17 +50,17 @@ Week 5: LSTM深度学习
 
 ---
 
-### Week 2 - LightGBM ⚡
+### LightGBM模型 ⚡
 
 深入学习LightGBM在量化投资中的应用。
 
 **文档列表**:
-- [01-Gradient Boosting原理](week2/01-Gradient-Boosting原理.md) - GOSS、EFB、Leaf-wise三大创新
-- [02-时序数据划分](week2/02-时序数据划分.md) - 因果性约束、交叉验证、滚动窗口
-- [03-模型训练](week2/03-模型训练.md) - IC优化、在线学习、分布式训练
-- [04-IC-Rank-IC评估指标](week2/04-IC-Rank-IC评估指标.md) - 统计检验、时序分析、IR指标
-- [05-特征重要性分析](week2/05-特征重要性分析.md) - Permutation、SHAP、稳定性分析
-- [06-学习检查清单](week2/06-学习检查清单.md) - 学习目标与实践建议
+- [01-Gradient Boosting原理](LightGBM模型/01-Gradient-Boosting原理.md) - GOSS、EFB、Leaf-wise三大创新
+- [02-时序数据划分](LightGBM模型/02-时序数据划分.md) - 因果性约束、交叉验证、滚动窗口
+- [03-模型训练](LightGBM模型/03-模型训练.md) - IC优化、在线学习、分布式训练
+- [04-IC-Rank-IC评估指标](LightGBM模型/04-IC-Rank-IC评估指标.md) - 统计检验、时序分析、IR指标
+- [05-特征重要性分析](LightGBM模型/05-特征重要性分析.md) - Permutation、SHAP、稳定性分析
+- [06-学习检查清单](LightGBM模型/06-学习检查清单.md) - 学习目标与实践建议
 
 **学习目标**:
 - ✅ 理解Gradient Boosting原理
@@ -73,18 +73,18 @@ Week 5: LSTM深度学习
 
 ---
 
-### Week 3 - 回测系统 📈
+### 回测系统 📈
 
 完整讲解策略回测、投资组合构建、绩效评估。
 
 **文档列表**:
-- [01-交易策略理论](week3/01-交易策略理论.md) - Top-K、IC权重、MV优化
-- [02-投资组合构建方法](week3/02-投资组合构建方法.md) - 三种组合构建方法对比
-- [03-Executor与成本模型](week3/03-Executor与成本模型.md) - 交易成本与执行机制
-- [04-绩效评估指标](week3/04-绩效评估指标.md) - 收益、风险、绩效指标
-- [05-实验分析方法](week3/05-实验分析方法.md) - 参数敏感性、样本外验证
-- [06-回测流程与实践](week3/06-回测流程与实践.md) - Qlib回测框架
-- [07-学习检查清单](week3/07-学习检查清单.md) - 学习目标与实践建议
+- [01-交易策略理论](回测系统/01-交易策略理论.md) - Top-K、IC权重、MV优化
+- [02-投资组合构建方法](回测系统/02-投资组合构建方法.md) - 三种组合构建方法对比
+- [03-Executor与成本模型](回测系统/03-Executor与成本模型.md) - 交易成本与执行机制
+- [04-绩效评估指标](回测系统/04-绩效评估指标.md) - 收益、风险、绩效指标
+- [05-实验分析方法](回测系统/05-实验分析方法.md) - 参数敏感性、样本外验证
+- [06-回测流程与实践](回测系统/06-回测流程与实践.md) - Qlib回测框架
+- [07-学习检查清单](回测系统/07-学习检查清单.md) - 学习目标与实践建议
 
 **学习目标**:
 - ✅ 理解交易策略理论
@@ -98,39 +98,39 @@ Week 5: LSTM深度学习
 
 ---
 
-### Week 5 - LSTM深度学习 🧠
+### LSTM深度学习 🧠
 
 深入学习LSTM神经网络，掌握时序数据的深度学习方法。
 
 **文档系列**:
 
 #### 1. 基础理论系列
-- [基础理论系列](week5/01_基础理论系列/)
+- [基础理论系列](LSTM深度学习/01_基础理论系列/)
   - 深度学习基础、RNN原理、LSTM原理
   - LSTM vs RNN vs GRU对比
 
 #### 2. PyTorch框架系列
-- [PyTorch框架系列](week5/02_PyTorch框架系列/)
+- [PyTorch框架系列](LSTM深度学习/02_PyTorch框架系列/)
   - Tensor操作、Autograd、nn.Module
   - 常用层（LSTM、Linear、Dropout）
 
 #### 3. LSTM模型构建系列
-- [LSTM模型构建系列](week5/03_LSTM模型构建系列/)
+- [LSTM模型构建系列](LSTM深度学习/03_LSTM模型构建系列/)
   - 单层、多层、双向LSTM
   - LSTM变体与超参数选择
 
 #### 4. 时序数据处理系列
-- [时序数据处理系列](week5/04_时序数据处理系列/)
+- [时序数据处理系列](LSTM深度学习/04_时序数据处理系列/)
   - 滑动窗口、数据划分、特征标准化
   - PyTorch Dataset与DataLoader
 
 #### 5. 模型训练优化系列
-- [模型训练优化系列](week5/05_模型训练优化系列/)
+- [模型训练优化系列](LSTM深度学习/05_模型训练优化系列/)
   - 损失函数、优化器、训练循环
   - 早停策略、正则化、学习率调度
 
 #### 6. 实战应用系列
-- [实战应用系列](week5/06_实战应用系列/)
+- [实战应用系列](LSTM深度学习/06_实战应用系列/)
   - 完整预测流程、超参数调优
   - 模型保存加载、评估指标
   - LSTM vs LightGBM对比、最佳实践
@@ -208,7 +208,7 @@ Week 5: LSTM深度学习
 <div align="center" style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
   <h3 style="margin: 0;">开始学习之旅</h3>
   <p style="margin: 0.5rem 0 1.5rem 0; opacity: 0.9;">从特征工程开始，系统学习量化投资</p>
-  <a href="week1/" style="background: white; color: #667eea; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">开始学习 Week 1 →</a>
+  <a href="特征工程/" style="background: white; color: #667eea; padding: 0.8rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: 500;">开始学习：特征工程 →</a>
 </div>
 
 ---
