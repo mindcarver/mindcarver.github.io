@@ -1,494 +1,1056 @@
-# Data Ready 阶段 -- 横截面因子研究的数据就绪
+# DataReady 阶段 - 横截面因子数据就绪
 
 ## 目录
-1. [阶段定义与核心目的](#1-阶段定义与核心目的)
-2. [为什么横截面研究需要 Data Ready](#2-为什么横截面研究需要-data-ready)
-3. [Panel 构建](#3-panel-构建)
-4. [Universe 过滤](#4-universe-过滤)
-5. [Alignment（时点对齐）](#5-alignment时点对齐)
-6. [Leakage Check（泄露检查）](#6-leakage-check泄露检查)
-7. [数据质量报告模板](#7-数据质量报告模板)
-8. [Formal Gate 要求](#8-formal-gate-要求)
-9. [Audit Gate 检查项](#9-audit-gate-检查项)
-10. [常见错误与反模式](#10-常见错误与反模式)
-11. [实际案例：加密货币横截面动量数据面板](#11-实际案例加密货币横截面动量数据面板)
-12. [输出 Artifact 规范](#12-输出-artifact-规范)
-13. [与 Signal Ready 的交接标准](#13-与-signal-ready-的交接标准)
+1. [阶段定义](#阶段定义)
+2. [为什么需要 DataReady 阶段](#为什么需要-dataready-阶段)
+3. [Panel 数据结构](#panel-数据结构)
+4. [Universe 过滤](#universe-过滤)
+5. [时间对齐 (Alignment)](#时间对齐-alignment)
+6. [Leakage 检查](#leakage-检查)
+7. [数据质量验证](#数据质量验证)
+8. [Formal Gate 要求](#formal-gate-要求)
+9. [常见错误和反模式](#常见错误和反模式)
+10. [实际案例：加密货币动量因子数据准备](#实际案例加密货币动量因子数据准备)
+11. [输出 Artifact 规范](#输出-artifact-规范)
+12. [与下一阶段的交接标准](#与下一阶段的交接标准)
 
 ---
 
-## 1. 阶段定义与核心目的
+## 阶段定义
 
-### 1.1 阶段定义
+### DataReady 定义
 
-**Data Ready（数据就绪）**是将原始数据转换为可研究的数据面板（Panel）的阶段。在横截面因子研究中，这意味着构建一个**"标的 × 时间"的二维矩阵**，其中每一行代表一个时间点，每一列代表一个截面特征。
+**DataReady（数据就绪）** 确认原始数据可以被转换为可用于横截面因子研究的 Panel 数据结构。
 
-**核心特征**：
-- **面板化**：将原始时序数据重组为截面友好的面板格式
-- **问题隔离**：确保后续因子表现不会被数据问题污染
-- **时间一致性**：确保每个数据点的信息可用时点严格对齐
+### 核心目标
 
-### 1.2 横截面 Data Ready 的特殊性
+| 目标 | 横截面研究特有含义 | 价值 |
+|------|------------------|------|
+| **构建 Panel 结构** | 时间 × 标的二维数据矩阵 | 奠定分析基础 |
+| **确保 Universe 稳定** | 研究期间标的池一致性 | 避免选择偏差 |
+| **验证时间对齐** | 所有标的时间戳一致 | 防止虚假信号 |
+| **排除 Leakage** | 因子计算不使用未来信息 | 确保结果有效 |
 
-| 维度 | 时间序列策略 | 横截面因子研究 |
-|------|-------------|---------------|
-| 数据结构 | 单标的长格式时序 | 标的×时间的面板矩阵 |
-| 对齐要求 | 相对宽松（单标的时间对齐） | 极严格（所有标的必须在同一时点对齐） |
-| 缺失值影响 | 丢失时间点 | 丢失截面样本 |
-| 泄露风险 | 较低（单标的前视偏差） | 较高（截面排序中一个标的的泄露影响整个截面） |
-| 数据量级 | 较小 | 较大（N × T） |
+### 阶段定位
+
+```
+Mandate → DataReady → PanelReady → FactorReady → ...
+         ↑
+    数据准备层
+```
+
+DataReady 是横截面因子研究的数据基础——所有因子计算和检验都依赖这个阶段构建的 Panel 数据。
 
 ---
 
-## 2. 为什么横截面研究需要 Data Ready
+## 为什么需要 DataReady 阶段
 
-### 2.1 核心风险
+### 横截面因子数据的特殊挑战
 
-**风险 1：数据时点不一致**
-
-```
-场景：因子 A 使用 00:00 的价格，因子 B 使用 08:00 的成交量
-问题：截面比较不公平，因为不同因子使用了不同时间窗口的信息
-结果：因子表现差异可能反映的是时间窗口差异，而非因子本身优劣
-```
-
-**风险 2：前视偏差（Look-ahead Bias）**
-
-```
-场景：Label 使用了当天收盘价，但因子用了收盘前的数据
-问题：因子在计算时无法获得收盘价信息，但 Label 已经包含了
-结果：IC 虚高，实盘完全无法复现
-```
-
-**风险 3：幸存者偏差**
-
-```
-场景：Universe 只包含当前还在交易的标的
-问题：退市标的（归零、下架）的历史数据被排除
-结果：高估策略收益，因为亏钱的标的被自动过滤了
-```
-
----
-
-## 3. Panel 构建
-
-### 3.1 面板格式选择
-
-横截面因子研究通常使用**宽表格式**（Wide Format）：
-
-```
-时间戳        BTC_return  ETH_return  BNB_return  ...  SOL_return
-2026-01-01    0.023       0.015       0.031       ...  0.045
-2026-01-08    -0.012      0.008       -0.005      ...  0.022
-2026-01-15    0.018       0.021       0.012       ...  -0.008
-```
-
-**长格式 vs 宽格式**：
-
-| 格式 | 优点 | 缺点 | 适用场景 |
-|------|------|------|---------|
-| 宽格式（Wide） | 截面计算直观，矩阵运算快 | 缺失值处理复杂，新标的需要补列 | ✅ 横截面因子研究（主流） |
-| 长格式（Long） | 缺失值处理简单，灵活 | 截面计算需要 pivot，速度慢 | 时间序列分析 |
-
-### 3.2 构建流程
+**挑战 1：Panel 数据缺失模式复杂**
 
 ```python
-panel 构建步骤:
-  1. 获取所有标的的原始 Kline 数据
-  2. 按再平衡频率重采样（日 K → 周 K）
-  3. 计算基础字段（open, high, low, close, volume, returns）
-  4. Pivot 为宽表（标的为列，时间为行）
-  5. 标记缺失值来源（缺失 vs 不存在 vs 异常）
-  6. 生成数据面板元信息（起止日期、标的数量、缺失率）
+# Panel 数据的多种缺失模式
+panel_missing = {
+    '时间缺失': '某天整个市场停牌',
+    '标的缺失': '新币上市前、退市后',
+    '随机缺失': '数据中断',
+    '结构性缺失': '某币种没有某字段'
+}
 ```
 
-### 3.3 加密货币特殊处理
-
-**时间戳处理**：
-
-```yaml
-加密货币时间处理规范:
-  日定义: UTC 00:00:00 至 UTC 23:59:59
-  周定义: 每周一 UTC 00:00 至周日 UTC 23:59:59
-  月定义: 每月 1 日 UTC 00:00 至月末 UTC 23:59:59
-  注意: 加密货币 24/7 交易，不存在"收盘"概念
-  推荐: 使用 rebalance 时点的前 1 小时 VWAP 作为"结算价"
-```
-
-**复权处理**：
-
-- 加密货币不存在分红、拆股等传统复权问题
-- 但存在**硬分叉**（如 BTC/BCH）和**代币拆分/合并**
-- 处理方式：在分叉/拆分发生时调整历史价格序列，保持收益连续性
-
----
-
-## 4. Universe 过滤
-
-### 4.1 流动性门槛过滤
-
-基于 Mandate 阶段定义的流动性分层规则执行过滤：
+**挑战 2：Universe 动态变化**
 
 ```python
-def filter_by_liquidity(df, lookback=30, min_volume_usd=50_000_000):
-    """
-    使用过去 30 天的平均 24h 成交额过滤
-    注意：必须使用 lookback 期末的数据，不能使用 lookback 期间的平均值
-    因为平均值包含了未来信息
-    """
-    # 正确做法：使用 t 时刻的 24h 成交额（或 t-1 的，确保可用）
-    # 错误做法：使用 t-30 到 t 的平均值（包含 t 的信息）
-    pass
+# 加密货币市场的动态性
+universe_changes = {
+    '新币上市': '每月新增多个币种',
+    '退市': '币种可能下架',
+    '流动性变化': 'Top 50 成分不断变化'
+}
+
+# 如果不处理，会导致选择偏差
 ```
 
-### 4.2 上市时间过滤
+**挑战 3：时间对齐问题**
 
+```python
+# 不同数据源的时间戳不一致
+time_issues = {
+    '时区问题': '交易所使用不同时区',
+    '对齐问题': 'K线时间戳定义不同',
+    '夏令时': '某些地区夏令时切换'
+}
+```
+
+### DataReady 的价值
+
+有个实际教训：
 ```yaml
-上市时间规则:
-  最低上市天数: 90 天
-  理由: 新上市币波动率异常高，价格发现不充分
-  注意: 90 天是从上市日到数据时点的自然日天数
-  数据来源: Binance listing API / 交易所公告
-```
+before_data_ready:
+  problem: "因子在 Train 上显著，Test 上失效"
+  investigation: "花了1周排查因子逻辑"
+  root_cause: "Test 期间多个新币上市，改变了 Universe 构成"
 
-### 4.3 特殊标的过滤
-
-需要从 Universe 中排除的特殊标的：
-
-| 排除类型 | 示例 | 原因 |
-|---------|------|------|
-| 稳定币 | USDT, USDC, DAI | 收益率接近 0，无截面信息 |
-| 包装代币 | WBTC, stETH | 价格与底层资产高度相关，重复计算 |
-| 杠杆代币 | BULL3x, BEAR3x | 衰减特性导致收益不可预测 |
-| 治理代币（低流动性）| 小市值 DAO 代币 | 流动性不足，价格操纵风险 |
-
-### 4.4 Point-in-Time Universe
-
-**关键原则**：每个时间点的 Universe 必须只包含当时满足条件的标的。
-
-```
-错误做法：使用当前时点满足条件的标的，回溯填充历史 Universe
-正确做法：每个历史时点独立判断该标的当时是否满足条件
-
-示例：
-  Token X 在 2025-06 上市，2025-09 成交额突破 $50M
-  → 2025-06 至 2025-08 的 Universe 不包含 Token X
-  → 2025-09 起的 Universe 包含 Token X
+after_data_ready:
+  qc_report: >
+    DataReady 阶段发现 Test 期间
+    Universe 成分变化超过 30%，
+    提前调整处理策略
+  outcome: "节省1周排查时间，结果更可靠"
 ```
 
 ---
 
-## 5. Alignment（时点对齐）
+## Panel 数据结构
 
-### 5.1 什么是 Alignment
+### Panel 数据定义
 
-Alignment 是确保面板中所有数据字段在**信息可用性上保持一致**。这是横截面因子研究中最容易出错的环节。
-
-### 5.2 对齐规则
-
-**核心原则**：t 时刻的截面只能使用 t 时刻（或之前）可获得的信息。
-
-```
-时间线：
-  t-1 00:00 | t-1 08:00 | t 00:00 (rebalance) | t 00:01 | t+1 00:00
-
-  ✅ 可用：t-1 00:00 及之前的所有数据
-  ✅ 可用：t 00:00 的开盘快照数据
-  ❌ 不可用：t 00:00 之后的任何数据
-```
-
-### 5.3 常见对齐场景
-
-| 数据类型 | 正确做法 | 错误做法 |
-|---------|---------|---------|
-| 价格 | 使用 t-1 收盘价或 t 日开盘价 | 使用 t 日收盘价（因为包含未来信息） |
-| 成交量 | 使用截至 t-1 的累计成交量 | 使用 t 日的成交量（未来信息） |
-| 链上数据 | 使用 t-1 的链上快照 | 使用 t 日的链上数据（可能有延迟） |
-| 市值 | 使用 t-1 的价格 × 流通量 | 使用 t 日实时市值 |
-| Label | 使用 t+h 的价格（未来） | 这是标签，理应包含未来信息 |
-
-### 5.4 Report Lag（报告延迟）
-
-不同数据源的发布时间不同，必须考虑报告延迟：
-
-```yaml
-常见数据延迟:
-  OHLCV: 延迟 ≈ 0（交易所实时可用）
-  链上活跃地址: 延迟 ≈ 区块确认时间（~10min BTC, ~12s ETH）
-  交易所净流入流出: 延迟 ≈ 1-24 小时（取决于数据源）
-  社交媒体情绪: 延迟 ≈ 0-1 小时
-  基金持仓数据: 延迟 ≈ 1 个季度（季报发布）
-
-规则: 因子计算时间 = rebalance 时间 - max(所有输入数据的延迟)
-```
-
-### 5.5 对齐验证方法
+**Panel 数据**是横截面因子研究的核心数据结构，有两个维度：时间（T）和标的（N）。
 
 ```python
-def alignment_check(panel, factor_columns, label_column):
+import pandas as pd
+
+# Panel 数据结构示例
+panel_structure = {
+    'shape': '(T, N)',  # T 个时间点，N 个标的
+    'index': '时间戳',
+    'columns': '标的代码',
+    'values': '观测值（价格、收益率等）'
+}
+
+# 实际示例
+# 假设有 1000 天，50 个币种
+panel_shape = (1000, 50)  # 50,000 个观测
+```
+
+### Panel 数据类型
+
+```yaml
+Panel 数据类型:
+  
+  价格 Panel:
+    维度: (时间 × 标的)
+    值: 价格或收益率
+    示例: "每个时间点每个币的收盘价"
+    
+  因子 Panel:
+    维度: (时间 × 标的)
+    值: 计算得到的因子值
+    示例: "每个时间点每个币的动量值"
+    
+  标签 Panel:
+    维度: (时间 × 标的)
+    值: 未来收益
+    示例: "每个时间点每个币的未来24h收益"
+    
+  可用性 Panel:
+    维度: (时间 × 标的)
+    值: 布尔值，表示该观测是否可用
+    示例: "标记哪些时间点哪些币可以用于分析"
+```
+
+### Panel 数据示例
+
+```python
+# 价格 Panel 示例
+price_panel = pd.DataFrame(
+    index=pd.date_range('2021-01-01', '2024-12-31', freq='D'),
+    columns=['BTC', 'ETH', 'BNB', 'SOL', 'ADA', ...],
+    data=...  # 价格数据
+)
+
+# 展示结构
+print(price_panel.shape)  # (1461, 42) - 1461天，42个币
+print(price_panel.head())
+"""
+            BTC      ETH      BNB      SOL      ADA
+2021-01-01  35000    1200     40       5        0.5
+2021-01-02  36000    1250     42       5.5      0.52
+...
+"""
+```
+
+### Panel 操作基础
+
+```python
+# 计算 Panel 收益率
+def calculate_panel_returns(price_panel):
     """
-    验证因子列和标签列的时间对齐性
+    计算 Panel 收益率
+    
+    沿时间轴计算收益率，保持 Panel 结构
     """
-    checks = {
-        "因子列无未来信息": check_no_future_info(factor_columns),
-        "标签列包含未来信息": check_contains_future_info(label_column),
-        "因子可用时点 < 标签起始时点": check_factor_before_label(factor_columns, label_column),
-        "截面内所有标的使用相同时间戳": check_cross_section_timestamp_consistency(panel),
+    returns_panel = price_panel.pct_change()
+    return returns_panel
+
+# 横截面操作
+def cross_sectional_rank(panel_at_t):
+    """
+    计算某时间点的横截面排序
+    """
+    ranks = panel_at_t.rank(pct=True)
+    return ranks
+
+# 应用到整个 Panel
+rank_panel = price_panel.apply(
+    lambda row: row.rank(pct=True),
+    axis=1  # 沿横截面（标的）方向
+)
+```
+
+---
+
+## Universe 过滤
+
+### Universe 过滤的目的
+
+Universe 过滤确保研究期间使用的标的池符合 Mandate 定义，同时处理动态变化。
+
+### 过滤步骤
+
+#### 步骤 1：应用 Mandate 准入口径
+
+```python
+def apply_eligibility_criteria(raw_data, mandate_config):
+    """
+    应用 Mandate 定义的准入口径
+    """
+    filtered_data = raw_data.copy()
+    
+    # 按交易量过滤
+    volume_threshold = calculate_top_n_volume(
+        filtered_data, 
+        n=mandate_config['target_market']['baseline_count']
+    )
+    filtered_data = filtered_data[
+        filtered_data['volume_24h'] >= volume_threshold
+    ]
+    
+    # 排除稳定币
+    stablecoins = mandate_config['target_market']['excluded_stablecoins']
+    filtered_data = filtered_data[
+        ~filtered_data['symbol'].isin(stablecoins)
+    ]
+    
+    # 排除杠杆代币
+    leveraged = ['UP', 'DOWN', 'BULL', 'BEAR']
+    filtered_data = filtered_data[
+        ~filtered_data['symbol'].str.contains('|'.join(leveraged))
+    ]
+    
+    # 最小历史天数
+    min_days = mandate_config['factor_definition']['data_requirements']['min_history']
+    filtered_data = filter_by_history_length(filtered_data, min_days)
+    
+    return filtered_data
+```
+
+#### 步骤 2：处理 Universe 动态变化
+
+```python
+def handle_universe_changes(panel_data, mandate_config):
+    """
+    处理研究期间 Universe 的动态变化
+    """
+    # 策略 1：冻结初始 Universe（推荐）
+    if mandate_config['universe_strategy'] == 'freeze_initial':
+        initial_universe = get_universe_at_start(panel_data)
+        filtered_panel = panel_data[initial_universe]
+        
+        # 新上市币种不纳入
+        # 退市币种保留历史数据，之后标记为不可用
+        
+    # 策略 2：动态 Universe（谨慎使用）
+    elif mandate_config['universe_strategy'] == 'dynamic':
+        # 每个时间点使用当时的 Top N
+        # 需要注意：可能引入前视偏差
+        filtered_panel = apply_dynamic_universe(panel_data)
+        
+    return filtered_panel
+```
+
+#### 步骤 3：生成可用性矩阵
+
+```python
+def create_availability_matrix(panel_data, universe_config):
+    """
+    生成可用性矩阵
+    
+    标记每个时间点每个标的是否可用于分析
+    """
+    availability = pd.DataFrame(
+        index=panel_data.index,
+        columns=panel_data.columns,
+        dtype=bool
+    )
+    
+    for symbol in panel_data.columns:
+        # 检查数据是否存在
+        data_exists = panel_data[symbol].notna()
+        
+        # 检查是否在 Universe 中
+        in_universe = is_in_universe_at_t(
+            symbol, 
+            panel_data.index,
+            universe_config
+        )
+        
+        # 检查历史数据是否足够
+        sufficient_history = has_sufficient_history(
+            panel_data[symbol],
+            min_days=universe_config['min_history']
+        )
+        
+        availability[symbol] = data_exists & in_universe & sufficient_history
+    
+    return availability
+```
+
+### Universe 过滤配置
+
+```yaml
+Universe 过滤配置:
+  
+  过滤策略: "freeze_initial"
+    理由: "避免选择偏差"
+    实现: "使用研究开始时的 Universe"
+  
+  新币处理:
+    策略: "不纳入"
+    理由: "避免事后选择"
+  
+  退市处理:
+    策略: "保留历史，标记不可用"
+    理由: "避免幸存者偏差"
+  
+  最小历史:
+    要求: "至少 20 天数据"
+    应用: "计算因子前检查"
+```
+
+---
+
+## 时间对齐 (Alignment)
+
+### 时间对齐的重要性
+
+横截面因子研究要求所有标的时间戳严格对齐。时间不对齐会直接产生虚假的横截面关系。
+
+### 对齐步骤
+
+#### 步骤 1：时区标准化
+
+```python
+def standardize_timezone(raw_data, target_timezone='UTC'):
+    """
+    标准化所有时间戳到统一时区
+    """
+    # 加密货币通常使用 UTC
+    # 确保所有数据都在同一时区
+    
+    if raw_data.index.tz is None:
+        raw_data.index = raw_data.index.tz_localize(target_timezone)
+    else:
+        raw_data.index = raw_data.index.tz_convert(target_timezone)
+    
+    return raw_data
+```
+
+#### 步骤 2：频率对齐
+
+```python
+def align_frequency(panel_data, frequency='1h'):
+    """
+    对齐到指定频率
+    """
+    # 向下对齐到整点
+    aligned_index = panel_data.index.floor(frequency)
+    
+    # 重新采样
+    aligned_data = panel_data.copy()
+    aligned_data.index = aligned_index
+    
+    # 去除重复时间戳
+    aligned_data = aligned_data[~aligned_data.index.duplicated(keep='last')]
+    
+    return aligned_data
+```
+
+#### 步骤 3：处理缺失时间点
+
+```python
+def handle_missing_timestamps(panel_data, frequency='1h'):
+    """
+    处理缺失的时间点
+    
+    关键：保留缺失标记，不填充
+    """
+    # 创建完整的时间范围
+    full_range = pd.date_range(
+        start=panel_data.index.min(),
+        end=panel_data.index.max(),
+        freq=frequency
+    )
+    
+    # 重新索引
+    aligned_panel = panel_data.reindex(full_range)
+    
+    # 标记缺失
+    for col in aligned_panel.columns:
+        aligned_panel[f'{col}_is_missing'] = aligned_panel[col].isna()
+    
+    return aligned_panel
+```
+
+### 时间对齐验证
+
+```python
+def validate_time_alignment(panel_data):
+    """
+    验证时间对齐质量
+    """
+    validation_results = {}
+    
+    # 检查时区一致性
+    validation_results['timezone_consistent'] = (
+        panel_data.index.tz.zone == 'UTC'
+    )
+    
+    # 检查频率一致性
+    time_diffs = panel_data.index.to_series().diff()
+    expected_diff = pd.Timedelta('1h')
+    validation_results['frequency_consistent'] = (
+        time_diffs.mode()[0] == expected_diff
+    )
+    
+    # 检查缺失率
+    validation_results['missing_rate'] = (
+        panel_data.isna().mean().mean()
+    )
+    
+    return validation_results
+```
+
+---
+
+## Leakage 检查
+
+### Leakage 的定义和危害
+
+**Leakage（信息泄漏）** 指计算因子或标签时使用了当时不可获得的未来信息。这是横截面因子研究中最严重的错误，没有之一。
+
+### Leakage 类型
+
+```yaml
+Leakage 类型:
+  
+  时间 Leakage:
+    描述: "使用了未来时刻的数据"
+    示例: "计算 T 时刻因子时使用了 T+1 的价格"
+    危害: "造成虚假的预测能力"
+  
+  数据 Leakage:
+    描述: "使用了当时未发布的数据"
+    示例: "使用了盘后才发布的财报数据"
+    危害: "实盘无法复现"
+  
+  标的 Leakage:
+    描述: "基于未来信息选择标的"
+    示例: "只选择后来表现好的币"
+    危害: "选择偏差"
+```
+
+### Leakage 检查方法
+
+#### 方法 1：时间顺序检查
+
+```python
+def check_temporal_order(panel_data, factor_col, label_col, horizon):
+    """
+    检查时间顺序是否正确
+    
+    因子只能使用过去的数据，标签只能用未来的数据
+    """
+    issues = []
+    
+    for t in panel_data.index:
+        # 因子计算：只能用 t 及之前的数据
+        factor_data = panel_data.loc[:t, factor_col]
+        
+        # 标签计算：应该用 t+horizon 的数据
+        label_time = t + pd.Timedelta(hours=horizon)
+        
+        if label_time in panel_data.index:
+            label_data = panel_data.loc[label_time, label_col]
+            
+            # 检查：因子数据不能包含未来信息
+            # 这通常需要在因子计算层面保证
+        else:
+            issues.append(f"Label time {label_time} not in data")
+    
+    return issues
+```
+
+#### 方法 2：前视偏差检测
+
+```python
+def detect_lookahead_bias(factor_values, price_data):
+    """
+    检测因子是否包含前视偏差
+    
+    原理：如果因子包含未来信息，IC 会异常高
+    """
+    # 计算因子与未来收益的相关性
+    ics = []
+    
+    for t in range(len(factor_values) - 24):
+        factor_t = factor_values.iloc[t]
+        future_return = price_data.iloc[t + 24]
+        
+        ic = spearmanr(factor_t, future_return)[0]
+        ics.append(ic)
+    
+    # 如果 IC 异常高（> 0.3），可能存在前视偏差
+    if np.mean(ics) > 0.3:
+        warnings.warn("Abnormally high IC detected. Check for lookahead bias!")
+    
+    return ics
+```
+
+#### 方法 3：完整性检查
+
+```python
+def check_data_leakage(panel_data, mandate_config):
+    """
+    检查数据泄漏
+    """
+    leakage_report = {
+        'temporal_leakage': [],
+        'data_leakage': [],
+        'universe_leakage': []
     }
-    return checks
+    
+    # 检查 1：因子计算时间
+    # 确保因子计算只用过去数据
+    for t in panel_data.index:
+        # 检查是否有未来函数调用
+        # 这通常需要代码审计
+        pass
+    
+    # 检查 2：数据可用性
+    # 确保使用的数据在当时是可获得的
+    for col in panel_data.columns:
+        # 检查数据发布时间 vs 计算时间
+        pass
+    
+    # 检查 3：Universe 选择
+    # 确保 Universe 选择没有使用未来信息
+    # 例如：不能根据未来收益选择标的
+    pass
+    
+    return leakage_report
 ```
 
----
-
-## 6. Leakage Check（泄露检查）
-
-### 6.1 什么是数据泄露
-
-数据泄露是指在因子计算或标签构建中，**使用了当时不可能获得的信息**。这是横截面因子研究中最致命的错误。
-
-### 6.2 常见泄露类型
-
-| 泄露类型 | 描述 | 检测方法 |
-|---------|------|---------|
-| 时间泄露 | 使用了未来时刻的数据 | 检查数据时点 vs 可用时点 |
-| 选择泄露 | 使用了基于未来信息的筛选 | 检查 Universe 是否为 point-in-time |
-| 标签泄露 | 标签计算包含了因子的信息 | 检查因子构造时间 vs 标签起始时间 |
-| 归一化泄露 | 截面标准化使用了当期统计量 | 检查标准化窗口是否仅用历史数据 |
-
-### 6.3 检查清单
-
-```
-泄露检查清单:
-
-□ 价格数据：使用了 rebalance 时点之前的收盘价，而非之后的价格
-□ 成交量数据：使用了截至 rebalance 前的累计量，而非当期数据
-□ 流动性过滤：使用了 rebalance 之前的成交额判断，而非当期
-□ 标签计算：标签起始时间严格在因子构造时间之后
-□ Universe：使用 point-in-time Universe，未使用未来信息判断标的归属
-□ 截面标准化：标准化统计量（均值、标准差）仅使用历史窗口，未包含当期
-□ 因子组合：Train 阶段的参数仅使用 IS 数据，未使用 OOS 数据
-□ 填补缺失：缺失值填补方法未使用未来数据（如不能 forward fill Label）
-```
-
-### 6.4 实用泄露检测技巧
-
-**技巧 1：延迟测试**
-
-```python
-# 将因子滞后 1 期，如果 IC 不变，说明没有时间泄露
-# 如果 IC 显著下降，可能存在泄露
-ic_original = calc_ic(factor_t, label_t)
-ic_lagged = calc_ic(factor_t_minus_1, label_t)
-
-# 如果 ic_original >> ic_lagged，高度怀疑时间泄露
-```
-
-**技巧 2：随机标签测试**
-
-```python
-# 用随机打乱的标签计算 IC
-# 如果真实因子 IC 与随机 IC 无显著差异，说明因子可能无效
-# 如果随机 IC 也高，说明存在系统性泄露
-```
-
-**技巧 3：NaN 模式检查**
-
-```python
-# 检查因子中 NaN 的分布模式
-# 如果 NaN 集中在收益极端的样本上，可能存在条件泄露
-# （例如：退市前最后一个有数据的时刻恰好是亏损最大的时刻）
-```
-
----
-
-## 7. 数据质量报告模板
-
-每个横截面因子研究项目在 Data Ready 阶段必须产出数据质量报告：
-
-```markdown
-# 数据质量报告
-
-## 1. 概览
-- 时间范围：YYYY-MM-DD 至 YYYY-MM-DD
-- 标的数量：XX 个（平均截面），XX-XX 个（波动范围）
-- 总样本量：XX,XXX（标的×时间）
-- Rebalance 频率：周频
-
-## 2. 覆盖率
-| 时间段 | 平均标的数 | 数据覆盖率 | Label 覆盖率 |
-|--------|-----------|-----------|-------------|
-| IS     | XX        | XX%       | XX%         |
-| OOS    | XX        | XX%       | XX%         |
-| Holdout| XX        | XX%       | XX%         |
-
-## 3. 缺失值分析
-- 价格缺失率：XX%
-- 成交量缺失率：XX%
-- 因子字段缺失率：XX%
-- 缺失模式：MCAR / MAR / MNAR
-
-## 4. 对齐验证
-- 时间泄露检查：✅ 通过 / ❌ 未通过
-- Point-in-time Universe：✅ / ❌
-- 标签起始时间：t + 1（正确）/ t（泄露）
-
-## 5. 异常值检测
-- 超过 ±4σ 的收益样本：XX 个（XX%）
-- 单日涨跌超过 ±50% 的样本：XX 个
-- 处理方式：标记 / Winsorize / 不处理
-```
-
----
-
-## 8. Formal Gate 要求
-
-| # | 检查项 | 通过标准 | 验证方式 |
-|---|-------|---------|---------|
-| 1 | Panel 已构建 | 宽表格式，标的×时间矩阵 | 代码检查 |
-| 2 | Universe 已过滤 | 使用 point-in-time 规则，仅含符合条件的标的 | 代码检查 |
-| 3 | 时间对齐已验证 | 所有因子字段使用 rebalance 前的信息 | Alignment 检查 |
-| 4 | 泄露检查通过 | 所有泄露检测项通过 | 泄露检测脚本 |
-| 5 | 缺失值已处理 | 覆盖率 > 80%（IS），> 75%（OOS） | 统计报告 |
-| 6 | 数据质量报告已产出 | 包含覆盖率、缺失分析、对齐验证 | 文档审查 |
-| 7 | IS/OOS/Holdout 时间划分已确定 | 三个窗口无重叠，时间连续 | 代码检查 |
-
-### 时间划分建议
+### Leakage 防范措施
 
 ```yaml
-时间划分:
-  In-Sample (IS):    前 60% 的时间（用于因子发现和参数训练）
-  Out-of-Sample (OOS): 中 20% 的时间（用于冻结后的验证）
-  Holdout:           后 20% 的时间（用于最终独立评估）
-  要求:
-    - 三个窗口在时间上严格连续，不能交叉
-    - IS 至少 24 个月（确保统计功效）
-    - OOS 和 Holdout 各至少 6 个月
+Leakage 防范:
+  
+  代码层面:
+    - "使用 `shift()` 确保只用过去数据"
+    - "禁止在因子计算中使用未来函数"
+    - "时间戳严格审查"
+  
+  流程层面:
+    - "Mandate 阶段明确数据可用性"
+    - "DataReady 阶段验证时间对齐"
+    - "代码审查重点检查时间逻辑"
+  
+  验证层面:
+    - "计算 Forward IC"
+    - "检查异常高的 IC"
+    - "实盘前 paper trading"
 ```
 
 ---
 
-## 9. Audit Gate 检查项
+## 数据质量验证
 
-| # | 检查项 | 说明 |
-|---|-------|------|
-| 1 | 数据源版本记录 | 确保后续可复现（API 版本、数据下载日期） |
-| 2 | 价格异常标注 | 单日涨跌超过 ±50% 的样本是否有记录 |
-| 3 | 交易所维护时段 | 是否排除了交易所维护期间的异常数据 |
-| 4 | 链上数据延迟确认 | 链上因子的延迟假设是否经过验证 |
-| 5 | 多数据源一致性 | 不同数据源对同一标的数据是否有差异，如何处理 |
-
----
-
-## 10. 常见错误与反模式
-
-### 反模式 1：使用当前 Universe 回溯历史
-
-```
-错误：当前有 200 个币满足条件，回溯时 2024 年也使用这 200 个币
-正确：2024 年可能只有 50 个币满足条件，使用当时的 Universe
-```
-
-### 反模式 2：截面标准化使用当期统计量
-
-```
-错误：z_score = (x - mean(panel[t])) / std(panel[t])  # 包含当期信息
-正确：z_score = (x - mean(panel[:t])) / std(panel[:t])  # 仅用历史
-```
-
-### 反模式 3：Label 包含因子构造信息
-
-```
-错误：因子用 t 日 VWAP，Label 也从 t 日 VWAP 开始算
-正确：因子用 t-1 日数据，Label 从 t 日开始算（至少错开 1 期）
-```
-
-### 反模式 4：忽略数据时间戳的时区差异
-
-```
-错误：Kline 用 UTC 时间，链上数据用区块时间，两者混用
-正确：统一转换为 UTC 时间戳，并在文档中明确标注
-```
-
----
-
-## 11. 实际案例：加密货币横截面动量数据面板
-
-### 数据需求（基于 Mandate）
+### 质量指标
 
 ```yaml
-数据面板规格:
-  格式: 宽表（标的为列，周为行）
-  时间范围: 2023-01-01 至 2025-12-31（3 年）
-  IS: 2023-01 至 2024-06（18 个月）
-  OOS: 2024-07 至 2025-06（12 个月）
-  Holdout: 2025-07 至 2025-12（6 个月）
-  Universe: Binance 现货，24h 成交额 > $50M，上市 > 90 天
-  Rebalance: 每周一 UTC 00:00
-
-字段列表:
-  必需:
-    - close_t-1: 再平衡前一日收盘价
-    - close_t: 再平衡当日开盘价（近似）
-    - return_1d/7d/14d/28d: 不同周期的历史收益
-    - volume_24h: 24h 成交量
-    - market_cap: 市值（价格 × 流通量）
-    - label_7d: 7 日前向收益（Label）
-  可选:
-    - vol_7d: 7 日波动率
-    - turnover_7d: 7 日换手率
-    - on_chain_active_addresses: 链上活跃地址数
+Panel 数据质量指标:
+  
+  完整性:
+    缺失率: "< 10%"
+    覆盖率: "> 90%"
+    
+  准确性:
+    坏价率: "< 1%"
+    异常值率: "< 5%"
+    
+  一致性:
+    时间一致性: "100%"
+    标的一致性: "100%"
+    
+  及时性:
+    延迟: "< 数据发布间隔"
 ```
 
-### 数据质量检查结果示例
+### QC 实现
 
-```markdown
-## 覆盖率统计
-
-| 时间段 | 时间范围 | 平均标的数 | 价格覆盖率 | Label 覆盖率 |
-|--------|---------|-----------|-----------|-------------|
-| IS     | 23.01-24.06 | 25 个 | 98.5% | 97.2% |
-| OOS    | 24.07-25.06 | 32 个 | 99.1% | 98.0% |
-| Holdout| 25.07-25.12 | 38 个 | 99.3% | 98.5% |
-
-## 对齐验证
-- ✅ 所有因子字段使用 t-1 及之前的数据
-- ✅ Label 从 t 日开始计算
-- ✅ Universe 为 point-in-time
-- ✅ 泄露检测全部通过
-
-## 异常值
-- 超过 ±4σ 收益的样本：127 个（0.8%）
-- 已标记，不做删除
+```python
+def perform_panel_qc(panel_data, availability_matrix):
+    """
+    执行 Panel 数据质量检查
+    """
+    qc_results = {}
+    
+    # 1. 覆盖率检查
+    qc_results['coverage'] = {
+        'overall_coverage': availability_matrix.mean().mean(),
+        'time_coverage': availability_matrix.mean(axis=1).describe(),
+        'symbol_coverage': availability_matrix.mean(axis=0).describe()
+    }
+    
+    # 2. 缺失模式检查
+    qc_results['missing_patterns'] = {
+        'consecutive_missing': check_consecutive_missing(availability_matrix),
+        'random_missing': check_random_missing(availability_matrix),
+        'block_missing': check_block_missing(availability_matrix)
+    }
+    
+    # 3. 异常值检查
+    qc_results['outliers'] = {
+        'price_spikes': detect_price_spikes(panel_data),
+        'zero_prices': detect_zero_prices(panel_data),
+        'extreme_returns': detect_extreme_returns(panel_data)
+    }
+    
+    # 4. 横截面检查
+    qc_results['cross_sectional'] = {
+        'min_symbols_per_period': availability_matrix.sum(axis=1).min(),
+        'min_periods_per_symbol': availability_matrix.sum(axis=0).min()
+    }
+    
+    return qc_results
 ```
 
 ---
 
-## 12. 输出 Artifact 规范
+## Formal Gate 要求
 
-| Artifact | 格式 | 必需 | 说明 |
-|----------|------|------|------|
-| 数据面板（CSV/Parquet） | 文件 | 是 | 宽表格式，含所有基础字段 |
-| 数据质量报告 | Markdown | 是 | 覆盖率、缺失分析、对齐验证 |
-| 时间划分记录 | Markdown | 是 | IS/OOS/Holdout 的精确日期范围 |
-| 对齐验证报告 | Markdown | 是 | 泄露检测结果 |
-| 数据源元信息 | YAML | 是 | 数据源、版本、下载日期 |
-| Universe 变更日志 | Markdown | 是 | 每个时间点的 Universe 成员列表 |
+### FG-1: Panel 结构完整
+
+```yaml
+检查标准:
+  - Panel 数据维度正确 (T × N)
+  - 时间索引连续且对齐
+  - 标的列完整
+  - 数据类型正确
+
+验收方式:
+  - Panel 结构验证脚本
+  - 数据形状报告
+```
+
+### FG-2: Universe 过滤正确
+
+```yaml
+检查标准:
+  - 准入口径正确应用
+  - 排除规则正确执行
+  - Universe 变化记录完整
+  - 可用性矩阵生成
+
+验收方式:
+  - universe_manifest.csv 更新
+  - availability_matrix.parquet
+  - 过滤日志
+```
+
+### FG-3: 时间对齐验证
+
+```yaml
+检查标准:
+  - 所有数据统一时区 (UTC)
+  - 时间戳对齐到指定频率
+  - 缺失时间点正确处理
+  - 对齐质量报告通过
+
+验收方式:
+  - time_alignment_report.yaml
+  - 对齐验证脚本
+```
+
+### FG-4: Leakage 检查通过
+
+```yaml
+检查标准:
+  - 无时间 Leakage
+  - 无数据 Leakage
+  - 无标的 Leakage
+  - Leakage 报告无严重问题
+
+验收方式:
+  - leakage_check_report.yaml
+  - 代码审计记录
+```
+
+### FG-5: 数据质量达标
+
+```yaml
+检查标准:
+  - 覆盖率 > 90%
+  - 缺失率 < 10%
+  - 无严重数据问题
+  - QC 报告完整
+
+验收方式:
+  - qc_report.yaml
+  - data_quality_summary.md
+```
 
 ---
 
-## 13. 与 Signal Ready 的交接标准
+## 常见错误和反模式
 
-Data Ready → Signal Ready 交接清单：
+### 错误 1：Universe 悄悄改变
 
-```
-✅ 数据面板已构建，格式为宽表（标的×时间）
-✅ Point-in-time Universe 已实现，每个时点独立过滤
-✅ IS/OOS/Holdout 时间窗口已划分，无重叠
-✅ 所有因子可用字段的时间对齐已验证
-✅ 泄露检查全部通过
-✅ 数据覆盖率满足最低要求（IS > 80%，OOS > 75%）
-✅ 数据质量报告已产出
-✅ 数据面板文件和元信息已归档
+**反模式**：
+```python
+# 研究中途悄悄改变 Universe
+if period == 'test':
+    universe = top_50_by_volume()  # 每天重新选
+else:
+    universe = initial_universe
 ```
 
-Signal Ready 阶段将基于此数据面板，开始候选因子的构造和检验。
+**正确做法**：
+```python
+# Mandate 阶段冻结 Universe
+universe = get_universe_at_start(mandate_config)
+# 整个研究期间保持一致
+```
+
+### 错误 2：时间不对齐导致虚假信号
+
+**反模式**：
+```python
+# 不同币种使用不同时区
+btc_price = get_price('BTC', timezone='UTC')
+eth_price = get_price('ETH', timezone='EST')  # 错误！
+```
+
+**正确做法**：
+```python
+# 统一时区
+btc_price = get_price('BTC', timezone='UTC').tz_convert('UTC')
+eth_price = get_price('ETH', timezone='EST').tz_convert('UTC')
+```
+
+### 错误 3：Leakage 导致虚假结果
+
+**反模式**：
+```python
+# 计算 T 时刻的因子，但用了 T+1 的数据
+def calculate_factor_at_t(data, t):
+    return data[t:t+20].mean()  # 包含未来数据！
+```
+
+**正确做法**：
+```python
+# 只用过去的数据
+def calculate_factor_at_t(data, t):
+    return data[t-20:t].mean()  # 只用过去数据
+```
+
+---
+
+## 实际案例：加密货币动量因子数据准备
+
+### 数据准备流程
+
+```python
+# 完整的 DataReady 流程示例
+class CryptoFactorDataReady:
+    def __init__(self, mandate_config):
+        self.mandate = mandate_config
+        self.raw_data = None
+        self.panel_data = None
+        self.availability_matrix = None
+    
+    def run(self):
+        """执行完整 DataReady 流程"""
+        # 1. 加载原始数据
+        self.load_raw_data()
+        
+        # 2. 构建 Panel
+        self.build_panel()
+        
+        # 3. 应用 Universe 过滤
+        self.apply_universe_filter()
+        
+        # 4. 时间对齐
+        self.align_time()
+        
+        # 5. 生成可用性矩阵
+        self.create_availability_matrix()
+        
+        # 6. Leakage 检查
+        self.check_leakage()
+        
+        # 7. 数据质量验证
+        self.run_qc()
+        
+        # 8. 输出结果
+        self.save_results()
+    
+    def load_raw_data(self):
+        """加载原始数据"""
+        # 从 Binance API 或数据库加载
+        symbols = self.mandate['universe']['baseline_symbols']
+        
+        data_list = []
+        for symbol in symbols:
+            symbol_data = load_binance_data(
+                symbol,
+                start=self.mandate['time_window']['study_start'],
+                end=self.mandate['time_window']['study_end']
+            )
+            data_list.append(symbol_data)
+        
+        self.raw_data = pd.concat(data_list)
+    
+    def build_panel(self):
+        """构建 Panel 数据"""
+        # 透视为 Panel 结构
+        self.panel_data = self.raw_data.pivot(
+            index='timestamp',
+            columns='symbol',
+            values='close'
+        )
+    
+    def apply_universe_filter(self):
+        """应用 Universe 过滤"""
+        # 获取初始 Universe
+        initial_universe = self.get_initial_universe()
+        
+        # 过滤到初始 Universe
+        self.panel_data = self.panel_data[initial_universe]
+        
+        # 记录 Universe 变化
+        self.universe_changes = self.track_universe_changes()
+    
+    def align_time(self):
+        """时间对齐"""
+        # 标准化时区
+        self.panel_data.index = self.panel_data.index.tz_convert('UTC')
+        
+        # 对齐到小时
+        self.panel_data.index = self.panel_data.index.floor('1h')
+        
+        # 处理重复时间戳
+        self.panel_data = self.panel_data[~self.panel_data.index.duplicated(keep='last')]
+    
+    def create_availability_matrix(self):
+        """生成可用性矩阵"""
+        self.availability_matrix = pd.DataFrame(
+            index=self.panel_data.index,
+            columns=self.panel_data.columns,
+            dtype=bool
+        )
+        
+        for symbol in self.panel_data.columns:
+            # 检查数据是否存在
+            exists = self.panel_data[symbol].notna()
+            
+            # 检查历史数据是否足够
+            sufficient = self.check_sufficient_history(symbol)
+            
+            self.availability_matrix[symbol] = exists & sufficient
+    
+    def check_leakage(self):
+        """Leakage 检查"""
+        # 检查时间顺序
+        self.temporal_check = self.check_temporal_order()
+        
+        # 检查数据可用性
+        self.data_leakage_check = self.check_data_availability()
+        
+        # 生成报告
+        self.leakage_report = {
+            'temporal_leakage': self.temporal_check,
+            'data_leakage': self.data_leakage_check,
+            'overall_status': 'PASS' if all([
+                self.temporal_check['status'] == 'OK',
+                self.data_leakage_check['status'] == 'OK'
+            ]) else 'FAIL'
+        }
+    
+    def run_qc(self):
+        """数据质量检查"""
+        self.qc_results = {
+            'coverage': self.calculate_coverage(),
+            'missing_patterns': self.analyze_missing(),
+            'outliers': self.detect_outliers(),
+            'cross_sectional': self.cross_sectional_stats()
+        }
+        
+        # 生成 QC 报告
+        self.qc_report = self.generate_qc_report()
+    
+    def save_results(self):
+        """保存结果"""
+        # 保存 Panel 数据
+        self.panel_data.to_parquet('panel_data.parquet')
+        
+        # 保存可用性矩阵
+        self.availability_matrix.to_parquet('availability_matrix.parquet')
+        
+        # 保存报告
+        with open('data_ready_report.yaml', 'w') as f:
+            yaml.dump({
+                'leakage_check': self.leakage_report,
+                'qc_results': self.qc_results,
+                'panel_shape': self.panel_data.shape,
+                'universe_size': len(self.panel_data.columns)
+            }, f)
+```
+
+### Gate 决策示例
+
+```yaml
+DataReady Gate 决策:
+  
+  评审时间: "2026-04-02"
+  评审结论: "PASS"
+  
+  通过项:
+    ✅ FG-1: "Panel 结构完整 (1461 × 42)"
+    ✅ FG-2: "Universe 过滤正确，冻结初始 42 个币"
+    ✅ FG-3: "时间对齐到 UTC 小时，无重复"
+    ✅ FG-4: "Leakage 检查通过，无前视偏差"
+    ✅ FG-5: "覆盖率 95.2%，质量达标"
+  
+  冻结内容:
+    - "Panel 数据结构"
+    - "Universe 成分（42 个币）"
+    - "时间对齐规范（UTC 小时）"
+    - "可用性矩阵"
+  
+  下一步: "进入 PanelReady 阶段"
+```
+
+---
+
+## 输出 Artifact 规范
+
+### 必需的输出文件
+
+#### 1. panel_data.parquet（Panel 数据）
+
+```yaml
+描述: "横截面因子研究的 Panel 数据"
+格式: "Parquet"
+维度: "(时间 × 标的)"
+内容: "价格、收益率等基础数据"
+```
+
+#### 2. availability_matrix.parquet（可用性矩阵）
+
+```yaml
+描述: "标记每个观测是否可用"
+格式: "Parquet"
+维度: "(时间 × 标的)"
+值: "布尔值"
+```
+
+#### 3. data_ready_report.yaml（数据就绪报告）
+
+```yaml
+version: "1.0"
+stage: "data_ready"
+lineage_id: "momentum_crypto_xs_v1"
+timestamp: "2026-04-02"
+
+panel_structure:
+  shape: [1461, 42]
+  time_range: ["2021-01-01", "2024-12-31"]
+  symbols: ["BTC", "ETH", "BNB", ...]
+
+universe_filter:
+  initial_size: 42
+  excluded_stablecoins: 8
+  excluded_leveraged: 5
+  excluded_insufficient_history: 0
+
+time_alignment:
+  timezone: "UTC"
+  frequency: "1h"
+  alignment_method: "floor"
+
+leakage_check:
+  temporal_leakage: "NONE"
+  data_leakage: "NONE"
+  universe_leakage: "NONE"
+  status: "PASS"
+
+qc_results:
+  coverage:
+    overall: 0.952
+    by_time: {min: 0.88, max: 0.98}
+    by_symbol: {min: 0.85, max: 0.99}
+  
+  missing_patterns:
+    consecutive_max: 12
+    block_missing: 0
+  
+  outliers:
+    price_spikes: 0.001
+    extreme_returns: 0.005
+
+gate_decision:
+  status: "PASS"
+  frozen_items:
+    - "panel_data.parquet"
+    - "availability_matrix.parquet"
+    - "universe_manifest.csv"
+  next_stage: "panel_ready"
+```
+
+---
+
+## 与下一阶段的交接标准
+
+### PanelReady 阶段的输入要求
+
+| 项目 | 交付物 | 格式 | 用途 |
+|------|--------|------|------|
+| Panel 数据 | panel_data.parquet | Parquet | 因子计算基础 |
+| 可用性矩阵 | availability_matrix.parquet | Parquet | 样本选择 |
+| Universe 列表 | universe_manifest.csv | CSV | 标的过滤 |
+| 时间配置 | time_alignment.yaml | YAML | 时间对齐 |
+
+### 交接验收标准
+
+```yaml
+PanelReady 可以开始的条件:
+  ✅ panel_data.parquet 存在且可读
+  ✅ availability_matrix.parquet 存在且可读
+  ✅ Panel 结构符合要求 (T × N)
+  ✅ 覆盖率 > 90%
+  ✅ Leakage 检查通过
+
+验收方式:
+  - 自动化脚本验证文件格式
+  - Panel 结构检查
+  - 数据质量报告审查
+```
+
+---
+
+**文档版本**: v1.0  
+**最后更新**: 2026-04-02  
+**维护者**: 量化研究团队

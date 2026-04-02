@@ -1,16 +1,14 @@
-# Backtest 阶段 -- 横截面因子研究的回测仿真
+# Backtest 阶段 -- 回测仿真
 
-## 1. 阶段定义与核心目的
+## 1. 阶段定义
 
-### 1.1 阶段定义
+**Backtest（回测仿真）** 是将 Test 阶段验证通过的因子分组策略，在考虑真实交易成本、滑点、风险约束和容量限制的条件下，模拟完整交易执行过程的阶段。
 
-**Backtest（回测仿真）** 是横截面因子研究中，将 Test 阶段验证通过的因子分组策略，在考虑真实交易成本、滑点、风险约束和容量限制的条件下，模拟完整交易执行过程的阶段。
+本阶段回答的问题：
 
-本阶段回答的核心问题：
+> 因子策略在真实交易约束下是否仍然盈利？策略容量和可实现性如何？
 
-> **因子策略在真实交易约束下是否仍然盈利？策略容量和可实现性如何？**
-
-### 1.2 在横截面因子研究中的定位
+### 1.1 在流程中的定位
 
 ```
 Test（样本外统计验证）
@@ -20,7 +18,7 @@ Backtest（回测仿真） ← 你在这里
 Holdout（留存验证）
 ```
 
-### 1.3 核心目的
+### 1.2 与 Test 阶段的区别
 
 | 维度 | Test 阶段 | Backtest 阶段 |
 |------|-----------|---------------|
@@ -36,7 +34,7 @@ Holdout（留存验证）
 
 ### 2.1 成本构成全景
 
-横截面因子策略涉及大量标的的多空组合，成本建模是回测真实性的基石。以下是完整的成本清单：
+横截面策略涉及大量标的的多空组合，成本建模直接决定回测可信度。完整成本清单如下：
 
 ```
 直接成本:
@@ -91,14 +89,14 @@ def calculate_trading_fee(trade_value_usd, maker_rate=0.0002, taker_rate=0.0004,
         return trade_value_usd * taker_rate
 ```
 
-**实务要点**：
-- 横截面策略再平衡涉及数十个标的同时调仓，优先使用限价单降低成本
+注意：
+- 再平衡涉及数十个标的同时调仓，优先使用限价单降低成本
 - 但限价单有成交概率问题，部分订单可能无法成交导致跟踪误差
 - 回测中应假设保守的成交率（限价单约 70%-80% 成交）
 
 ### 2.3 资金费率成本
 
-永续合约的资金费率是加密市场特有的成本项，对多空策略影响显著。
+永续合约的资金费率是加密市场特有的成本项，对多空策略影响很大。
 
 ```python
 def calculate_funding_cost(position_value_usd, funding_rates_series, position_side='long'):
@@ -125,7 +123,7 @@ def calculate_funding_cost(position_value_usd, funding_rates_series, position_si
         return cost + rebate
 ```
 
-**实务要点**：
+注意：
 - 年化资金费率通常在 -10% ~ +30%，极端行情下可达 +100%+
 - 做多热门标的（如 memecoin）时资金费率成本极高
 - 回测必须使用实际的历史资金费率数据，不能用常数假设
@@ -145,7 +143,7 @@ def calculate_borrow_cost(short_value_usd, borrow_rate_series):
     return total_borrow_cost
 ```
 
-**实务要点**：
+注意：
 - 借贷利率通常年化 5%-30%，热门做空标的可能超过 50%
 - 交易所的借贷池深度有限，大规模做空时利率飙升
 - 回测中应考虑借贷利率与做空规模的非线性关系
@@ -156,7 +154,7 @@ def calculate_borrow_cost(short_value_usd, borrow_rate_series):
 
 ### 3.1 滑点模型分层
 
-横截面因子策略通常涉及大量标的，滑点建模是回测真实性的关键。
+横截面策略通常涉及大量标的，滑点建模直接影响回测可信度。
 
 ```python
 def slippage_model(order_size_usd, avg_daily_volume_usd, mid_price, bid_ask_spread,
@@ -205,7 +203,7 @@ def slippage_model(order_size_usd, avg_daily_volume_usd, mid_price, bid_ask_spre
 | 平方根模型 | slippage = k * sqrt(participation_rate) | 中等规模（1%-5%） | 中高 |
 | 非线性模型 | slippage = k * participation_rate^0.6 | 大额订单（> 5%） | 高 |
 
-**实务建议**：
+注意：
 - 回测默认使用平方根模型，这是业界标准
 - 对比不同模型的结果差异：如果差异巨大，说明策略对滑点敏感
 - 对容量瓶颈标的使用非线性模型做压力测试
@@ -272,7 +270,7 @@ def slippage_sensitivity(gross_return, turnover_annual, slippage_scenarios):
     return pd.DataFrame(results)
 ```
 
-**Formal Gate 要求**：
+Formal Gate 要求：
 
 ```yaml
 formal_gate_slippage:
@@ -292,7 +290,7 @@ formal_gate_slippage:
 
 ### 4.1 单标的仓位上限
 
-横截面策略需要防止过度集中于单一标的。
+横截面策略需要防止过度集中于单一标的，否则回撤会远超可控范围。
 
 ```python
 def apply_position_limit(target_weights, max_single_weight=0.10,
@@ -325,14 +323,14 @@ def apply_position_limit(target_weights, max_single_weight=0.10,
     return weights
 ```
 
-**实务要点**：
+注意：
 - 单标的权重通常不超过 5%-10%，具体取决于标的数量
 - 小市值标的的流动性可能不足以支撑大仓位
 - 权重约束会降低策略收益，但这是真实约束，必须纳入
 
 ### 4.2 行业暴露限制
 
-横截面因子可能对某些行业有系统性暴露（如价值因子偏好金融、厌恶科技）。
+横截面因子可能对某些行业有系统性暴露，比如价值因子偏好金融、厌恶科技。
 
 ```python
 def check_sector_exposure(weights, sector_map, max_sector_exposure=0.30):
@@ -368,7 +366,7 @@ def check_sector_exposure(weights, sector_map, max_sector_exposure=0.30):
 
 ### 4.3 Beta 中性约束
 
-横截面因子策略通常要求市场中性，控制系统性风险暴露。
+横截面策略通常要求市场中性，控制系统性风险暴露。
 
 ```python
 def apply_beta_neutralization(weights, betas, target_beta=0.0):
@@ -401,7 +399,7 @@ def apply_beta_neutralization(weights, betas, target_beta=0.0):
     return adjusted_weights
 ```
 
-**Formal Gate 要求**：
+Formal Gate 要求：
 
 ```yaml
 formal_gate_risk_constraints:
@@ -424,7 +422,7 @@ formal_gate_risk_constraints:
 
 ### 5.1 容量定义与重要性
 
-**策略容量** 是策略在不显著影响收益的前提下所能管理的最大资金规模。对于横截面因子策略，容量受限于最不流动的那批标的。
+**策略容量** 是在不显著影响收益的前提下所能管理的最大资金规模。横截面策略的容量受限于最不流动的那批标的。
 
 ### 5.2 容量估算方法
 
@@ -513,7 +511,7 @@ def aum_sensitivity_analysis(base_returns, turnover, slippage_model_fn,
     return pd.DataFrame(results)
 ```
 
-**容量评估示例**：
+容量评估示例：
 
 | AUM (USD) | 年化滑点 | 毛收益 | 净收益 | 收益衰减 | 净 Sharpe |
 |-----------|----------|--------|--------|----------|-----------|
@@ -522,7 +520,7 @@ def aum_sensitivity_analysis(base_returns, turnover, slippage_model_fn,
 | 100 万 | 3.2% | 18% | 9.2% | 49% | 0.8 |
 | 500 万 | 8.5% | 18% | -2.3% | 113% | -0.2 |
 
-**结论**：该策略容量上限约为 30-50 万美元。
+该策略容量上限约为 30-50 万美元。
 
 ### 5.4 流动性天花板
 
@@ -548,7 +546,7 @@ def liquidity_ceilings(universe, daily_volumes, min_volume_threshold_usd=1_000_0
     return sorted(low_liquidity, key=lambda x: x['avg_daily_volume'])
 ```
 
-**Formal Gate 要求**：
+Formal Gate 要求：
 
 ```yaml
 formal_gate_capacity:
@@ -571,7 +569,7 @@ formal_gate_capacity:
 
 ### 6.1 再平衡窗口
 
-横截面因子策略的再平衡频率直接影响成本和收益的平衡。
+再平衡频率直接影响成本和收益的平衡。
 
 | 再平衡频率 | 优势 | 劣势 | 适用场景 |
 |-----------|------|------|----------|
@@ -621,8 +619,8 @@ def rebalance_schedule(factor_values, rebalance_freq='W',
 | 适用场景 | 再平衡窗口充裕、流动性好 | 需要快速执行的紧急调仓 |
 | 回测假设 | 假设成交率，计算跟踪误差 | 假设 Taker 费率 + 固定滑点 |
 
-**实务建议**：
-- 横截面策略默认使用限价单（再平衡窗口充裕）
+注意：
+- 默认使用限价单（再平衡窗口充裕）
 - 回测中假设限价单成交率为 75%-85%
 - 未成交部分次日继续挂单或转为市价单
 
@@ -788,7 +786,7 @@ formal_gate_backtest_stage:
 
 ### 8.2 实际案例
 
-**案例：动量因子扣费后策略失效**
+案例：动量因子扣费后策略失效
 
 某团队构建了一个 20 日动量因子，Test 阶段多空 Sharpe = 2.1，进入 Backtest 后：
 
@@ -803,7 +801,7 @@ formal_gate_backtest_stage:
 净 Sharpe: 0.65
 ```
 
-**处理方式**：
+处理方式：
 - 虽然净收益大幅下降，但仍为正且 Sharpe > 0.5
 - 判定 CONDITIONAL PASS
 - 在 Backtest 中优化再平衡频率：周频改为双周频
@@ -888,9 +886,9 @@ frozen_spec_handover:
 
 ### 10.2 Holdout 阶段需要特别关注的事项
 
-1. **成本一致性**：Holdout 期间的市场结构可能导致成本模型参数变化（如波动率升高导致滑点增大）
-2. **流动性变化**：Holdout 期间可能有新的低流动性标的加入 Universe
-3. **执行偏差**：Holdout 应使用与 Backtest 相同的执行假设，不做任何优化
+1. 成本一致性：Holdout 期间的市场结构可能导致成本模型参数变化（如波动率升高导致滑点增大）
+2. 流动性变化：Holdout 期间可能有新的低流动性标的加入 Universe
+3. 执行偏差：Holdout 应使用与 Backtest 相同的执行假设，不做任何优化
 
 ---
 
