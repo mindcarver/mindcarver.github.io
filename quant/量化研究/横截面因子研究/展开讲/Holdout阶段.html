@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>Holdout阶段</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="Holdout阶段"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Holdout阶段"/><meta name="twitter:description" content="HoldoutValidation 阶段 - 详细展开 对应摘要版：../简介/Holdout阶段.md 1."/><meta property="og:description" content="HoldoutValidation 阶段 - 详细展开 对应摘要版：../简介/Holdout阶段.md 1."/><meta property="og:image:alt" content="HoldoutValidation 阶段 - 详细展开 对应摘要版：../简介/Holdout阶段.md 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/quant/量化研究/横截面因子研究/展开讲/Holdout阶段"/><meta property="twitter:url" content="https://https//mindcarver.top/quant/量化研究/横截面因子研究/展开讲/Holdout阶段"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="HoldoutValidation 阶段 - 详细展开 对应摘要版：../简介/Holdout阶段.md 1."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="quant/量化研究/横截面因子研究/展开讲/Holdout阶段"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-616"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-616" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/">quant</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/量化研究/">量化研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/量化研究/横截面因子研究/">横截面因子研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/量化研究/横截面因子研究/展开讲/">展开讲</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>Holdout阶段</a></div></nav><h1 class="article-title">Holdout阶段</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-03T08:50:26.510Z">2026年4月03日</time><span>11分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="holdoutvalidation-阶段---详细展开">HoldoutValidation 阶段 - 详细展开<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#holdoutvalidation-阶段---详细展开" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p>对应摘要版：<code>../简介/Holdout阶段.md</code></p>
+</blockquote>
+<h2 id="1-先说人话holdout-是终审不是补考">1. 先说人话：Holdout 是终审，不是补考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-先说人话holdout-是终审不是补考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>HoldoutValidation 是整条研究线里治理要求最严的一层。</p>
+<p>它不是：</p>
+<ul>
+<li>再多拿一点数据看看</li>
+<li>再延长几个月观察一下</li>
+<li>看结果不理想时再调一调</li>
+</ul>
+<p>它真正回答的问题是：</p>
+<blockquote>
+<p>在完全未参与设计、调参、组合选择的最终窗口上，已经冻结好的方案还能不能成立？</p>
+</blockquote>
+<p>所以 Holdout 的本质是：</p>
+<blockquote>
+<p>终审，不是补考。</p>
+</blockquote>
+<hr/>
+<h2 id="2-holdoutvalidation-回答的核心问题">2. HoldoutValidation 回答的核心问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-holdoutvalidation-回答的核心问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h2 id="21-冻结方案在未见窗口是否还能站住">2.1 冻结方案在未见窗口是否还能站住<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-冻结方案在未见窗口是否还能站住" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这里不是看“有没有局部亮点”，而是看：</p>
+<ul>
+<li>方向是否还一致</li>
+<li>表现是否仍可解释</li>
+<li>与 Backtest 的偏离是否在可接受范围内</li>
+</ul>
+<h2 id="22-如果不一致原因是什么">2.2 如果不一致，原因是什么<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-如果不一致原因是什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Holdout 不只是给 verdict，还要做解释。</p>
+<p>解释通常要分几类：</p>
+<ul>
+<li>实现错误</li>
+<li>市场环境漂移</li>
+<li>策略本身失效</li>
+</ul>
+<p>这一步非常重要，因为“结果差”不是唯一问题，<strong>结果差而解释混乱</strong>才是治理灾难。</p>
+<h2 id="23-如果失败应该怎么处理">2.3 如果失败，应该怎么处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#23-如果失败应该怎么处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Holdout 失败之后，不是只有“全盘否定”一种路径。</p>
+<p>常见合法结论有：</p>
+<ul>
+<li><code>PASS</code></li>
+<li><code>CONDITIONAL PASS</code></li>
+<li><code>NO_GO</code></li>
+<li><code>CHILD LINEAGE</code></li>
+</ul>
+<p>关键是：</p>
+<blockquote>
+<p>哪种情况触发哪种结论，必须在结果出来前就定义清楚。</p>
+</blockquote>
+<hr/>
+<h2 id="3-本阶段冻结的五组内容怎么理解">3. 本阶段冻结的五组内容怎么理解<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-本阶段冻结的五组内容怎么理解" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h2 id="31-window_contract">3.1 <code>window_contract</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-window_contract" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这组定义：</p>
+<ul>
+<li>Holdout 的起止窗口</li>
+<li>这一窗口是否只允许单次消费</li>
+<li>单窗口结果和合并窗口结果怎么产出</li>
+</ul>
+<p>这里最重要的是：窗口必须是事先冻结好的，不能看结果再决定取哪里。</p>
+<h2 id="32-reuse_contract">3.2 <code>reuse_contract</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-reuse_contract" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这组定义：</p>
+<ul>
+<li>Holdout 可以复用什么</li>
+<li>Holdout 绝对不能改什么</li>
+</ul>
+<p>例如：</p>
+<ul>
+<li>factor selection 不可改</li>
+<li>portfolio rules 不可改</li>
+<li>cost model 不可改</li>
+</ul>
+<p>这一步不是形式主义，而是在防止“结果不好就偷偷修一下”的冲动。</p>
+<h2 id="33-drift_audit">3.3 <code>drift_audit</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-drift_audit" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这组解决的是：</p>
+<blockquote>
+<p>如果 Holdout 和 Backtest 不一致，我们要如何解释这种偏离？</p>
+</blockquote>
+<p>这里通常要看：</p>
+<ul>
+<li>rolling OOS 一致性</li>
+<li>方向是否翻转</li>
+<li>具体失败时段在哪里</li>
+<li>是否有可识别的市场环境变化</li>
+</ul>
+<p>这一步不是为了帮策略找借口，而是为了避免团队在失败时只会说“市场变了”。</p>
+<h2 id="34-failure_governance">3.4 <code>failure_governance</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#34-failure_governance" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这组定义：</p>
+<ul>
+<li>什么叫方向翻转</li>
+<li>发生方向翻转后如何处置</li>
+<li>什么情况必须 <code>NO_GO</code></li>
+<li>什么情况必须开 <code>CHILD LINEAGE</code></li>
+</ul>
+<p>重点是：</p>
+<p>这些规则必须在结果出来前就写好。<br/>
+不能等到结果出来后，看是有利还是不利再改处置口径。</p>
+<h2 id="35-delivery_contract">3.5 <code>delivery_contract</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#35-delivery_contract" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这组定义：</p>
+<ul>
+<li>哪些产物必须落盘</li>
+<li>什么文件能证明 Holdout 只跑过一次</li>
+<li>后续 Shadow / 实盘要继承哪些结论</li>
+</ul>
+<hr/>
+<h2 id="4-为什么-holdout-绝对不能被当成可延期窗口">4. 为什么 Holdout 绝对不能被当成可延期窗口<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-为什么-holdout-绝对不能被当成可延期窗口" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是最重要的一条。</p>
+<p>很多团队在这里会犯一个看似合理、实际上非常危险的错：</p>
+<ul>
+<li>先跑三个月 Holdout</li>
+<li>如果不好，就说“市场不匹配”</li>
+<li>再延三个月</li>
+<li>然后说“延期观察不算新的 Holdout”</li>
+</ul>
+<p>这在治理上是站不住的。</p>
+<p>原因是：</p>
+<ul>
+<li>你已经消费了未见窗口信息</li>
+<li>后面的任何继续观察，都会带着前面结果的影响</li>
+<li>这和真正的一次性未见验证已经不是一回事</li>
+</ul>
+<p>所以：</p>
+<blockquote>
+<p>Holdout 一旦开始消费，窗口就已经被使用了。</p>
+</blockquote>
+<p>边界情况最多只能给出：</p>
+<ul>
+<li><code>CONDITIONAL PASS</code></li>
+<li><code>NO_GO</code></li>
+<li><code>CHILD LINEAGE</code></li>
+</ul>
+<p>不能把它包装成“只是继续观察”。</p>
+<hr/>
+<h2 id="5-这一阶段应如何落地">5. 这一阶段应如何落地<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-这一阶段应如何落地" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h2 id="51-先确认复用对象">5.1 先确认复用对象<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-先确认复用对象" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Holdout 开始时，首先要明确：</p>
+<ul>
+<li>当前复用的是哪一版 <code>frozen_portfolio_spec</code></li>
+<li>对应哪一版 <code>strategy_combo_ledger</code></li>
+<li>时间窗边界是否与 Mandate 一致</li>
+</ul>
+<p>如果这一层都不清楚，后面的结果比较就没有意义。</p>
+<h2 id="52-生成单窗口结果">5.2 生成单窗口结果<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-生成单窗口结果" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>单窗口结果的意义是：</p>
+<ul>
+<li>看具体失败发生在什么时候</li>
+<li>看是否有局部方向翻转</li>
+<li>看波动是否集中在少数窗口</li>
+</ul>
+<p>如果只有一份合并结果，很容易掩盖关键问题。</p>
+<h2 id="53-生成合并窗口结果">5.3 生成合并窗口结果<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#53-生成合并窗口结果" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>合并结果的意义是：</p>
+<ul>
+<li>给出整体判断</li>
+<li>便于和 Backtest 总结性结果比较</li>
+</ul>
+<p>但它不能替代单窗口分析。</p>
+<h2 id="54-做-holdout_backtest_compare">5.4 做 <code>holdout_backtest_compare</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#54-做-holdout_backtest_compare" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这一层不是为了拼一条“大曲线”，而是为了做严肃对比。</p>
+<p>应关注：</p>
+<ul>
+<li>整体方向是否一致</li>
+<li>退化幅度多大</li>
+<li>rolling OOS 一致性如何</li>
+<li>是否出现特定时间段方向翻转</li>
+</ul>
+<h2 id="55-做-drift_audit">5.5 做 <code>drift_audit</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#55-做-drift_audit" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这一步的要求是：</p>
+<ul>
+<li>如果一致性低，必须明确指出是哪些窗口、什么原因</li>
+<li>解释必须有对象，不允许抽象空话</li>
+</ul>
+<p>例如：</p>
+<ul>
+<li>“2024-11 到 2024-12 的高波动 regime 中出现显著方向偏离”</li>
+</ul>
+<p>比：</p>
+<ul>
+<li>“市场风格变化了”</li>
+</ul>
+<p>要有治理价值得多。</p>
+<hr/>
+<h2 id="6-输出物应该长什么样">6. 输出物应该长什么样<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-输出物应该长什么样" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>典型输出物包括：</p>
+<ul>
+<li><code>holdout_run_manifest.json</code></li>
+<li><code>holdout_backtest_compare.csv</code></li>
+<li><code>window_results/</code></li>
+<li><code>holdout_gate_decision.md</code></li>
+<li><code>artifact_catalog.md</code></li>
+<li><code>field_dictionary.md</code></li>
+</ul>
+<h3 id="holdout_run_manifestjson"><code>holdout_run_manifest.json</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#holdout_run_manifestjson" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这类文件的重要性在于证明：</p>
+<ul>
+<li>跑的是哪一版冻结方案</li>
+<li>什么时候跑的</li>
+<li>是否只跑了一次</li>
+</ul>
+<h3 id="window_results"><code>window_results/</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#window_results" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这里必须保留单窗口结果，而不是只保留汇总。</p>
+<h3 id="holdout_backtest_comparecsv"><code>holdout_backtest_compare.csv</code><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#holdout_backtest_comparecsv" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这个文件只能用于比较，不能和 Backtest 曲线拼成一条“最终业绩曲线”。</p>
+<p>这是非常重要的纪律。</p>
+<hr/>
+<h2 id="7-最常见的错误">7. 最常见的错误<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-最常见的错误" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h2 id="71-根据-holdout-结果回头调参">7.1 根据 Holdout 结果回头调参<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#71-根据-holdout-结果回头调参" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是最严重的错误。</p>
+<p>一旦发生，正确反应不是“修一下继续”，而是承认：</p>
+<ul>
+<li>这个 Holdout 已经被消费了</li>
+<li>后续若继续研究，应当按治理要求开新 lineage</li>
+</ul>
+<h2 id="72-把-holdout-和-backtest-拼成一条曲线">7.2 把 Holdout 和 Backtest 拼成一条曲线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#72-把-holdout-和-backtest-拼成一条曲线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这会掩盖最终窗口的独立性，让人误以为整条曲线都是同等可信度。</p>
+<p>实际上不是。</p>
+<h2 id="73-只看汇总不看单窗口">7.3 只看汇总，不看单窗口<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#73-只看汇总不看单窗口" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>只看合并结果，很容易忽略：</p>
+<ul>
+<li>方向翻转发生在哪几段</li>
+<li>是否只有极少数窗口在支撑整体结果</li>
+</ul>
+<h2 id="74-失败时只有情绪没有治理结论">7.4 失败时只有情绪，没有治理结论<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#74-失败时只有情绪没有治理结论" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>常见错误说法：</p>
+<ul>
+<li>“最近行情不适合”</li>
+<li>“再观察一下”</li>
+<li>“这个阶段不代表真实水平”</li>
+</ul>
+<p>这些话如果没有进入 <code>drift_audit</code> 和 <code>failure_governance</code> 的正式语义，就没有治理价值。</p>
+<hr/>
+<h2 id="8-holdout-失败后怎么判断是哪里出了问题">8. Holdout 失败后怎么判断是哪里出了问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-holdout-失败后怎么判断是哪里出了问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>可以按三类分：</p>
+<h2 id="81-实现错误">8.1 实现错误<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#81-实现错误" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如：</p>
+<ul>
+<li>参数文件读错</li>
+<li>执行代码没复用 frozen spec</li>
+<li>时间戳对齐错误</li>
+</ul>
+<p>这类问题允许按治理规则修复后重跑，因为它不是策略本身的问题，而是执行失败。</p>
+<h2 id="82-市场环境漂移">8.2 市场环境漂移<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#82-市场环境漂移" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如：</p>
+<ul>
+<li>极端波动 regime</li>
+<li>流动性结构变化</li>
+<li>某类资产集中异常</li>
+</ul>
+<p>这类问题不一定等于策略无效，但必须在 <code>drift_audit</code> 中有明确解释。</p>
+<h2 id="83-策略本身失效">8.3 策略本身失效<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#83-策略本身失效" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如：</p>
+<ul>
+<li>方向持续反转</li>
+<li>多窗口一致性明显塌掉</li>
+<li>无法给出合理 drift 解释</li>
+</ul>
+<p>这类情况通常不能再靠“观察一下”解决，应进入 <code>NO_GO</code> 或 <code>CHILD LINEAGE</code> 路径。</p>
+<hr/>
+<h2 id="9-与-shadow--实盘的衔接">9. 与 Shadow / 实盘的衔接<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-与-shadow--实盘的衔接" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>只有 HoldoutValidation 完成后，才有资格讨论 Shadow 或实盘。</p>
+<p>交接时最重要的不是“最好看的指标”，而是：</p>
+<ul>
+<li>复用的是哪套冻结方案</li>
+<li>Holdout 与 Backtest 的对比结论</li>
+<li>drift audit</li>
+<li>失败治理规则</li>
+<li>若为 <code>CONDITIONAL PASS</code>，初始资金约束和退出条件是什么</li>
+</ul>
+<p>否则实盘团队拿到的就只是“一个看起来还行的故事”，而不是正式结论。</p>
+<hr/>
+<h2 id="10-最后给一个判断标准">10. 最后给一个判断标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-最后给一个判断标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>合格的 HoldoutValidation，应该满足：</p>
+<blockquote>
+<p>即使结果不理想，团队也不能靠继续观察或回头调参来掩盖它；他们只能解释、裁决，然后决定是进入 Shadow，还是终止，还是另开 lineage。</p>
+</blockquote>
+<p>如果这点做不到，那就说明 Holdout 还没真正成为终审。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-350" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#holdoutvalidation-阶段---详细展开" data-for="holdoutvalidation-阶段---详细展开">HoldoutValidation 阶段 - 详细展开</a></li><li class="depth-1"><a href="#1-先说人话holdout-是终审不是补考" data-for="1-先说人话holdout-是终审不是补考">1. 先说人话：Holdout 是终审，不是补考</a></li><li class="depth-1"><a href="#2-holdoutvalidation-回答的核心问题" data-for="2-holdoutvalidation-回答的核心问题">2. HoldoutValidation 回答的核心问题</a></li><li class="depth-1"><a href="#21-冻结方案在未见窗口是否还能站住" data-for="21-冻结方案在未见窗口是否还能站住">2.1 冻结方案在未见窗口是否还能站住</a></li><li class="depth-1"><a href="#22-如果不一致原因是什么" data-for="22-如果不一致原因是什么">2.2 如果不一致，原因是什么</a></li><li class="depth-1"><a href="#23-如果失败应该怎么处理" data-for="23-如果失败应该怎么处理">2.3 如果失败，应该怎么处理</a></li><li class="depth-1"><a href="#3-本阶段冻结的五组内容怎么理解" data-for="3-本阶段冻结的五组内容怎么理解">3. 本阶段冻结的五组内容怎么理解</a></li><li class="depth-1"><a href="#31-window_contract" data-for="31-window_contract">3.1 window_contract</a></li><li class="depth-1"><a href="#32-reuse_contract" data-for="32-reuse_contract">3.2 reuse_contract</a></li><li class="depth-1"><a href="#33-drift_audit" data-for="33-drift_audit">3.3 drift_audit</a></li><li class="depth-1"><a href="#34-failure_governance" data-for="34-failure_governance">3.4 failure_governance</a></li><li class="depth-1"><a href="#35-delivery_contract" data-for="35-delivery_contract">3.5 delivery_contract</a></li><li class="depth-1"><a href="#4-为什么-holdout-绝对不能被当成可延期窗口" data-for="4-为什么-holdout-绝对不能被当成可延期窗口">4. 为什么 Holdout 绝对不能被当成可延期窗口</a></li><li class="depth-1"><a href="#5-这一阶段应如何落地" data-for="5-这一阶段应如何落地">5. 这一阶段应如何落地</a></li><li class="depth-1"><a href="#51-先确认复用对象" data-for="51-先确认复用对象">5.1 先确认复用对象</a></li><li class="depth-1"><a href="#52-生成单窗口结果" data-for="52-生成单窗口结果">5.2 生成单窗口结果</a></li><li class="depth-1"><a href="#53-生成合并窗口结果" data-for="53-生成合并窗口结果">5.3 生成合并窗口结果</a></li><li class="depth-1"><a href="#54-做-holdout_backtest_compare" data-for="54-做-holdout_backtest_compare">5.4 做 holdout_backtest_compare</a></li><li class="depth-1"><a href="#55-做-drift_audit" data-for="55-做-drift_audit">5.5 做 drift_audit</a></li><li class="depth-1"><a href="#6-输出物应该长什么样" data-for="6-输出物应该长什么样">6. 输出物应该长什么样</a></li><li class="depth-2"><a href="#holdout_run_manifestjson" data-for="holdout_run_manifestjson">holdout_run_manifest.json</a></li><li class="depth-2"><a href="#window_results" data-for="window_results">window_results/</a></li><li class="depth-2"><a href="#holdout_backtest_comparecsv" data-for="holdout_backtest_comparecsv">holdout_backtest_compare.csv</a></li><li class="depth-1"><a href="#7-最常见的错误" data-for="7-最常见的错误">7. 最常见的错误</a></li><li class="depth-1"><a href="#71-根据-holdout-结果回头调参" data-for="71-根据-holdout-结果回头调参">7.1 根据 Holdout 结果回头调参</a></li><li class="depth-1"><a href="#72-把-holdout-和-backtest-拼成一条曲线" data-for="72-把-holdout-和-backtest-拼成一条曲线">7.2 把 Holdout 和 Backtest 拼成一条曲线</a></li><li class="depth-1"><a href="#73-只看汇总不看单窗口" data-for="73-只看汇总不看单窗口">7.3 只看汇总，不看单窗口</a></li><li class="depth-1"><a href="#74-失败时只有情绪没有治理结论" data-for="74-失败时只有情绪没有治理结论">7.4 失败时只有情绪，没有治理结论</a></li><li class="depth-1"><a href="#8-holdout-失败后怎么判断是哪里出了问题" data-for="8-holdout-失败后怎么判断是哪里出了问题">8. Holdout 失败后怎么判断是哪里出了问题</a></li><li class="depth-1"><a href="#81-实现错误" data-for="81-实现错误">8.1 实现错误</a></li><li class="depth-1"><a href="#82-市场环境漂移" data-for="82-市场环境漂移">8.2 市场环境漂移</a></li><li class="depth-1"><a href="#83-策略本身失效" data-for="83-策略本身失效">8.3 策略本身失效</a></li><li class="depth-1"><a href="#9-与-shadow--实盘的衔接" data-for="9-与-shadow--实盘的衔接">9. 与 Shadow / 实盘的衔接</a></li><li class="depth-1"><a href="#10-最后给一个判断标准" data-for="10-最后给一个判断标准">10. 最后给一个判断标准</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>
