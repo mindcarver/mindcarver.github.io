@@ -1,5 +1,7 @@
 # Backtest Ready 阶段 - 组合与执行合同冻结
 
+> 详细版：`../展开讲/Backtest阶段.md`
+
 ## 1. 阶段定位
 
 BacktestReady 的职责是把已经通过 TestEvidence 的候选，落成真正可复用的组合、成本、风险和执行合同。

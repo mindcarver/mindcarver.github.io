@@ -1,5 +1,7 @@
 # DataReady 阶段 - 横截面面板底座冻结
 
+> 详细版：`../展开讲/DataReady阶段.md`
+
 ## 1. 阶段定位
 
 DataReady 的职责是把 Mandate 中冻结的研究边界，落成真正可复用的横截面面板底座。

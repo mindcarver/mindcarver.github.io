@@ -1,5 +1,7 @@
 # Test Evidence 阶段 - 独立样本证据冻结
 
+> 详细版：`../展开讲/Test阶段.md`
+
 ## 1. 阶段定位
 
 虽然文件名仍叫 `Test阶段`，但这里更准确的职责是 `TestEvidence`。

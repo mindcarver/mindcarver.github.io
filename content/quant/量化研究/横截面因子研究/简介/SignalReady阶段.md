@@ -1,5 +1,7 @@
 # Signal Ready 阶段 - 因子合同冻结
 
+> 详细版：`../展开讲/SignalReady阶段.md`
+
 ## 1. 阶段定位
 
 SignalReady 的职责是冻结横截面因子的正式定义，而不是提前宣布它是赢家。

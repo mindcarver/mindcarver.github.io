@@ -1,5 +1,7 @@
 # Train Freeze 阶段 - 训练窗尺子冻结
 
+> 详细版：`../展开讲/Train阶段.md`
+
 ## 1. 阶段定位
 
 虽然文件名仍叫 `Train阶段`，但这里更准确的职责是 `TrainFreeze`。

@@ -1,5 +1,7 @@
 # Holdout Validation 阶段 - 最终未见窗口验证
 
+> 详细版：`../展开讲/Holdout阶段.md`
+
 ## 1. 阶段定位
 
 HoldoutValidation 是横截面因子研究链里的最终验证层。
