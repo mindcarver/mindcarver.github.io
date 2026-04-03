@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>18-git-workflow</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="18-git-workflow"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="18-git-workflow"/><meta name="twitter:description" content="push —force 被拦了：Claude Code 的 Git 安全协议 1."/><meta property="og:description" content="push —force 被拦了：Claude Code 的 Git 安全协议 1."/><meta property="og:image:alt" content="push —force 被拦了：Claude Code 的 Git 安全协议 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/claudecode/18-git-workflow"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/claudecode/18-git-workflow"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="push —force 被拦了：Claude Code 的 Git 安全协议 1."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/claudecode/18-git-workflow"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-47"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-47" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/claudecode/">claudecode</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>18 git workflow</a></div></nav><h1 class="article-title">18-git-workflow</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-03T06:57:52.298Z">2026年4月03日</time><span>22分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="push-force-被拦了claude-code-的-git-安全协议">push —force 被拦了：Claude Code 的 Git 安全协议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#push-force-被拦了claude-code-的-git-安全协议" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="1-引言ai-编码中-git-操作的特殊风险">1. 引言：AI 编码中 git 操作的特殊风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-引言ai-编码中-git-操作的特殊风险" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>当 AI agent 获得在终端执行命令的能力时，git 操作成为最高风险区域之一。与人类开发者不同，AI agent 不会因为”感觉不对”而犹豫，也不会因为某个操作”看起来危险”而主动停下来确认。它只会忠实执行指令，包括那些可能造成不可逆破坏的 git 命令。</p>
+<p>Claude Code 通过一套 Git Safety Protocol 来应对这个问题。这套协议不是笼统的安全建议，而是嵌入在 system prompt 中的硬性规则，覆盖从 commit 创建到 PR 提交的完整工作流。本文从源码层面拆解这套协议的设计逻辑，分析每条规则背后的具体事故场景。</p>
+<h2 id="2-git-safety-protocol-四条红线">2. Git Safety Protocol 四条红线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-git-safety-protocol-四条红线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Claude Code 的 Git Safety Protocol 以 NEVER 开头的四条禁令为核心，构成不可逾越的安全边界。</p>
+<h3 id="21-never-update-the-git-config">2.1 NEVER update the git config<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-never-update-the-git-config" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“NEVER update the git config” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>这条规则看似简单，实则保护的是身份完整性。Git config 中存储着 <code>user.name</code> 和 <code>user.email</code>，一旦被篡改，所有后续 commit 的作者信息都会出错。在团队协作场景中，这意味着代码归属混乱、审计追溯失效。AI agent 可能出于”规范化”的目的修改 config，但 Claude Code 明确禁止这种行为，无论动机如何。</p>
+<h3 id="22-never-run-destructive-git-commands">2.2 NEVER run destructive git commands<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-never-run-destructive-git-commands" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“NEVER run destructive git commands (push —force, reset —hard, checkout ., restore ., clean -f, branch -D) unless the user explicitly requests these actions. Taking unauthorized destructive actions is unhelpful and can result in lost work, so it’s best to ONLY run these commands when given direct instructions” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>被列入黑名单的命令具有共同特征：它们都可能导致工作成果的不可逆丢失。<code>push --force</code> 会覆盖远程历史，<code>reset --hard</code> 会丢弃所有未提交的修改，<code>checkout .</code> 会还原所有本地文件变动，<code>clean -f</code> 会删除未跟踪的文件，<code>branch -D</code> 会强制删除分支。</p>
+<p>这条规则并非绝对禁止，而是要求”explicitly requests”，用户必须明确发出指令。Claude Code 不会将模糊的意图解读为授权，比如用户说”把这个分支清理一下”，AI 不会自行决定执行 <code>branch -D</code>。</p>
+<p>在另一份补充规则中，Claude Code 进一步要求在执行破坏性操作前先考虑替代方案：</p>
+<blockquote>
+<p>“Before running destructive operations (e.g., git reset —hard, git push —force, git checkout —), consider whether there is a safer alternative that achieves the same goal. Only use destructive operations when they are truly the best approach.” [source: tool-description-bash-git-avoid-destructive-ops]</p>
+</blockquote>
+<p>即使用户明确要求执行破坏性操作，Claude Code 仍需先评估是否存在更安全的路径。比如用户说”我想回到上一个版本”，<code>git revert</code> 可能比 <code>git reset --hard</code> 更合适，因为前者创建新 commit 而非丢弃历史。</p>
+<h3 id="23-never-skip-hooks">2.3 NEVER skip hooks<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#23-never-skip-hooks" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“NEVER skip hooks (—no-verify, —no-gpg-sign, etc) unless the user explicitly requests it” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>单独的规则文件对此做了更严格的表述：</p>
+<blockquote>
+<p>“Never skip hooks (—no-verify) or bypass signing (—no-gpg-sign, -c commit.gpgsign=false) unless the user has explicitly asked for it. If a hook fails, investigate and fix the underlying issue.” [source: tool-description-bash-git-never-skip-hooks]</p>
+</blockquote>
+<p>Hooks 是代码质量的自动关卡。pre-commit hooks 可能执行 lint 检查、格式化验证、敏感信息扫描；commit-msg hooks 可能校验提交信息格式；GPG signing 确保提交的来源可信。绕过这些检查意味着让可能有问题的代码进入仓库。</p>
+<p>关键在最后一句话：“If a hook fails, investigate and fix the underlying issue.” Claude Code 被要求不是绕过失败的 hook，而是追根溯源修复问题。当代码无法通过质量关卡时，正确做法是修复代码，而非移除关卡。</p>
+<h3 id="24-never-run-force-push-to-mainmaster">2.4 NEVER run force push to main/master<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#24-never-run-force-push-to-mainmaster" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“NEVER run force push to main/master, warn the user if they request it” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>这是四条红线中唯一一条即使用户要求也不会直接执行的规则。其他三条禁令在用户”explicitly requests”时可以放行，但 force push main/master 即使在用户请求时也需要先发出警告。原因在于 main/master 分支是整个团队的共享基础，force push 会重写所有人的公共历史，影响范围远超单个开发者。</p>
+<h2 id="3-提交流程详解">3. 提交流程详解<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-提交流程详解" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Claude Code 的 commit 创建流程被设计为一个三阶段的严格管线，每一阶段都有明确的输入、处理和输出。</p>
+<h3 id="31-阶段一并行信息收集">3.1 阶段一：并行信息收集<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-阶段一并行信息收集" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“1. Run the following bash commands in parallel, each using the Bash tool:</p>
+<ul>
+<li>Run a git status command to see all untracked files. IMPORTANT: Never use the -uall flag as it can cause memory issues on large repos.</li>
+<li>Run a git diff command to see both staged and unstaged changes that will be committed.</li>
+<li>Run a git log command to see recent commit messages, so that you can follow this repository’s commit message style.” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</li>
+</ul>
+</blockquote>
+<p>三个命令并行执行，分别回答三个问题：有哪些文件被修改或新增？具体的代码变更内容是什么？这个仓库的 commit message 风格是怎样的？</p>
+<p><code>git status</code> 的 <code>-uall</code> 限制值得注意。在大型仓库中，<code>-uall</code> 会列出每一个未跟踪文件，可能导致内存溢出。Claude Code 明确要求不使用此 flag，这是对实际工程环境的务实考量。</p>
+<h3 id="32-阶段二分析与决策">3.2 阶段二：分析与决策<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-阶段二分析与决策" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“2. Analyze all staged changes (both previously staged and newly added) and draft a commit message:</p>
+<ul>
+<li>Summarize the nature of the changes (eg. new feature, enhancement to an existing feature, bug fix, refactoring, test, docs, etc.). Ensure the message accurately reflects the changes and their purpose (i.e. ‘add’ means a wholly new feature, ‘update’ means an enhancement to an existing feature, ‘fix’ means a bug fix, etc.).</li>
+<li>Do not commit files that likely contain secrets (.env, credentials.json, etc). Warn the user if they specifically request to commit those files</li>
+<li>Draft a concise (1-2 sentences) commit message that focuses on the ‘why’ rather than the ‘what’</li>
+<li>Ensure it accurately reflects the changes and their purpose” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</li>
+</ul>
+</blockquote>
+<p>这个阶段要求 Claude Code 识别变更类型（新功能、增强、修复、重构等），检查是否包含敏感文件，起草 commit message。动词选择有严格映射关系：“add”对应全新功能，“update”对应功能增强，“fix”对应缺陷修复。这不是随意选择措辞，而是遵循 conventional commits 的语义规范。</p>
+<h3 id="33-阶段三执行与验证">3.3 阶段三：执行与验证<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-阶段三执行与验证" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“3. Run the following commands in parallel:</p>
+<ul>
+<li>Add relevant untracked files to the staging area.</li>
+<li>Create the commit with a message ending with [Co-Authored-By line]</li>
+<li>Run git status after the commit completes to verify success.
+Note: git status depends on the commit completing, so run it sequentially after the commit.” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</li>
+</ul>
+</blockquote>
+<p>执行阶段的关键细节是 staging 策略：</p>
+<blockquote>
+<p>“When staging files, prefer adding specific files by name rather than using ‘git add -A’ or ‘git add .’, which can accidentally include sensitive files (.env, credentials) or large binaries” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p><code>git add -A</code> 和 <code>git add .</code> 是危险的快捷操作，它们会将当前目录下所有变更文件加入 staging area，包括 <code>.env</code>、credentials 文件或大型二进制文件。Claude Code 被要求按文件名逐个添加，步骤更多，但避免了意外提交。</p>
+<p>验证步骤同样不可省略。commit 完成后必须运行 <code>git status</code> 确认操作成功，且由于 git status 依赖 commit 的结果，这两个命令必须串行执行。</p>
+<h2 id="4-为什么-always-create-new-commits-rather-than-amending">4. 为什么 “Always create NEW commits rather than amending”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-为什么-always-create-new-commits-rather-than-amending" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“CRITICAL: Always create NEW commits rather than amending, unless the user explicitly requests a git amend. When a pre-commit hook fails, the commit did NOT happen — so —amend would modify the PREVIOUS commit, which may result in destroying work or losing previous changes. Instead, after hook failure, fix the issue, re-stage, and create a NEW commit” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>这条规则被标记为 CRITICAL，其重要性体现在对 git 内部机制的理解上。拆解 <code>git commit --amend</code> 的工作原理就能明白：</p>
+<p>当 pre-commit hook 执行失败时，git 不会创建新的 commit 对象。当前 HEAD 指向的仍然是上一次的 commit。此时如果执行 <code>git commit --amend</code>，git 会将 staged 的修改合并到上一个 commit 中，替换掉原来的 commit 对象。</p>
+<p>想象一个具体场景：开发者 A 创建了一个包含重要功能代码的 commit。Claude Code 尝试创建一个新的 commit，但 pre-commit hook 因为 lint 错误而失败。此时如果 Claude Code 使用 <code>--amend</code>，它不是重试自己的 commit（因为自己的 commit 根本没有创建成功），而是修改了开发者 A 的 commit。开发者 A 的原始代码可能被部分覆盖或完全丢失。</p>
+<p>正确做法：修复 hook 报告的问题，重新 stage 文件，创建一个全新的 commit。这样既不会影响已有的 commit 历史，也保证了每次 commit 操作的原子性和可追溯性。</p>
+<p>补充规则文件对此做了更简洁的表述：</p>
+<blockquote>
+<p>“Prefer to create a new commit rather than amending an existing commit.” [source: tool-description-bash-git-prefer-new-commits]</p>
+</blockquote>
+<h2 id="5-commit-message-设计">5. Commit message 设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-commit-message-设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="51-聚焦-why-而非-what">5.1 聚焦 why 而非 what<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-聚焦-why-而非-what" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“Draft a concise (1-2 sentences) commit message that focuses on the ‘why’ rather than the ‘what’” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>这是一个经过深思熟虑的设计选择。代码的 diff 本身已经展示了”what”，哪些文件被修改、哪些行被添加或删除。Commit message 的价值在于解释”why”，为什么要做这个修改，解决什么问题，达到什么目的。</p>
+<h3 id="52-变更类型的动词映射">5.2 变更类型的动词映射<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-变更类型的动词映射" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Claude Code 被要求使用精确的动词来描述变更性质：</p>
+<blockquote>
+<p>“Ensure the message accurately reflects the changes and their purpose (i.e. ‘add’ means a wholly new feature, ‘update’ means an enhancement to an existing feature, ‘fix’ means a bug fix, etc.)” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>这种动词映射遵循 conventional commits 的精神，使得 git log 的读者能够快速判断每个 commit 的性质，而无需翻阅代码变更。</p>
+<h3 id="53-co-authored-by-标记">5.3 Co-Authored-By 标记<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#53-co-authored-by-标记" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“Create the commit with a message ending with: [Co-Authored-By line]” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>Co-Authored-By 是 git 社区公认的多作者标记方式。Claude Code 在 commit message 末尾添加此标记，明确声明这个 commit 是人机协作的结果。这对代码审计和贡献者归属都有实际意义。</p>
+<h2 id="6-pr-创建流程">6. PR 创建流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-pr-创建流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="61-理解分支全貌">6.1 理解分支全貌<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-理解分支全貌" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“1. Run the following bash commands in parallel using the Bash tool, in order to understand the current state of the branch since it diverged from the main branch:</p>
+<ul>
+<li>Run a git status command to see all untracked files (never use -uall flag)</li>
+<li>Run a git diff command to see both staged and unstaged changes that will be committed</li>
+<li>Check if the current branch tracks a remote branch and is up to date with the remote, so you know if you need to push to the remote</li>
+<li>Run a git log command and <code>git diff [base-branch]...HEAD</code> to understand the full commit history for the current branch (from the time it diverged from the base branch)” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</li>
+</ul>
+</blockquote>
+<p>PR 创建的第一步比 commit 创建更全面，因为它需要理解整个分支的完整历史。四个并行命令分别收集：当前文件状态、代码变更、远程同步状态、完整提交历史。其中 <code>git diff [base-branch]...HEAD</code> 是关键，它展示了从分支分叉点到当前 HEAD 的所有变更，确保 PR 描述覆盖了分支上的全部改动。</p>
+<h3 id="62-分析全部-commit">6.2 分析全部 commit<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-分析全部-commit" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“2. Analyze all changes that will be included in the pull request, making sure to look at all relevant commits (NOT just the latest commit, but ALL commits that will be included in the pull request!!!), and draft a pull request title and summary:</p>
+<ul>
+<li>Keep the PR title short (under 70 characters)</li>
+<li>Use the description/body for details, not the title” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</li>
+</ul>
+</blockquote>
+<p>这里用了三个感叹号来强调”ALL commits”。只看最新 commit 而忽略之前的 commit，会导致 PR 描述不完整甚至误导。一个分支可能包含多个 commit，每个 commit 解决不同的问题，PR 描述必须综合所有 commit 的信息。</p>
+<h3 id="63-执行创建">6.3 执行创建<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-执行创建" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>“3. Run the following commands in parallel:</p>
+<ul>
+<li>Create new branch if needed</li>
+<li>Push to remote with -u flag if needed</li>
+<li>Create PR using gh pr create with the format below. Use a HEREDOC to pass the body to ensure correct formatting.” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</li>
+</ul>
+</blockquote>
+<p>PR 的创建使用 <code>gh</code> CLI 工具，这是 GitHub 官方命令行工具。文档明确要求”Use the gh command via the Bash tool for ALL GitHub-related tasks including working with issues, pull requests, checks, and releases.” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+<p>PR body 包含两个标准部分：Summary（1-3 个要点概括）和 Test plan（测试检查清单）。创建完成后，Claude Code 被要求返回 PR URL：“Return the PR URL when you’re done, so the user can see it.” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+<h2 id="7-heredoc-格式的必要性">7. HEREDOC 格式的必要性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-heredoc-格式的必要性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在 commit message 和 PR body 的传递中，Claude Code 被要求使用 HEREDOC 格式：</p>
+<blockquote>
+<p>“In order to ensure good formatting, ALWAYS pass the commit message via a HEREDOC, a la this example:</p>
+<pre><code>git commit -m &quot;$(cat &lt;&lt;'EOF'
+   Commit message here.
+
+   Co-Authored-By: Claude
+   EOF
+   )&quot;
+```&quot; [source: tool-description-bash-git-commit-and-pr-creation-instructions]
+</code></pre>
+</blockquote>
+<p>PR body 同样使用 HEREDOC：</p>
+<blockquote>
+<p>“Create PR using gh pr create with the format below. Use a HEREDOC to pass the body to ensure correct formatting.” [source: tool-description-bash-git-commit-and-pr-creation-instructions]</p>
+</blockquote>
+<p>HEREDOC 的必要性来自两个方面。</p>
+<p>一是 shell 中的引号处理。Commit message 和 PR body 通常包含多行文本、特殊字符、markdown 格式标记。如果直接用双引号包裹，shell 会对 <code>$</code>、反引号、<code>\</code> 等字符进行解释，导致内容被意外修改。HEREDOC 中的单引号（<code>&lt;&lt;'EOF'</code>）会禁用变量替换和命令替换，确保文本原样传递。</p>
+<p>二是多行内容的完整性。HEREDOC 天然支持多行文本，无需使用 <code>\n</code> 转义序列或多个 <code>-m</code> flag。这保证了 commit message 和 PR body 的格式与预期一致，不会因为 shell 的换行处理而出现格式错误。</p>
+<h2 id="8-与-executing-actions-with-care-的风险分级联动">8. 与 Executing Actions with Care 的风险分级联动<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-与-executing-actions-with-care-的风险分级联动" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Git Safety Protocol 不是孤立存在的，它是一个更广泛的风险管理框架的具体应用。在 “Executing actions with care” 系统提示中，Claude Code 的风险管控被统一表述为：</p>
+<blockquote>
+<p>“Carefully consider the reversibility and blast radius of actions. Generally you can freely take local, reversible actions like editing files or running tests. But for actions that are hard to reverse, affect shared systems beyond your local environment, or could otherwise be risky or destructive, check with the user before proceeding.” [source: system-prompt-executing-actions-with-care]</p>
+</blockquote>
+<p>这段话建立了风险分级的底层逻辑：本地可逆操作可以自由执行；难以逆转、影响范围超出本地的操作需要用户确认。</p>
+<p>Git 操作正好横跨了这两个层级。<code>git add</code>、<code>git commit</code> 是本地可逆操作，属于低风险层级。以下操作被明确列为高风险：</p>
+<blockquote>
+<p>“Examples of the kind of risky actions that warrant user confirmation:</p>
+<ul>
+<li>Destructive operations: deleting files/branches, dropping database tables, killing processes, rm -rf, overwriting uncommitted changes</li>
+<li>Hard-to-reverse operations: force-pushing (can also overwrite upstream), git reset —hard, amending published commits, removing or downgrading packages/dependencies, modifying CI/CD pipelines</li>
+<li>Actions visible to others or that affect shared state: pushing code, creating/closing/commenting on PRs or issues, sending messages (Slack, email, GitHub), posting to external services, modifying shared infrastructure or permissions” [source: system-prompt-executing-actions-with-care]</li>
+</ul>
+</blockquote>
+<p>将这份风险清单与 Git Safety Protocol 对照，可以看到明确的映射关系：force push 同时出现在两个文档中，reset —hard 被同时列为破坏性命令和难以逆转的操作，pushing code 被归为”影响共享状态”的操作。</p>
+<p>“Executing actions with care” 还建立了一条授权边界原则：</p>
+<blockquote>
+<p>“A user approving an action (like a git push) once does NOT mean that they approve it in all contexts, so unless actions are authorized in advance in durable instructions like CLAUDE.md files, always confirm first. Authorization stands for the scope specified, not beyond. Match the scope of your actions to what was actually requested.” [source: system-prompt-executing-actions-with-care]</p>
+</blockquote>
+<p>用户在场景 A 中授权的 push 操作，不会自动延伸到场景 B。每次执行高风险操作都需要独立的授权确认，且授权的范围不能超出用户的实际请求。</p>
+<p>当遇到障碍时，Claude Code 被要求避免使用破坏性操作作为捷径：</p>
+<blockquote>
+<p>“When you encounter an obstacle, do not use destructive actions as a shortcut to simply make it go away. For instance, try to identify root causes and fix underlying issues rather than bypassing safety checks (e.g. —no-verify). If you discover unexpected state like unfamiliar files, branches, or configuration, investigate before deleting or overwriting, as it may represent the user’s in-progress work.” [source: system-prompt-executing-actions-with-care]</p>
+</blockquote>
+<p>这条规则与 Git Safety Protocol 中的 “NEVER skip hooks” 形成呼应。当 pre-commit hook 失败时，正确做法是调查并修复根本问题，而不是用 <code>--no-verify</code> 绕过检查。当发现陌生的文件或分支时，应该先调查其来源和用途，而不是直接删除，因为这可能是用户正在进行的工作。</p>
+<h2 id="9-这套协议防止的具体事故类型">9. 这套协议防止的具体事故类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-这套协议防止的具体事故类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Claude Code 的 Git Safety Protocol 和 PR 创建流程针对 AI agent 在 git 操作中可能引发的具体事故，逐条设置了防线：</p>
+<p><strong>身份篡改</strong>：禁止修改 git config，防止 agent 修改提交者身份信息，确保 commit 的作者归属准确。</p>
+<p><strong>代码丢失</strong>：禁止未经授权的破坏性命令（reset —hard、checkout .、clean -f 等），防止 agent 因追求效率而丢弃用户未提交的工作。要求在执行前先考虑更安全的替代方案，进一步降低风险。</p>
+<p><strong>质量关卡失效</strong>：禁止跳过 hooks 和绕过签名，防止 agent 为了完成提交而绕过项目设置的质量检查。当 hook 失败时，要求调查根本原因而非走捷径。</p>
+<p><strong>共享历史重写</strong>：在 force push main/master 时发出警告（即使用户要求），保护团队公共分支的完整性。</p>
+<p><strong>Commit 历史污染</strong>：要求创建新 commit 而非 amend，防止在 pre-commit hook 失败时意外修改他人的 commit。这条规则基于对 git 内部机制的精确理解：hook 失败意味着 commit 未创建，此时 amend 修改的是上一个 commit。</p>
+<p><strong>敏感信息泄露</strong>：要求按文件名 staging 而非使用 <code>git add -A</code>，防止 <code>.env</code>、credentials 等敏感文件被意外提交。</p>
+<p><strong>PR 描述不完整</strong>：要求分析分支上的全部 commit（而非仅最新 commit），确保 PR 描述准确反映完整的变更范围。</p>
+<p><strong>格式丢失</strong>：要求使用 HEREDOC 传递 commit message 和 PR body，防止 shell 引号处理导致的内容损坏。</p>
+<p><strong>授权越界</strong>：明确”一次授权不等于永久授权”的原则，防止 agent 将用户在特定场景下的许可延伸到其他场景。</p>
+<p>每一条规则都对应着一个真实的事故场景，而不仅仅是理论上的风险假设。这套协议的设计思路是：在每一个可能出错的环节设置防线，让 AI agent 的 git 操作在效率上接近人类开发者，但在安全性上远超随意执行命令的自动化脚本。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-17" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#push-force-被拦了claude-code-的-git-安全协议" data-for="push-force-被拦了claude-code-的-git-安全协议">push —force 被拦了：Claude Code 的 Git 安全协议</a></li><li class="depth-1"><a href="#1-引言ai-编码中-git-操作的特殊风险" data-for="1-引言ai-编码中-git-操作的特殊风险">1. 引言：AI 编码中 git 操作的特殊风险</a></li><li class="depth-1"><a href="#2-git-safety-protocol-四条红线" data-for="2-git-safety-protocol-四条红线">2. Git Safety Protocol 四条红线</a></li><li class="depth-2"><a href="#21-never-update-the-git-config" data-for="21-never-update-the-git-config">2.1 NEVER update the git config</a></li><li class="depth-2"><a href="#22-never-run-destructive-git-commands" data-for="22-never-run-destructive-git-commands">2.2 NEVER run destructive git commands</a></li><li class="depth-2"><a href="#23-never-skip-hooks" data-for="23-never-skip-hooks">2.3 NEVER skip hooks</a></li><li class="depth-2"><a href="#24-never-run-force-push-to-mainmaster" data-for="24-never-run-force-push-to-mainmaster">2.4 NEVER run force push to main/master</a></li><li class="depth-1"><a href="#3-提交流程详解" data-for="3-提交流程详解">3. 提交流程详解</a></li><li class="depth-2"><a href="#31-阶段一并行信息收集" data-for="31-阶段一并行信息收集">3.1 阶段一：并行信息收集</a></li><li class="depth-2"><a href="#32-阶段二分析与决策" data-for="32-阶段二分析与决策">3.2 阶段二：分析与决策</a></li><li class="depth-2"><a href="#33-阶段三执行与验证" data-for="33-阶段三执行与验证">3.3 阶段三：执行与验证</a></li><li class="depth-1"><a href="#4-为什么-always-create-new-commits-rather-than-amending" data-for="4-为什么-always-create-new-commits-rather-than-amending">4. 为什么 “Always create NEW commits rather than amending”</a></li><li class="depth-1"><a href="#5-commit-message-设计" data-for="5-commit-message-设计">5. Commit message 设计</a></li><li class="depth-2"><a href="#51-聚焦-why-而非-what" data-for="51-聚焦-why-而非-what">5.1 聚焦 why 而非 what</a></li><li class="depth-2"><a href="#52-变更类型的动词映射" data-for="52-变更类型的动词映射">5.2 变更类型的动词映射</a></li><li class="depth-2"><a href="#53-co-authored-by-标记" data-for="53-co-authored-by-标记">5.3 Co-Authored-By 标记</a></li><li class="depth-1"><a href="#6-pr-创建流程" data-for="6-pr-创建流程">6. PR 创建流程</a></li><li class="depth-2"><a href="#61-理解分支全貌" data-for="61-理解分支全貌">6.1 理解分支全貌</a></li><li class="depth-2"><a href="#62-分析全部-commit" data-for="62-分析全部-commit">6.2 分析全部 commit</a></li><li class="depth-2"><a href="#63-执行创建" data-for="63-执行创建">6.3 执行创建</a></li><li class="depth-1"><a href="#7-heredoc-格式的必要性" data-for="7-heredoc-格式的必要性">7. HEREDOC 格式的必要性</a></li><li class="depth-1"><a href="#8-与-executing-actions-with-care-的风险分级联动" data-for="8-与-executing-actions-with-care-的风险分级联动">8. 与 Executing Actions with Care 的风险分级联动</a></li><li class="depth-1"><a href="#9-这套协议防止的具体事故类型" data-for="9-这套协议防止的具体事故类型">9. 这套协议防止的具体事故类型</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>

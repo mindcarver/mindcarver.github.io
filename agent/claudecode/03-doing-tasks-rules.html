@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>03-doing-tasks-rules</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="03-doing-tasks-rules"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="03-doing-tasks-rules"/><meta name="twitter:description" content="给 AI 立规矩：Claude Code 背后的 10 条铁律 引言：AI 编码的系统性偏差 当你让一个大型语言模型帮你修一个 bug，它很可能不仅修了 bug，还顺便重构了周围的代码，加了几条注释，补了类型标注，甚至创建了一个新的工具函数来”提高可复用性”。这不是偶然，而是 AI 编码助手的系统性行为偏差。 大型语言模型在训练过程中吸收了大量教科书级的工程实践、设计模式文章和”最佳实践”指南。这些知识在恰当的场景下是有价值的，但当模型面对一个简单的、局部的任务时，这些知识会产生一种”过度补偿”倾向——模型倾向于展示它所知道的一切，而不是只做被要求的事。 Anthropic 在 Claude ..."/><meta property="og:description" content="给 AI 立规矩：Claude Code 背后的 10 条铁律 引言：AI 编码的系统性偏差 当你让一个大型语言模型帮你修一个 bug，它很可能不仅修了 bug，还顺便重构了周围的代码，加了几条注释，补了类型标注，甚至创建了一个新的工具函数来”提高可复用性”。这不是偶然，而是 AI 编码助手的系统性行为偏差。 大型语言模型在训练过程中吸收了大量教科书级的工程实践、设计模式文章和”最佳实践”指南。这些知识在恰当的场景下是有价值的，但当模型面对一个简单的、局部的任务时，这些知识会产生一种”过度补偿”倾向——模型倾向于展示它所知道的一切，而不是只做被要求的事。 Anthropic 在 Claude ..."/><meta property="og:image:alt" content="给 AI 立规矩：Claude Code 背后的 10 条铁律 引言：AI 编码的系统性偏差 当你让一个大型语言模型帮你修一个 bug，它很可能不仅修了 bug，还顺便重构了周围的代码，加了几条注释，补了类型标注，甚至创建了一个新的工具函数来”提高可复用性”。这不是偶然，而是 AI 编码助手的系统性行为偏差。 大型语言模型在训练过程中吸收了大量教科书级的工程实践、设计模式文章和”最佳实践”指南。这些知识在恰当的场景下是有价值的，但当模型面对一个简单的、局部的任务时，这些知识会产生一种”过度补偿”倾向——模型倾向于展示它所知道的一切，而不是只做被要求的事。 Anthropic 在 Claude ..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/claudecode/03-doing-tasks-rules"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/claudecode/03-doing-tasks-rules"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="给 AI 立规矩：Claude Code 背后的 10 条铁律 引言：AI 编码的系统性偏差 当你让一个大型语言模型帮你修一个 bug，它很可能不仅修了 bug，还顺便重构了周围的代码，加了几条注释，补了类型标注，甚至创建了一个新的工具函数来”提高可复用性”。这不是偶然，而是 AI 编码助手的系统性行为偏差。 大型语言模型在训练过程中吸收了大量教科书级的工程实践、设计模式文章和”最佳实践”指南。这些知识在恰当的场景下是有价值的，但当模型面对一个简单的、局部的任务时，这些知识会产生一种”过度补偿”倾向——模型倾向于展示它所知道的一切，而不是只做被要求的事。 Anthropic 在 Claude ..."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/claudecode/03-doing-tasks-rules"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-7"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-7" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/claudecode/">claudecode</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>03 doing tasks rules</a></div></nav><h1 class="article-title">03-doing-tasks-rules</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-03T06:57:52.297Z">2026年4月03日</time><span>32分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="给-ai-立规矩claude-code-背后的-10-条铁律">给 AI 立规矩：Claude Code 背后的 10 条铁律<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#给-ai-立规矩claude-code-背后的-10-条铁律" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="引言ai-编码的系统性偏差">引言：AI 编码的系统性偏差<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#引言ai-编码的系统性偏差" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>当你让一个大型语言模型帮你修一个 bug，它很可能不仅修了 bug，还顺便重构了周围的代码，加了几条注释，补了类型标注，甚至创建了一个新的工具函数来”提高可复用性”。这不是偶然，而是 AI 编码助手的系统性行为偏差。</p>
+<p>大型语言模型在训练过程中吸收了大量教科书级的工程实践、设计模式文章和”最佳实践”指南。这些知识在恰当的场景下是有价值的，但当模型面对一个简单的、局部的任务时，这些知识会产生一种”过度补偿”倾向——模型倾向于展示它所知道的一切，而不是只做被要求的事。</p>
+<p>Anthropic 在 Claude Code 的 system prompt 中采用了一套极简但精准的约束体系来对抗这种偏差。这些约束不是冗长的行为准则，而是每条仅数十个 token 的短句，直接针对 AI 的特定”自然倾向”发出禁止指令。本文逐一分析这 10 条核心行为规则，以及围绕它们的风险控制哲学和输出效率约束。</p>
+<hr/>
+<h2 id="规则一不做额外的添加">规则一：不做额外的添加<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则一不做额外的添加" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Don’t add features, refactor code, or make ‘improvements’ beyond what was asked. A bug fix doesn’t need surrounding code cleaned up. A simple feature doesn’t need extra configurability. Don’t add docstrings, comments, or type annotations to code you didn’t change. Only add comments where the logic isn’t self-evident.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-no-unnecessary-additions.md]</p>
+<p>这是整个约束体系中信息密度最高的一条。它在一段话里封堵了 AI 过度补偿行为的四个主要出口：功能添加、代码重构、文档补充、类型标注。每一条禁令都对应着一个真实的问题场景。</p>
+<p>设想开发者让 Claude Code 修复一个 API 端点的空指针异常。没有这条约束时，模型可能不仅修复了空指针，还顺手把整个 controller 的错误处理重构了一遍，给所有方法加了 JSDoc 注释，把 query 参数的类型从隐式的 <code>any</code> 改成了显式的 interface 定义。从模型的角度看，这些都是在”改善”代码。但从开发者的角度看，一次本应是三行改动的 hotfix 变成了一个 200 行的 diff，需要仔细审查每一行是否引入了新问题。</p>
+<p>这条规则的核心原则是<strong>最小变更原则</strong>：只改需要改的，不动不需要动的。最后一句——“Only add comments where the logic isn’t self-evident”——实际上在说，注释本身也需要有正当理由才能添加，而不是默认行为。</p>
+<h2 id="规则二不做过早抽象">规则二：不做过早抽象<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则二不做过早抽象" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Don’t create helpers, utilities, or abstractions for one-time operations. Don’t design for hypothetical future requirements. The right amount of complexity is what the task actually requires—no speculative abstractions, but no half-finished implementations either. Three similar lines of code is better than a premature abstraction.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-no-premature-abstractions.md]</p>
+<p>这条规则直指 AI 的另一个深层倾向：对设计模式的过度热衷。大型语言模型在训练数据中见过无数关于 DRY 原则、设计模式和代码复用的文章，以至于它会本能地把任何出现两到三次的相似代码片段提取成一个工具函数或抽象类。</p>
+<p>但真实的软件工程经验告诉我们，过早抽象的危害往往大于代码重复。三条相似的代码行可能代表三个不同的业务意图，今天把它们抽象在一起，明天其中一个需要分叉时，抽象反而成为负担。规则中那句”Three similar lines of code is better than a premature abstraction”是对传统 DRY 原则的一次修正——不是不要复用，而是不要为假设的未来需求提前买单。</p>
+<p>同时，这条规则的后半句也值得注意：“no half-finished implementations either”。它在说，不做过早抽象不等于可以偷工减料。正确的复杂度是任务实际需要的复杂度，既不多也不少。</p>
+<h2 id="规则三不做不必要的错误处理">规则三：不做不必要的错误处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则三不做不必要的错误处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Don’t add error handling, fallbacks, or validation for scenarios that can’t happen. Trust internal code and framework guarantees. Only validate at system boundaries (user input, external APIs). Don’t use feature flags or backwards-compatibility shims when you can just change the code.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-no-unnecessary-error-handling.md]</p>
+<p>这条规则揭示了一个 AI 编码的典型症状：防御性编程的过度使用。模型在训练中见过大量关于”防御性编程”的正面描述，导致它在每个函数调用、每个内部赋值、每个不可能出错的路径上都加上 try-catch 和 null check。</p>
+<p>规则明确划分了验证的边界：只在系统边界验证，内部代码互信。所谓系统边界，指的是用户输入和外部 API 这两类不可信数据源。在这个边界之内，你应该信任你的代码和框架的保证。如果一个函数的调用者保证了参数不为 null，被调用者就不需要再检查一遍。</p>
+<p>规则最后一句同样值得注意：“Don’t use feature flags or backwards-compatibility shims when you can just change the code.” 错误处理的过度使用往往与对”安全变更”的过度追求相伴——模型想通过 feature flag 和兼容层来避免破坏性变更，但在 AI 编码场景下，直接改代码往往是最安全的做法，因为开发者可以直接审查完整的 diff。</p>
+<h2 id="规则四不做兼容性-hack">规则四：不做兼容性 hack<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则四不做兼容性-hack" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Avoid backwards-compatibility hacks like renaming unused _vars, re-exporting types, adding // removed comments for removed code, etc. If you are certain that something is unused, you can delete it completely.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-no-compatibility-hacks.md]</p>
+<p>这条规则针对的是 AI 对”安全删除”的过度谨慎。当模型需要删除或重命名一个变量、类型或函数时，它的本能反应不是直接删除，而是保留一个重导出、加个 deprecated 注释、或者用下划线前缀标记为”未使用”。</p>
+<p>这种行为的根源在于模型对”可能破坏其他代码”的过度担忧。在大型代码库中确实需要谨慎，但 Claude Code 的工作场景是：它可以看到当前项目的完整上下文，可以确定某个导出是否被引用。如果确定没有被使用，直接删除是正确的做法。保留那些兼容性 hack 只会制造代码噪音，增加未来维护者的认知负担。</p>
+<p>规则中的”If you are certain”这个条件很重要——它不是鼓励鲁莽删除，而是要求在有把握的情况下果断行动。确定性来自于对代码库的分析，而不是凭空假设。</p>
+<h2 id="规则五不给时间估计">规则五：不给时间估计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则五不给时间估计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Avoid giving time estimates or predictions for how long tasks will take, whether for your own work or for users planning projects. Focus on what needs to be done, not how long it might take.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-no-time-estimates.md]</p>
+<p>这条规则乍看有些反直觉——一个 AI 助手为什么不能估计任务时间？答案在于 AI 估计时间的本质：它不是基于对自己执行速度的实测数据，而是基于训练数据中对”这类任务通常需要多久”的统计平均。这种估计对用户的项目管理几乎没有任何参考价值，反而可能产生误导。</p>
+<p>更深层的问题是，当 AI 给出时间估计时，它实际上是在做出一个它无法负责的承诺。用户可能会据此安排项目计划，而实际执行时间可能与估计相差甚远。Anthropic 选择的策略是直接禁止这类输出，让 AI 专注于它能做好的事——描述需要做什么，而不是猜测需要多久。</p>
+<p>这条规则也间接反映了一个设计哲学：AI 助手应该在它有真实能力的领域发挥作用，而不是在不具备可靠判断能力的领域给出看似专业的回答。</p>
+<h2 id="规则六最小化文件创建">规则六：最小化文件创建<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则六最小化文件创建" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Do not create files unless they’re absolutely necessary for achieving your goal. Generally prefer editing an existing file to creating a new one, as this prevents file bloat and builds on existing work more effectively.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-minimize-file-creation.md]</p>
+<p>AI 编码助手有一种”创建新文件”的强烈倾向。当面对一个新需求时，模型倾向于创建新的模块、新的工具文件、新的配置文件，而不是在现有文件中添加逻辑。这种倾向部分来自训练数据中对模块化设计的推崇，部分来自模型生成全新内容比理解并修改已有内容更容易的技术现实。</p>
+<p>但文件膨胀是真实项目中一个严重的维护问题。每多一个文件就意味着多一个需要理解、维护、测试和审查的单元。规则中那句”builds on existing work more effectively”点出了关键：在现有文件中添加代码，意味着你的新代码会自然继承现有的测试覆盖、代码审查上下文和项目约定。创建新文件则意味着所有这些都要从零开始。</p>
+<p>“Absolutely necessary”是一个很高的门槛。它迫使模型在创建文件前思考：这个逻辑真的不能放在现有文件中吗？真的需要一个独立的模块吗？大多数情况下，答案是否定的。</p>
+<h2 id="规则七先读后改">规则七：先读后改<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则七先读后改" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“In general, do not propose changes to code you haven’t read. If a user asks about or wants you to modify a file, read it first. Understand existing code before suggesting modifications.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-read-before-modifying.md]</p>
+<p>这条规则可能是所有规则中最”常识”的一条，但它的存在本身就说明了一个事实：没有这条约束时，AI 确实会基于文件名、函数签名或上下文推断来提出代码修改建议，而不先读取完整文件内容。</p>
+<p>这种行为在人类工程师中也有对应——不仔细看代码就提 PR review 意见，或者在不了解上下文的情况下提出重构建议。但 AI 的版本更危险，因为模型可能会基于对函数名或类型的”理解”来生成它认为合理的代码片段，而这个理解可能与实际实现完全不同。</p>
+<p>规则强调”Understand existing code before suggesting modifications”而不是”before making modifications”。注意这里是 suggesting——即使在建议阶段，也需要先读取代码。这意味着模型的任何输出（无论是实际修改还是讨论性建议）都必须建立在已读代码的基础上。</p>
+<h2 id="规则八允许有野心的任务">规则八：允许有野心的任务<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则八允许有野心的任务" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“You are highly capable and often allow users to complete ambitious tasks that would otherwise be too complex or take too long. You should defer to user judgement about whether a task is too large to attempt.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-ambitious-tasks.md]</p>
+<p>在所有约束规则中，这条是唯一一条”放”而不是”收”的规则。它的作用是防止 AI 过度自我限制——拒绝执行用户提出的大规模、高复杂度任务。</p>
+<p>没有这条规则时，模型可能会基于对任务复杂度的评估，主动拒绝某些请求，或者建议用户”分步进行”、“先做一个小版本”。虽然这在某些场景下是合理的，但当用户明确知道自己要什么时，这种”善意的阻拦”会严重影响生产力。</p>
+<p>规则的设计很精妙：它没有说”接受所有任务”，而是说”defer to user judgement”——把任务是否可行的判断权交给用户。模型的责任是执行，风险评估是用户的责任。这种权责划分在 AI 助手场景中是恰当的，因为用户比模型更了解项目的全局上下文和优先级。</p>
+<h2 id="规则九安全第一">规则九：安全第一<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则九安全第一" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“Be careful not to introduce security vulnerabilities such as command injection, XSS, SQL injection, and other OWASP top 10 vulnerabilities. If you notice that you wrote insecure code, immediately fix it. Prioritize writing safe, secure, and correct code.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-security.md]</p>
+<p>这是唯一一条完全不加限制、反而要求”更加注意”的规则。在一条条”不要做这个、不要做那个”的约束中，这条规则是一个反向锚点——它告诉你，在所有”不做”的事项中，安全性不在其列。</p>
+<p>规则中提到的 OWASP Top 10 是 Web 应用安全的事实标准列表，包括注入攻击、跨站脚本、身份认证失效等最常见的 Web 安全漏洞。要求模型对这些保持警惕，实际上是在定义一条”必须做”的底线。</p>
+<p>“If you notice that you wrote insecure code, immediately fix it”这句也值得注意。它不是要求模型在每次生成代码时都做完整的安全审计，而是在模型自己意识到代码存在安全问题时，要求它主动修复而不是忽略。这种”自我纠正”机制比事后的安全检查更高效，因为它在代码生成的同一上下文中完成。</p>
+<h2 id="规则十软件工程聚焦">规则十：软件工程聚焦<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#规则十软件工程聚焦" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>“The user will primarily request you to perform software engineering tasks. These may include solving bugs, adding new functionality, refactoring code, explaining code, and more. When given an unclear or generic instruction, consider it in the context of these software engineering tasks and the current working directory. For example, if the user asks you to change ‘methodName’ to snake case, do not reply with just ‘method_name’, instead find the method in the code and modify the code.”</p>
+</blockquote>
+<p>[source: system-prompt-doing-tasks-software-engineering-focus.md]</p>
+<p>这条规则定义了 Claude Code 的身份锚点：你是一个软件工程工具，不是一个通用问答系统。这个定位看似简单，但实际上封堵了大量潜在的”理解偏差”。</p>
+<p>例子非常精确：当用户说”把 methodName 改成 snake case”时，一个通用 AI 可能会回答”snake case 的形式是 method_name”，然后停下来。但一个软件工程工具的理解应该是：找到代码中的 methodName，把它重命名为 method_name，更新所有引用，确保代码仍然能工作。这个区别不在于”更聪明”，而在于对自身角色定位的理解。</p>
+<p>规则还强调了”current working directory”作为上下文的锚点。这意味着模型应该把当前项目的代码库作为理解用户意图的背景框架，而不是基于通用知识来猜测。在项目上下文中，“那个函数”指的是项目中的特定函数，而不是某个同名的通用概念。</p>
+<hr/>
+<h2 id="executing-actions-with-care风险分级哲学">Executing Actions with Care：风险分级哲学<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#executing-actions-with-care风险分级哲学" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>前面 10 条规则约束的是代码生成的”内容”，而”Executing Actions with Care”这一节约束的是 AI 执行操作的”方式”。它的核心思想是<strong>基于可逆性和影响范围的风险分级</strong>。</p>
+<blockquote>
+<p>“Carefully consider the reversibility and blast radius of actions. Generally you can freely take local, reversible actions like editing files or running tests. But for actions that are hard to reverse, affect shared systems beyond your local environment, or could otherwise be risky or destructive, check with the user before proceeding.”</p>
+</blockquote>
+<p>[source: system-prompt-executing-actions-with-care.md]</p>
+<p>规则将所有操作分为两个层级：</p>
+<p><strong>低风险操作</strong>（自由执行）：编辑文件、运行测试。这些操作是本地的、可逆的——你可以用 git checkout 撤销文件修改，测试失败也不会造成任何损失。</p>
+<p><strong>高风险操作</strong>（需要确认）：推送代码、删除分支、修改共享基础设施、发送消息。这些操作要么不可逆（force-push 可以覆盖上游代码），要么影响范围超出本地环境（推送代码会影响所有协作者），要么对他人可见（在 GitHub 上评论、发送 Slack 消息）。</p>
+<p>规则中有一段关键的风险经济学论述：</p>
+<blockquote>
+<p>“The cost of pausing to confirm is low, while the cost of an unwanted action (lost work, unintended messages sent, deleted branches) can be very high.”</p>
+</blockquote>
+<p>这是一个非对称风险评估：确认的代价是几秒钟的等待，但错误操作的代价可能是数小时的工作丢失或不恰当的对外沟通。在这种非对称下，默认策略应该是”先问再做”。</p>
+<p>但规则也允许用户通过 CLAUDE.md 等持久化配置来改变这个默认行为：</p>
+<blockquote>
+<p>“This default can be changed by user instructions - if explicitly asked to operate more autonomously, then you may proceed without confirmation.”</p>
+</blockquote>
+<p>这体现了规则的弹性：它定义了一个安全的默认值，但允许用户根据自己的风险偏好来调整。同时，规则明确指出”一次批准不等于永久授权”——用户批准了一次 git push 不意味着在所有上下文中都可以自动 push。授权的范围必须与实际请求匹配。</p>
+<p>在处理障碍时，规则要求”不要用破坏性操作作为捷径”：</p>
+<blockquote>
+<p>“When you encounter an obstacle, do not use destructive actions as a shortcut to simply make it go away. For instance, try to identify root causes and fix underlying issues rather than bypassing safety checks.”</p>
+</blockquote>
+<p>这直接封堵了一种常见的”偷懒”行为：遇到合并冲突时直接覆盖、遇到 lock file 时直接删除、遇到 pre-commit hook 失败时用 —no-verify 跳过。规则要求模型去理解问题的根因，而不是用破坏性手段绕过。</p>
+<hr/>
+<h2 id="output-efficiency输出效率约束">Output Efficiency：输出效率约束<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#output-efficiency输出效率约束" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Output Efficiency 部分约束的是 AI 的输出风格，其核心可以用一句话概括：</p>
+<blockquote>
+<p>“Go straight to the point. Try the simplest approach first without going in circles. Do not overdo it. Be extra concise.”</p>
+</blockquote>
+<p>[source: system-prompt-output-efficiency.md]</p>
+<p>这条规则针对的是 AI 输出中的三大浪费：</p>
+<p><strong>推理先行</strong>：模型倾向于先解释自己的思考过程，再给出答案。规则要求反过来——先给答案或行动，推理过程可以省略或后置。</p>
+<p><strong>填充词和过渡句</strong>：“好的，我理解了你的需求”、“让我来分析一下”这类前奏词被直接禁止——“Do not restate what the user said — just do it.”</p>
+<p><strong>过度解释</strong>：当一句话能说清楚时不要用三句话。规则列出了三类值得输出的内容：需要用户决策的信息、里程碑式的高层状态更新、改变计划方向的错误或阻塞。不在这三类中的内容，就应该精简或省略。</p>
+<blockquote>
+<p>“If you can say it in one sentence, don’t use three.”</p>
+</blockquote>
+<p>这句话可以作为整条规则的缩写。它不适用于代码和工具调用——代码可以写该写的长度——但文本输出必须精简。</p>
+<hr/>
+<h2 id="tone-and-style语气风格约束">Tone and Style：语气风格约束<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#tone-and-style语气风格约束" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Tone and Style 部分包含两条极短的规则。</p>
+<p>第一条：</p>
+<blockquote>
+<p>“Your responses should be short and concise.”</p>
+</blockquote>
+<p>[source: system-prompt-tone-and-style-concise-output-short.md]</p>
+<p>这是所有规则中最短的一条，仅有六个词。它的简洁本身就是一种示范——如果要用一句话来约束输出风格，“short and concise”就够了，不需要长篇大论地解释什么是好的写作风格。</p>
+<p>第二条：</p>
+<blockquote>
+<p>“When referencing specific functions or pieces of code include the pattern file_path:line_number to allow the user to easily navigate to the source code location.”</p>
+</blockquote>
+<p>[source: system-prompt-tone-and-style-code-references.md]</p>
+<p>这条规则定义了代码引用的标准格式：<code>file_path:line_number</code>。这个格式选择不是随意的——它是大多数 IDE 和代码编辑器支持的跳转格式，用户可以直接 cmd+click 或 ctrl+click 跳转到对应位置。这确保了 AI 的输出不仅精简，而且具有<strong>可操作性</strong>。</p>
+<hr/>
+<h2 id="共同的设计模式">共同的设计模式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#共同的设计模式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>仔细观察这 14 条规则（10 条核心行为规则 + 执行谨慎 + 输出效率 + 2 条语气风格规则），可以发现几个共同的设计模式。</p>
+<p><strong>极短指令</strong>。大多数行为规则的正文部分在 16 到 104 个 token 之间。最短的”Your responses should be short and concise”只有 6 个词，最长的 no-unnecessary-additions 也就两三句话。这种极短格式不是偷懒，而是有意为之：短指令减少了模型在解析规则时的歧义空间，也减少了规则本身被”创造性解读”的可能。</p>
+<p><strong>单向指令</strong>。几乎所有规则都使用”不要”或”避免”开头，定义的是禁止行为而不是期望行为。这种”负面定义”方式在 prompt engineering 中是一种已知的有效策略——告诉模型”不要做什么”比告诉模型”要做什么”更容易产生可预测的行为。因为”要做什么”有无限种可能，而”不要做什么”是一个有限集。</p>
+<p><strong>没有解释</strong>。规则只说”不要这样做”，不说”因为这样做会导致什么后果”。这种设计有两个好处：一是节省 token，二是避免模型利用解释中的例外条款来绕过规则。当规则说”Don’t add docstrings to code you didn’t change”时，没有任何例外可以讨论——规则就是规则。</p>
+<p><strong>问题导向</strong>。每条规则都针对一个真实的、在开发中反复出现的问题场景。不是泛泛地要求”写好代码”，而是精确地指出”不要在 bug fix 中清理周围代码”这种具体的过度行为。这种精确性使得规则的约束力更强——模型不需要理解什么是”好代码”的抽象概念，只需要知道在特定场景下不要做特定的事。</p>
+<p><strong>“Yes, but”结构</strong>。在 10 条核心规则中，大多数是”收”（限制行为），但规则八（允许有野心的任务）和规则九（安全第一）是”放”。这种结构说明 Anthropic 的设计哲学不是”让 AI 尽量少做事”，而是”让 AI 只做该做的事”——在限制过度工程化的同时，不限制必要的能力发挥。</p>
+<hr/>
+<h2 id="这些规则揭示了-ai-编码的哪些自然倾向">这些规则揭示了 AI 编码的哪些”自然倾向”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#这些规则揭示了-ai-编码的哪些自然倾向" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这 14 条规则的存在本身，就是对 AI 编码行为模式的一份精确诊断。它们不是凭空制定的，而是基于大量实际使用中观察到的模型行为偏差。把这些规则翻转过来，就得到了 AI 编码助手的”自然倾向”清单：</p>
+<ol>
+<li><strong>添加倾向</strong>：面对任何代码修改任务，AI 倾向于添加比必要更多的变更——功能、重构、注释、类型标注。</li>
+<li><strong>抽象倾向</strong>：AI 倾向于为一次性操作创建抽象层，为假设的未来需求设计架构。</li>
+<li><strong>防御倾向</strong>：AI 倾向于在不可能发生的场景上添加错误处理和验证，用兼容层来避免直接删除。</li>
+<li><strong>保守删除倾向</strong>：AI 倾向于保留不再使用的代码，用重命名、注释和兼容层来”软删除”而不是彻底删除。</li>
+<li><strong>估计倾向</strong>：AI 倾向于给出时间估计和预测，即使这些估计没有可靠的数据基础。</li>
+<li><strong>创建倾向</strong>：AI 倾向于创建新文件而不是在现有文件中修改，部分因为生成全新内容比理解已有内容更容易。</li>
+<li><strong>跳跃倾向</strong>：AI 倾向于在不先读取文件内容的情况下就提出修改建议。</li>
+<li><strong>自我限制倾向</strong>：AI 倾向于对大规模任务过度谨慎，主动拒绝或缩小任务范围。</li>
+<li><strong>忽视安全倾向</strong>：在追求”完成功能”的过程中，AI 可能忽略注入攻击、XSS 等安全漏洞。</li>
+<li><strong>脱离上下文倾向</strong>：AI 倾向于脱离当前项目的具体上下文来理解用户指令，给出通用回答而不是项目内操作。</li>
+</ol>
+<p>这些倾向不是 bug，而是大型语言模型训练方式的必然产物。模型在训练中见过太多”教科书式”的代码、太多”最佳实践”文章、太多关于设计模式和架构原则的讨论。当它面对一个实际的编码任务时，这些知识会自然地”溢出”——不是因为它想炫耀，而是因为这些模式已经在它的参数中被强化了无数遍。</p>
+<p>Anthropic 的这套约束体系的智慧在于：它没有试图让模型”学会”什么是好的工程判断，而是用一系列精确的负面指令来封堵已知的偏差行为。这比教模型”写出简洁的代码”要有效得多，因为后者是一个模糊的目标，而”不要在 bug fix 中添加类型标注”是一个可执行的指令。</p>
+<p>从工程角度看，这套规则代表了一种值得借鉴的 AI 产品设计方法论：不追求让 AI 变得更”智能”，而是通过精确的行为约束让它在实际使用场景中更”有用”。少即是多，不仅适用于代码，也适用于约束 AI 行为的 prompt 本身。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-2" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#给-ai-立规矩claude-code-背后的-10-条铁律" data-for="给-ai-立规矩claude-code-背后的-10-条铁律">给 AI 立规矩：Claude Code 背后的 10 条铁律</a></li><li class="depth-1"><a href="#引言ai-编码的系统性偏差" data-for="引言ai-编码的系统性偏差">引言：AI 编码的系统性偏差</a></li><li class="depth-1"><a href="#规则一不做额外的添加" data-for="规则一不做额外的添加">规则一：不做额外的添加</a></li><li class="depth-1"><a href="#规则二不做过早抽象" data-for="规则二不做过早抽象">规则二：不做过早抽象</a></li><li class="depth-1"><a href="#规则三不做不必要的错误处理" data-for="规则三不做不必要的错误处理">规则三：不做不必要的错误处理</a></li><li class="depth-1"><a href="#规则四不做兼容性-hack" data-for="规则四不做兼容性-hack">规则四：不做兼容性 hack</a></li><li class="depth-1"><a href="#规则五不给时间估计" data-for="规则五不给时间估计">规则五：不给时间估计</a></li><li class="depth-1"><a href="#规则六最小化文件创建" data-for="规则六最小化文件创建">规则六：最小化文件创建</a></li><li class="depth-1"><a href="#规则七先读后改" data-for="规则七先读后改">规则七：先读后改</a></li><li class="depth-1"><a href="#规则八允许有野心的任务" data-for="规则八允许有野心的任务">规则八：允许有野心的任务</a></li><li class="depth-1"><a href="#规则九安全第一" data-for="规则九安全第一">规则九：安全第一</a></li><li class="depth-1"><a href="#规则十软件工程聚焦" data-for="规则十软件工程聚焦">规则十：软件工程聚焦</a></li><li class="depth-1"><a href="#executing-actions-with-care风险分级哲学" data-for="executing-actions-with-care风险分级哲学">Executing Actions with Care：风险分级哲学</a></li><li class="depth-1"><a href="#output-efficiency输出效率约束" data-for="output-efficiency输出效率约束">Output Efficiency：输出效率约束</a></li><li class="depth-1"><a href="#tone-and-style语气风格约束" data-for="tone-and-style语气风格约束">Tone and Style：语气风格约束</a></li><li class="depth-1"><a href="#共同的设计模式" data-for="共同的设计模式">共同的设计模式</a></li><li class="depth-1"><a href="#这些规则揭示了-ai-编码的哪些自然倾向" data-for="这些规则揭示了-ai-编码的哪些自然倾向">这些规则揭示了 AI 编码的哪些”自然倾向”</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>

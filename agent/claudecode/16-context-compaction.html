@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>16-context-compaction</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="16-context-compaction"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="16-context-compaction"/><meta name="twitter:description" content="上下文快炸了怎么办：Claude Code 的压缩生存术 1."/><meta property="og:description" content="上下文快炸了怎么办：Claude Code 的压缩生存术 1."/><meta property="og:image:alt" content="上下文快炸了怎么办：Claude Code 的压缩生存术 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/claudecode/16-context-compaction"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/claudecode/16-context-compaction"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="上下文快炸了怎么办：Claude Code 的压缩生存术 1."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/claudecode/16-context-compaction"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-43"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-43" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/claudecode/">claudecode</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>16 context compaction</a></div></nav><h1 class="article-title">16-context-compaction</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-03T06:57:52.298Z">2026年4月03日</time><span>23分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="上下文快炸了怎么办claude-code-的压缩生存术">上下文快炸了怎么办：Claude Code 的压缩生存术<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#上下文快炸了怎么办claude-code-的压缩生存术" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="1-为什么需要上下文压缩">1. 为什么需要上下文压缩<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-为什么需要上下文压缩" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>大语言模型的工作方式决定了每一次交互都需要携带完整的上下文历史。随着会话的推进，消息不断累积，context window 的容量逐渐被填满。当 token 数量逼近模型上限时，Claude Code 必须做出选择：要么丢弃早期消息导致信息丢失，要么将历史会话压缩为精炼的摘要以腾出空间。</p>
+<p>这就是上下文压缩（context compaction）存在的意义。它不是简单的文本截断，而是一套精心设计的摘要系统，目标是让”未来的自己”（或另一个模型实例）仅凭摘要就能无缝继续工作。正如 Claude Code 的 system prompt 所言，摘要需要足够详尽，确保”someone reading only your summary and then the newer messages can fully understand what happened and continue the work” [source: system-prompt-partial-compaction-instructions.md]。</p>
+<p>除了 context window 的硬性限制，token 成本也是实际考量。长上下文意味着更高的 API 调用费用和更慢的响应速度。高质量的压缩能在保留关键信息的同时大幅减少 token 消耗，这是一次以精度换取空间的技术权衡。</p>
+<h2 id="2-三种压缩模式对比">2. 三种压缩模式对比<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-三种压缩模式对比" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Claude Code 并非采用单一的压缩策略。通过分析其 system prompt 文件，可以识别出至少三种不同的压缩模式，每种模式针对不同的场景设计。</p>
+<p><strong>完整压缩（Full Compaction）</strong>：当用户显式请求压缩，或系统检测到上下文即将溢出时触发。整个会话历史被总结为一个结构化摘要，替换原始消息。这是最彻底的压缩方式，对应 <code>agent-prompt-conversation-summarization.md</code> 中的完整对话摘要指令 [source: agent-prompt-conversation-summarization.md]。</p>
+<p><strong>部分压缩（Partial Compaction）</strong>：用户选择仅压缩会话的某一部分，保留较新的消息不动。压缩后的摘要放在会话开头，新的消息直接跟在摘要之后。这种方式在保留近期上下文的同时释放了早期历史占用的空间，对应 <code>system-prompt-partial-compaction-instructions.md</code> [source: system-prompt-partial-compaction-instructions.md]。</p>
+<p><strong>近期消息压缩（Recent Message Summarization）</strong>：针对会话中最新的一部分消息进行总结，而更早的已保留上下文保持原样。它的 prompt 明确指出：“The earlier messages are being kept intact and do NOT need to be summarized. Focus your summary on what was discussed, learned, and accomplished in the recent messages only” [source: agent-prompt-recent-message-summarization.md]。</p>
+<p>三种模式共享相同的 9 段式总结结构，但在字段的语义取向上存在微妙差异。部分压缩独有的 “Work Completed” 和 “Context for Continuing Work” 字段体现了其独特的定位：它不仅记录做了什么，还明确传递”接续工作需要知道什么”。而近期消息压缩因为早期上下文仍在场，不需要这个字段，它的 “Current Work” 和 “Optional Next Step” 足以桥接已有上下文和最新进展。</p>
+<h2 id="3-完整压缩的-analysis-标签设计">3. 完整压缩的 <code>&lt;analysis></code> 标签设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-完整压缩的-analysis-标签设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>完整压缩的 prompt 采用了一个值得注意的两阶段结构。它要求模型在输出最终摘要之前，先用 <code>&lt;analysis></code> 标签包裹一段分析过程：</p>
+<blockquote>
+<p>“Before providing your final summary, wrap your analysis in <analysis> tags to organize your thoughts and ensure you’ve covered all necessary points.” [source: agent-prompt-conversation-summarization.md]</analysis></p>
+</blockquote>
+<p>这个设计背后是深思熟虑的工程判断。摘要的质量直接决定了后续会话能否正常工作。如果遗漏了关键的代码变更、错误修复路径或用户的偏好反馈，后续的工作将在错误的基础上展开。<code>&lt;analysis></code> 标签强制模型先进行一轮系统性的梳理，而不是直接跳入摘要撰写。</p>
+<p>分析阶段的具体要求包括按时间顺序逐条审视每一条消息，识别：</p>
+<ul>
+<li>用户的显式请求和意图</li>
+<li>助手的处理方法</li>
+<li>关键决策、技术概念和代码模式</li>
+<li>具体细节：文件名、完整代码片段、函数签名、文件编辑</li>
+<li>遇到的错误及修复方式</li>
+<li>用户的特别反馈，尤其是”告诉你要换一种做法”的指示 [source: agent-prompt-conversation-summarization.md]</li>
+</ul>
+<p>在完成分析之后，prompt 还要求”Double-check for technical accuracy and completeness”，相当于在摘要生成前再加一道质量检查。这种”先分析后总结”的两阶段结构，本质上是把思维链（chain-of-thought）外化为一个必经步骤，确保摘要的系统性和完整性。</p>
+<p>同样的 <code>&lt;analysis></code> 结构在部分压缩和近期消息压缩中也保持一致 [source: system-prompt-partial-compaction-instructions.md] [source: agent-prompt-recent-message-summarization.md]，说明 Claude Code 团队把这个两阶段流程视为压缩系统的核心保障。</p>
+<h2 id="4-9-段式结构化总结格式">4. 9 段式结构化总结格式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-9-段式结构化总结格式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>三种压缩模式最终产出的摘要都遵循一个 9 段的结构化格式。这个格式并非随意设计，而是覆盖了继续开发工作所需的全部关键信息维度。</p>
+<p>以完整压缩为例，这 9 个段落是 [source: agent-prompt-conversation-summarization.md]：</p>
+<ol>
+<li>
+<p><strong>Primary Request and Intent</strong> — 捕获用户的所有显式请求和意图。这是摘要的锚点，后续所有段落都围绕这个锚点展开。</p>
+</li>
+<li>
+<p><strong>Key Technical Concepts</strong> — 列出所有讨论过的重要技术概念、技术和框架。为后续工作提供技术栈的上下文背景。</p>
+</li>
+<li>
+<p><strong>Files and Code Sections</strong> — 枚举所有被检查、修改或创建的文件和代码段。prompt 特别强调”Pay special attention to the most recent messages and include full code snippets where applicable”，并且要求说明每个文件读取或编辑的原因。</p>
+</li>
+<li>
+<p><strong>Errors and Fixes</strong> — 列出所有遇到的错误及其修复方式。同样强调用户反馈：“Pay special attention to specific user feedback that you received, especially if the user told you to do something differently.”</p>
+</li>
+<li>
+<p><strong>Problem Solving</strong> — 记录已解决的问题和正在进行的故障排查。这个段落确保排错思路不会因为压缩而中断。</p>
+</li>
+<li>
+<p><strong>All User Messages</strong> — 列出所有非工具调用结果的用户消息。关于这个字段的重要性，下一节专门讨论。</p>
+</li>
+<li>
+<p><strong>Pending Tasks</strong> — 列出所有被明确要求但尚未完成的工作。</p>
+</li>
+<li>
+<p><strong>Current Work</strong> — 精确描述压缩请求前正在进行的工作。要求”paying special attention to the most recent messages from both user and assistant”，并包含文件名和代码片段。</p>
+</li>
+<li>
+<p><strong>Optional Next Step</strong> — 列出与当前工作直接相关的下一步。这个字段有严格的约束条件，后文将详细分析。</p>
+</li>
+</ol>
+<p>这个 9 段结构的设计逻辑是自上而下的：从用户的宏观意图出发，经过技术细节和文件变更，到错误和问题解决，再到未完成的任务和当前进展，最后落脚于下一步行动。每个段落都为后续工作提供了不同层面的上下文支撑。</p>
+<h2 id="5-部分压缩的独特设计">5. 部分压缩的独特设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-部分压缩的独特设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>部分压缩在 9 段结构中做了两个关键的字段替换。它将完整压缩中的第 8 段 “Current Work” 和第 9 段 “Optional Next Step” 替换为：</p>
+<ul>
+<li><strong>8. Work Completed</strong> — 描述截至这个部分结束时完成了什么。</li>
+<li><strong>9. Context for Continuing Work</strong> — 总结后续消息在理解并继续工作时所需的任何上下文、决策或状态。 [source: system-prompt-partial-compaction-instructions.md]</li>
+</ul>
+<p>这一替换反映了部分压缩的独特定位。部分压缩的 prompt 开宗明义地描述了摘要的放置位置：</p>
+<blockquote>
+<p>“This summary will be placed at the start of a continuing session; newer messages that build on this context will follow after your summary (you do not see them here).” [source: system-prompt-partial-compaction-instructions.md]</p>
+</blockquote>
+<p>这意味着摘要之后还会有新的消息自然衔接。因此，它不需要”Current Work”来描述正在做什么（因为新消息会自己展示），也不需要”Optional Next Step”来建议下一步（因为新消息可能已经走出了不同的方向）。它真正需要的是一份清晰的”已完成事项清单”加上”接续工作需要的背景知识”。</p>
+<p>“Context for Continuing Work” 这个字段的设计尤为精妙。它不仅包含技术状态（比如哪些文件被修改了），还包括决策理由（为什么选择方案 A 而不是方案 B）、未解决的约束条件、以及任何对后续工作有影响的隐含知识。这个字段的本质是一份知识传递文档，确保新消息的上下文不会被截断效应割裂。</p>
+<h2 id="6-近期消息压缩的使用场景">6. 近期消息压缩的使用场景<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-近期消息压缩的使用场景" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>近期消息压缩的 prompt 开头即定义了它的职责边界：</p>
+<blockquote>
+<p>“Your task is to create a detailed summary of the RECENT portion of the conversation — the messages that follow earlier retained context. The earlier messages are being kept intact and do NOT need to be summarized.” [source: agent-prompt-recent-message-summarization.md]</p>
+</blockquote>
+<p>这个场景适用于一种特定的压缩需求：会话的前半部分已经足够重要或足够紧凑，值得原样保留，但近期的大量交互（可能是一轮密集的调试、多次文件修改、或反复的错误修复）需要被浓缩。</p>
+<p>典型场景包括：用户在完成一个主要功能后进行了大量细粒度的调整和修复，这些调整的最终结果已经反映在代码中，但中间的试错过程占据了大量 token。此时保留早期的高层对话（需求讨论、架构决策），压缩近期的实现细节，是最合理的选择。</p>
+<p>近期消息压缩保留了标准的 9 段结构，但语义范围限定在”近期消息”内。比如它的 “All user messages” 字段只列出近期部分的用户消息，“Pending Tasks” 只包含近期消息中出现的待办事项 [source: agent-prompt-recent-message-summarization.md]。这种限定避免了与早期已保留上下文的信息重复。</p>
+<p>SDK 场景下还有一种更简洁的压缩格式，用于 context compaction summary。它使用 5 段结构：Task Overview、Current State、Important Discoveries、Next Steps、Context to Preserve [source: system-prompt-context-compaction-summary.md]。这个版本的指令更加简洁明确：“Be concise but complete — err on the side of including information that would prevent duplicate work or repeated mistakes” [source: system-prompt-context-compaction-summary.md]。它还包含一个其他版本没有的维度：“Any promises made to the user”，即记录在会话中对用户做出的任何承诺。</p>
+<h2 id="7-为什么-all-user-messages-是必填字段">7. 为什么 All User Messages 是必填字段<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-为什么-all-user-messages-是必填字段" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在 9 段结构中，第 6 段 “All User Messages” 的定位值得深入审视。它的说明是：</p>
+<blockquote>
+<p>“List ALL user messages that are not tool results. These are critical for understanding the users’ feedback and changing intent.” [source: agent-prompt-conversation-summarization.md]</p>
+</blockquote>
+<p>关键词是 “ALL” 和 “critical”。</p>
+<p>用户反馈是最重要的上下文。在一次典型的开发会话中，用户的意图并非一成不变。他们可能在第 3 轮对话中说”用 React”，第 7 轮说”算了换成 Vue”，第 12 轮说”其实还是用 React 吧，但不要用 Redux”。这些意图变化散布在不同的用户消息中，如果摘要只记录最终结论（“使用 React，不用 Redux”）而遗漏了变化过程，后续的模型实例可能会在遇到类似决策点时重蹈覆辙。</p>
+<p>用户的反馈常常包含隐含的偏好和约束。一句”这里的命名不太清楚”可能暗示用户偏好描述性命名而非简洁命名；一句”这个太慢了”可能意味着性能优先于代码美观。这些微妙的信号只有通过完整的用户消息列表才能被保留。</p>
+<p>prompt 还特别强调 “that are not tool results”，因为工具调用结果（比如文件内容、命令输出）已经被其他段落（Files and Code Sections、Errors and Fixes 等）捕获。用户消息段落专注的是人的意图和判断，这些是无法从技术细节中反推的。</p>
+<h2 id="8-optional-next-step-的约束">8. Optional Next Step 的约束<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-optional-next-step-的约束" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>第 9 段 “Optional Next Step” 是整个摘要结构中约束最严格的字段。它的完整指令是：</p>
+<blockquote>
+<p>“List the next step that you will take that is related to the most recent work you were doing. IMPORTANT: ensure that this step is DIRECTLY in line with the user’s most recent explicit requests, and the task you were working on immediately before this summary request. If your last task was concluded, then only list next steps if they are explicitly in line with the users request. Do not start on tangential requests or really old requests that were already completed without confirming with the user first.” [source: agent-prompt-conversation-summarization.md]</p>
+</blockquote>
+<p>这段指令包含了多层约束。首先是相关性约束：“DIRECTLY in line with the user’s most recent explicit requests”。注意 “explicit” 一词 — 模型的推断或揣测不算数，必须是用户明确说出的需求。</p>
+<p>其次是时序约束：必须基于”the task you were working on immediately before this summary request”。这意味着即使有一个更早的、尚未完成的任务，如果当前正在做的是另一件事，Next Step 应该基于当前工作而非历史遗留。</p>
+<p>第三是终止判断：如果上一个任务已经完成，则只有在用户明确请求时才列出下一步。这是一个防止”越权执行”的安全阀。</p>
+<p>最后还有引用要求：“If there is a next step, include direct quotes from the most recent conversation showing exactly what task you were working on and where you left off. This should be verbatim to ensure there’s no drift in task interpretation.” [source: agent-prompt-conversation-summarization.md]。要求使用原文引用（verbatim），是为了防止摘要过程中的意图漂移（task drift）。模型在总结时可能无意识地美化或曲解原始请求，原文引用提供了一个不可篡改的锚点。</p>
+<p>这些约束的层层叠加，反映了一个核心设计原则：压缩系统宁可保守（不提供 Next Step），也不愿激进地替用户做决定。这是一个关于 AI 自主性边界的深思熟虑的设计选择。</p>
+<h2 id="9-mcp-工具结果截断策略">9. MCP 工具结果截断策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-mcp-工具结果截断策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>除了会话级别的压缩，Claude Code 还有一套针对工具调用结果的细粒度截断策略。MCP（Model Context Protocol）工具可能返回大量数据，比如一个完整的 JSON 文件或数兆字节的日志输出。如果这些结果直接进入上下文，会迅速消耗 token 预算。</p>
+<p>Claude Code 的截断策略通过 <code>system-prompt-mcp-tool-result-truncation.md</code> 实现，核心思路是根据查询类型选择不同的处理路径 [source: system-prompt-mcp-tool-result-truncation.md]：</p>
+<p><strong>定向查询走直接工具</strong>：如果目标是查找特定行、按字段过滤等精确操作，直接使用 <code>jq</code> 或 <code>grep</code> 处理文件。这类操作不需要完整读取文件内容，因此不会产生大量 token 消耗。</p>
+<blockquote>
+<p>“For targeted queries (find a row, filter by field): use jq or grep on the file directly.” [source: system-prompt-mcp-tool-result-truncation.md]</p>
+</blockquote>
+<p><strong>全量分析走子代理</strong>：如果需要阅读完整内容进行分析或总结，则使用 Agent 工具在隔离的上下文中处理文件，确保完整输出不会进入主上下文。</p>
+<blockquote>
+<p>“For analysis or summarization that requires reading the full content: use the ${AGENT_TOOL_NAME} tool to process the file in an isolated context so the full output does not enter your main context.” [source: system-prompt-mcp-tool-result-truncation.md]</p>
+</blockquote>
+<p>这里的关键设计是”隔离上下文”（isolated context）。子代理在独立的 context window 中运行，可以完整阅读大文件并返回精炼的结果，而主上下文只接收子代理的摘要输出。这是一种空间换时间的策略：消耗了一次额外的 API 调用，但保护了主上下文的 token 预算。</p>
+<p>prompt 还对子代理的指令质量提出了明确要求：</p>
+<blockquote>
+<p>“Be explicit about what the subagent must return — e.g. ‘Read ALL of ${FILE_PATH}; summarize it and quote any key findings, decisions, or action items verbatim’ — a vague ‘summarize this’ may lose the detail you actually need. Require it to read the entire file before answering.” [source: system-prompt-mcp-tool-result-truncation.md]</p>
+</blockquote>
+<p>这段指令揭示了截断策略中一个微妙的平衡点：既要避免大文件撑爆主上下文，又要确保子代理不会因为过度压缩而丢失关键细节。“quote any key findings, decisions, or action items verbatim” 这个要求与 Next Step 的原文引用要求一脉相承，都是通过保留原始文本来防止信息在压缩过程中被曲解。</p>
+<h2 id="10-总结上下文压缩的设计哲学">10. 总结：上下文压缩的设计哲学<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-总结上下文压缩的设计哲学" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>回顾 Claude Code 的上下文压缩系统，可以提炼出几条核心设计哲学。</p>
+<p><strong>“总结是给未来的自己看的”</strong>。这不仅仅是一句隐喻，而是字面意义上的系统设计目标。部分压缩的 prompt 直接指出摘要的读者是”someone reading only your summary and then the newer messages” [source: system-prompt-partial-compaction-instructions.md]，SDK 版本的摘要指令更进一步，要求摘要能让你”or another instance of yourself”恢复工作 [source: system-prompt-context-compaction-summary.md]。这意味着摘要必须自包含（self-contained），不能假定读者拥有原始对话的记忆。</p>
+<p><strong>信息完整性优先于简洁性</strong>。三种压缩模式都要求 “full code snippets where applicable”，都强调用户反馈的逐条记录，都要求原文引用。这不是对简洁性的忽视，而是对”丢失信息的代价远大于多消耗几百 token”这一判断的体现。SDK 版本的指令说得最直白：“err on the side of including information that would prevent duplicate work or repeated mistakes” [source: system-prompt-context-compaction-summary.md]。</p>
+<p><strong>层次化设计匹配不同场景</strong>。完整压缩、部分压缩、近期消息压缩、MCP 结果截断 — 四种机制覆盖了从整段会话到单次工具调用的不同粒度。每种机制的结构和字段都针对其使用场景做了定制化调整，而非套用同一个模板。</p>
+<p><strong>对自主性的审慎克制</strong>。Optional Next Step 的多层约束、“All User Messages” 的必填要求、子代理指令中对原文引用的强调 — 这些设计都指向同一个原则：压缩系统应当忠实地传递上下文，而非替用户做决策。它是一个记忆管理者，不是一个任务规划者。</p>
+<p>这套压缩系统的存在本身也说明了一个事实：在大模型驱动的开发工具中，内存管理不再是操作系统独有的课题。AI 助手同样需要精心设计的”垃圾回收”机制，在有限的 context window 内高效地分配信息密度。Claude Code 的上下文压缩系统，正是这一新范式下的一个工程实践样本。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-15" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#上下文快炸了怎么办claude-code-的压缩生存术" data-for="上下文快炸了怎么办claude-code-的压缩生存术">上下文快炸了怎么办：Claude Code 的压缩生存术</a></li><li class="depth-1"><a href="#1-为什么需要上下文压缩" data-for="1-为什么需要上下文压缩">1. 为什么需要上下文压缩</a></li><li class="depth-1"><a href="#2-三种压缩模式对比" data-for="2-三种压缩模式对比">2. 三种压缩模式对比</a></li><li class="depth-1"><a href="#3-完整压缩的-analysis-标签设计" data-for="3-完整压缩的-analysis-标签设计">3. 完整压缩的 &lt;analysis> 标签设计</a></li><li class="depth-1"><a href="#4-9-段式结构化总结格式" data-for="4-9-段式结构化总结格式">4. 9 段式结构化总结格式</a></li><li class="depth-1"><a href="#5-部分压缩的独特设计" data-for="5-部分压缩的独特设计">5. 部分压缩的独特设计</a></li><li class="depth-1"><a href="#6-近期消息压缩的使用场景" data-for="6-近期消息压缩的使用场景">6. 近期消息压缩的使用场景</a></li><li class="depth-1"><a href="#7-为什么-all-user-messages-是必填字段" data-for="7-为什么-all-user-messages-是必填字段">7. 为什么 All User Messages 是必填字段</a></li><li class="depth-1"><a href="#8-optional-next-step-的约束" data-for="8-optional-next-step-的约束">8. Optional Next Step 的约束</a></li><li class="depth-1"><a href="#9-mcp-工具结果截断策略" data-for="9-mcp-工具结果截断策略">9. MCP 工具结果截断策略</a></li><li class="depth-1"><a href="#10-总结上下文压缩的设计哲学" data-for="10-总结上下文压缩的设计哲学">10. 总结：上下文压缩的设计哲学</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>
