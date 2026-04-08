@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>harness 工程理解codex</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="harness 工程理解codex"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="harness 工程理解codex"/><meta name="twitter:description" content="Harness 工程，不是让 AI 多写代码，而是重新发明软件工程 最近读完 OpenAI 那篇《在智能体优先的世界中利用 Codex》，我脑子里反复浮现的，不是“Codex 好强”，而是另一句话： 软件工程的主工作，正在从“写代码”，转成“设计一个让智能体稳定工作的环境”。 这件事很容易被误解。很多人看到“5 个月、100 万行代码、几乎全由 Codex 生成”，第一反应是模型更强了，程序员要下岗了。可如果你仔细读那篇文章，会发现 OpenAI 真正想说的重点并不是“AI 替代编码”，而是他们摸索出了一套新的工程学。 这套工程学，不是 prompt engineering，而是 harnes..."/><meta property="og:description" content="Harness 工程，不是让 AI 多写代码，而是重新发明软件工程 最近读完 OpenAI 那篇《在智能体优先的世界中利用 Codex》，我脑子里反复浮现的，不是“Codex 好强”，而是另一句话： 软件工程的主工作，正在从“写代码”，转成“设计一个让智能体稳定工作的环境”。 这件事很容易被误解。很多人看到“5 个月、100 万行代码、几乎全由 Codex 生成”，第一反应是模型更强了，程序员要下岗了。可如果你仔细读那篇文章，会发现 OpenAI 真正想说的重点并不是“AI 替代编码”，而是他们摸索出了一套新的工程学。 这套工程学，不是 prompt engineering，而是 harnes..."/><meta property="og:image:alt" content="Harness 工程，不是让 AI 多写代码，而是重新发明软件工程 最近读完 OpenAI 那篇《在智能体优先的世界中利用 Codex》，我脑子里反复浮现的，不是“Codex 好强”，而是另一句话： 软件工程的主工作，正在从“写代码”，转成“设计一个让智能体稳定工作的环境”。 这件事很容易被误解。很多人看到“5 个月、100 万行代码、几乎全由 Codex 生成”，第一反应是模型更强了，程序员要下岗了。可如果你仔细读那篇文章，会发现 OpenAI 真正想说的重点并不是“AI 替代编码”，而是他们摸索出了一套新的工程学。 这套工程学，不是 prompt engineering，而是 harnes..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/codex/harness-工程理解codex"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/codex/harness-工程理解codex"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="Harness 工程，不是让 AI 多写代码，而是重新发明软件工程 最近读完 OpenAI 那篇《在智能体优先的世界中利用 Codex》，我脑子里反复浮现的，不是“Codex 好强”，而是另一句话： 软件工程的主工作，正在从“写代码”，转成“设计一个让智能体稳定工作的环境”。 这件事很容易被误解。很多人看到“5 个月、100 万行代码、几乎全由 Codex 生成”，第一反应是模型更强了，程序员要下岗了。可如果你仔细读那篇文章，会发现 OpenAI 真正想说的重点并不是“AI 替代编码”，而是他们摸索出了一套新的工程学。 这套工程学，不是 prompt engineering，而是 harnes..."/><meta name="generator" content="Quartz"/><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/codex/harness-工程理解codex"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-64"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-64" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../agent/codex/">codex</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>harness 工程理解codex</a></div></nav><h1 class="article-title">harness 工程理解codex</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-08T10:43:35.421Z">2026年4月08日</time><span>20分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="harness-工程不是让-ai-多写代码而是重新发明软件工程">Harness 工程，不是让 AI 多写代码，而是重新发明软件工程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#harness-工程不是让-ai-多写代码而是重新发明软件工程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>最近读完 OpenAI 那篇《在智能体优先的世界中利用 Codex》，我脑子里反复浮现的，不是“Codex 好强”，而是另一句话：</p>
+<p><strong>软件工程的主工作，正在从“写代码”，转成“设计一个让智能体稳定工作的环境”。</strong></p>
+<p>这件事很容易被误解。很多人看到“5 个月、100 万行代码、几乎全由 Codex 生成”，第一反应是模型更强了，程序员要下岗了。可如果你仔细读那篇文章，会发现 OpenAI 真正想说的重点并不是“AI 替代编码”，而是他们摸索出了一套新的工程学。</p>
+<p>这套工程学，不是 prompt engineering，而是 <strong>harness engineering</strong>。</p>
+<p>它关心的不是“怎么把一句提示词写得更聪明”，而是“怎么给智能体搭一个能持续交付、持续纠偏、持续维护的软件生产环境”。</p>
+<h2 id="一真正变化的不是代码生成而是工程师的岗位定义">一、真正变化的，不是代码生成，而是工程师的岗位定义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一真正变化的不是代码生成而是工程师的岗位定义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在传统软件团队里，工程师最主要的职责是写代码、改代码、调代码。</p>
+<p>但在 OpenAI 这个实验里，他们刻意设了一条非常极端的约束：<strong>人类不直接写代码</strong>。产品代码、测试、CI、文档、评审回复、内部工具，尽量都由 Codex 生成。人类工程师做的事变成了：</p>
+<ul>
+<li>定义任务目标</li>
+<li>拆解问题边界</li>
+<li>设计仓库结构</li>
+<li>建立约束和不变量</li>
+<li>搭建验证和反馈回路</li>
+<li>在必要时做判断，而不是亲自下场实现</li>
+</ul>
+<p>这听上去像是在“退居二线”，其实刚好相反。</p>
+<p>因为当代码生成速度突然放大十倍时，真正稀缺的资源就不再是“敲代码的手”，而是<strong>人类的判断力、注意力和系统设计能力</strong>。你不再被实现细节卡住，你开始被另外一些问题卡住：</p>
+<ul>
+<li>智能体现在到底看到了什么？</li>
+<li>它为什么会在这里犯错？</li>
+<li>这个错误是模型能力不够，还是环境没有把约束表达清楚？</li>
+<li>这个团队的共识，有多少真的进入了代码仓库，有多少只是留在 Slack 和脑子里？</li>
+</ul>
+<p>这才是文章最值得反复咀嚼的地方。</p>
+<p>未来的高杠杆工程师，未必是写代码最快的人，而更像是一个“智能体工作系统设计师”。</p>
+<h2 id="二harness-工程本质上是在给智能体搭工作台">二、Harness 工程，本质上是在给智能体搭工作台<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二harness-工程本质上是在给智能体搭工作台" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果要用一句更直白的话解释 harness engineering，我会这样说：</p>
+<p><strong>它是为智能体准备工作台、工具链、规章制度和反馈装置。</strong></p>
+<p>一个成熟的 harness，至少要回答五个问题：</p>
+<ol>
+<li>智能体去哪里找真相？</li>
+<li>智能体允许怎么改，不能怎么改？</li>
+<li>智能体改完以后，怎么知道自己改对了？</li>
+<li>智能体发现问题后，怎么自己继续调查？</li>
+<li>智能体犯错之后，坏模式如何不被复制扩散？</li>
+</ol>
+<p>所以你会发现，OpenAI 那篇文章反复强调的东西，几乎都不是“生成”本身，而是这些支撑层：</p>
+<ul>
+<li>仓库结构</li>
+<li><code>AGENTS.md</code></li>
+<li>文档索引</li>
+<li>执行计划</li>
+<li>架构边界</li>
+<li>自定义 linter</li>
+<li>结构测试</li>
+<li>UI 可读性</li>
+<li>日志、指标、trace</li>
+<li>PR 审核循环</li>
+<li>后台清理任务</li>
+</ul>
+<p>换句话说，<strong>智能体不是在一个真空里写代码，它是在一个被精心设计过的生产系统里写代码。</strong></p>
+<p>没有这个系统，模型再强，也只是在高速度地产生随机性。</p>
+<h2 id="三为什么-openai-说要给地图不要给百科全书">三、为什么 OpenAI 说：要给地图，不要给百科全书<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三为什么-openai-说要给地图不要给百科全书" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>文章里有一个判断，我觉得几乎可以当作 agent 时代的文档原则：</p>
+<p><strong>情境是稀缺资源。</strong></p>
+<p>很多团队下意识会觉得，既然智能体需要上下文，那就把所有规则都堆进一个巨大的 <code>AGENTS.md</code>。结果通常会很糟：</p>
+<ul>
+<li>文件太长，真正和当前任务相关的上下文反而被挤掉</li>
+<li>所有规则都显得同样重要，最后等于没有重点</li>
+<li>文档很快过时，变成漂亮但失效的“假知识”</li>
+<li>没法机械检查覆盖率、新鲜度和交叉引用</li>
+</ul>
+<p>OpenAI 的做法是反过来的：</p>
+<ul>
+<li><code>AGENTS.md</code> 只做地图，不做百科全书</li>
+<li>真正的知识分散在结构化的 <code>docs/</code> 里</li>
+<li>架构、产品规范、设计原则、执行计划、技术债都版本化</li>
+<li>让智能体从一个小切口进入，再按索引逐步展开</li>
+</ul>
+<p>这其实是在把“给上下文”升级为“设计上下文的加载方式”。</p>
+<p>以前我们写文档，默认读者是人；现在开始要考虑另一个读者：<strong>会在运行时按需检索、按路径导航、按约束执行的智能体。</strong></p>
+<p>所以好文档的标准也变了。不是越全越好，而是：</p>
+<ul>
+<li>可定位</li>
+<li>可引用</li>
+<li>可校验</li>
+<li>可拆分</li>
+<li>可版本化</li>
+<li>可被后续智能体继续使用</li>
+</ul>
+<p>这是一个很大的观念转变。</p>
+<h2 id="四在-agent-first-的代码库里看不见就等于不存在">四、在 Agent-First 的代码库里，“看不见”就等于“不存在”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四在-agent-first-的代码库里看不见就等于不存在" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是原文里最狠、也最现实的一句话的延伸：</p>
+<p><strong>如果信息不在代码仓库里，对智能体来说，它就不存在。</strong></p>
+<p>很多团队真正的规则并不在 repo 里，而散落在这些地方：</p>
+<ul>
+<li>某次 Slack 讨论</li>
+<li>某个同事口头讲过的经验</li>
+<li>Google Docs 里的旧设计稿</li>
+<li>某个老员工“默认大家都知道”的约定</li>
+</ul>
+<p>这些内容对人类团队还能勉强运作，因为人会脑补、会问、会记忆、会容忍模糊。但对智能体不行。智能体只对它当前可访问的东西负责。</p>
+<p>这意味着，如果你想让智能体稳定产出，就必须把原本漂浮在组织空气里的那些“隐性知识”，尽可能沉淀成 repo 内的显式工件：</p>
+<ul>
+<li>Markdown 文档</li>
+<li>架构说明</li>
+<li>结构规则</li>
+<li>生成脚本</li>
+<li>检查器</li>
+<li>可执行计划</li>
+</ul>
+<p>这本质上是在把组织知识“编译”成机器可消费的形态。</p>
+<p>以前我们总说“代码即文档”并不现实。现在更现实的说法是：</p>
+<p><strong>代码仓库必须成为智能体的记忆系统。</strong></p>
+<h2 id="五为什么架构约束在这个时代不是负担而是杠杆">五、为什么架构约束在这个时代不是负担，而是杠杆<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五为什么架构约束在这个时代不是负担而是杠杆" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>很多人天然反感强约束，觉得那是大团队病，是流程崇拜，是过早设计。</p>
+<p>但文章里讲得很清楚：对于编码智能体来说，<strong>严格边界不是减速器，而是加速器</strong>。</p>
+<p>原因很简单。</p>
+<p>一个没有清晰边界的系统，对人类工程师来说只是“有点乱”；对智能体来说，往往是“高概率漂移”。因为智能体特别擅长模式补全，一旦仓库里已经有几种不一致的写法，它就会继续复制这些不一致。</p>
+<p>所以 OpenAI 的方法不是到处手把手规定实现细节，而是先把少数关键不变量钉死：</p>
+<ul>
+<li>依赖方向必须固定</li>
+<li>领域分层必须固定</li>
+<li>横切关注点只能从明确入口进入</li>
+<li>边界处必须解析数据形状</li>
+<li>日志、命名、文件大小、可靠性要求都可被静态检查</li>
+</ul>
+<p>这背后的思想很值得借鉴：</p>
+<p><strong>少管理实现，多管理边界。</strong></p>
+<p>只要边界是清楚的、可检查的、可自动纠正的，智能体在边界内部反而可以有更大自由。你不用盯着每一行代码，但你要把“什么绝对不能发生”写进系统里。</p>
+<p>这比口头评审有效得多，因为规则一旦编码成 lint、结构测试和 CI，它就能在每一次生成里重复生效。</p>
+<h2 id="六所谓智能体可读性其实是在重写我们对好代码的判断标准">六、所谓“智能体可读性”，其实是在重写我们对好代码的判断标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六所谓智能体可读性其实是在重写我们对好代码的判断标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>文章里一个很容易被忽略、但非常重要的观点是：他们不是先为“人类风格统一”优化，而是先为 <strong>Codex 的可读性</strong> 优化。</p>
+<p>这听上去有点反直觉，但很合理。</p>
+<p>因为在一个主要由智能体生成、维护、修复的代码库里，下一次改这段代码的，很可能还是智能体。于是“好代码”的标准就不再只是“像资深工程师手写”，而更偏向：</p>
+<ul>
+<li>是否容易导航</li>
+<li>是否行为可预测</li>
+<li>是否边界清晰</li>
+<li>是否方便验证</li>
+<li>是否容易被下一次运行继续修改</li>
+</ul>
+<p>这并不是说人类审美不重要，而是说审美的位置后移了。</p>
+<p>先保证代码对系统、对验证机制、对后续智能体是清晰的，再去追求风格上的优雅。只要代码正确、可维护、可继续演进，它就已经足够好。</p>
+<p>这个判断很“工程”，也很冷静。</p>
+<h2 id="七真正让智能体变强的不是多给几句提示词而是让它看见-ui日志和指标">七、真正让智能体变强的，不是多给几句提示词，而是让它看见 UI、日志和指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七真正让智能体变强的不是多给几句提示词而是让它看见-ui日志和指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>OpenAI 文章里我最认同的一点，是他们把 QA 和可观测性直接变成了智能体的工作界面。</p>
+<p>这很关键。因为如果智能体只能读代码，它就只能停留在“静态推理”；可一旦它还能读：</p>
+<ul>
+<li>DOM 快照</li>
+<li>页面截图</li>
+<li>浏览器运行时事件</li>
+<li>日志</li>
+<li>指标</li>
+<li>trace</li>
+</ul>
+<p>它就从“会写代码”升级成了“能闭环修问题”的执行者。</p>
+<p>这两者差别极大。</p>
+<p>前者像一个会补全文本的模型，后者开始接近一个真正的软件操作员：</p>
+<ul>
+<li>复现 bug</li>
+<li>记录故障现象</li>
+<li>定位异常路径</li>
+<li>提交修复</li>
+<li>重启验证</li>
+<li>再观察结果</li>
+<li>继续迭代</li>
+</ul>
+<p>一旦这个环跑起来，很多过去必须由人工完成的事情，就能被部分自动接手。于是瓶颈自然会从“编码能力”转移到“反馈系统是否完整”。</p>
+<p>所以如果一个团队真的想在内部推 agent coding，最优先的投资往往不是再研究一百种 prompt 模板，而是把这些东西接给智能体：</p>
+<ul>
+<li>可启动的本地环境</li>
+<li>可隔离的 worktree</li>
+<li>稳定的测试入口</li>
+<li>浏览器自动化能力</li>
+<li>日志和指标查询能力</li>
+<li>可回放、可比较、可验证的结果</li>
+</ul>
+<p>这才是 harness 的骨架。</p>
+<h2 id="八吞吐量一变很多正确流程都会变">八、吞吐量一变，很多“正确流程”都会变<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八吞吐量一变很多正确流程都会变" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>文章里还有一个很现实、也很容易引起争议的结论：</p>
+<p><strong>当智能体吞吐量远超人类注意力时，等待成本会开始高于纠错成本。</strong></p>
+<p>这意味着什么？</p>
+<p>意味着有些传统工程习惯，可能要重新审视：</p>
+<ul>
+<li>PR 不该长时间堆积</li>
+<li>阻塞性门禁要减少</li>
+<li>偶发失败不该无限放大</li>
+<li>合并策略要偏向快速纠偏，而不是假设每次都一次完美</li>
+</ul>
+<p>这并不是鼓励鲁莽，也不是说质量不重要。真正的前提是：你已经有一套足够强的回滚、重跑、验证、观测和持续修正机制。</p>
+<p>如果没有这些基础设施，放松门禁只是更快地产生事故。</p>
+<p>所以更准确的说法不是“agent 时代不需要流程”，而是：</p>
+<p><strong>agent 时代需要的是另一种流程，一种围绕高吞吐量持续纠偏而设计的流程。</strong></p>
+<h2 id="九智能体最危险的问题不是犯错而是高速复制坏模式">九、智能体最危险的问题，不是犯错，而是高速复制坏模式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#九智能体最危险的问题不是犯错而是高速复制坏模式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>OpenAI 没有把这篇文章写成乐观宣传稿，这点我很喜欢。</p>
+<p>他们明确承认，完全自主的智能体会带来新的熵。它会继承仓库里已有的模式，好的会继承，坏的也会继承；一致的会放大，不一致的也会放大。</p>
+<p>这意味着，在 agent-heavy 的代码库里，技术债的形成速度也可能更快。</p>
+<p>所以他们后来不再靠人工每周大扫除，而是把“黄金原则”直接编码进去，然后用后台任务持续做清理和重构。这其实是一个特别经典的系统工程思路：</p>
+<p><strong>不要指望人持续手工维持秩序，要把秩序写进系统。</strong></p>
+<p>这和垃圾回收的比喻很贴切。真正危险的不是某一处代码写丑了，而是坏模式一旦进入主干，后续一百个任务都会继续沿着那个方向补全。</p>
+<p>所以你必须有持续的“反熵机制”：</p>
+<ul>
+<li>周期性扫描坏模式</li>
+<li>自动发起小型重构 PR</li>
+<li>更新质量分数</li>
+<li>把审美和判断沉淀成规则</li>
+<li>让修正比扩散更快</li>
+</ul>
+<p>这可能是很多团队最晚才会补的环节，但实际上应该很早开始做。</p>
+<h2 id="十这篇文章真正给我们的启发不是照着抄而是认清主战场已经变了">十、这篇文章真正给我们的启发，不是“照着抄”，而是认清主战场已经变了<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十这篇文章真正给我们的启发不是照着抄而是认清主战场已经变了" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>我不觉得大多数团队今天就能完整复制 OpenAI 的那套做法。</p>
+<p>文章自己也说得很克制：很多能力高度依赖他们已经构建好的仓库结构、工具链和反馈系统，不能假设换个团队就自然成立。</p>
+<p>但这篇文章的价值，本来就不在于提供一份可以原样照搬的 SOP，而在于它点破了一个方向：</p>
+<p><strong>未来软件工程的核心竞争力，会越来越多地体现在环境设计、约束建模、知识组织和反馈闭环，而不是单点编码速度。</strong></p>
+<p>也就是说，真正值得问的问题，不再是：</p>
+<p>“这个模型能不能替我把函数写出来？”</p>
+<p>而是：</p>
+<ul>
+<li>我的仓库是不是 agent-readable？</li>
+<li>我的规范是不是可执行、可验证，而不是只存在于嘴上？</li>
+<li>我的系统有没有给智能体足够的观察能力和纠偏能力？</li>
+<li>我的团队是不是还在用人类低吞吐量时代的流程，去管理智能体高吞吐量时代的生产？</li>
+</ul>
+<p>这些问题想明白了，才算真正开始理解 harness engineering。</p>
+<h2 id="结语">结语<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#结语" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果只看表面，这篇文章像是在讲一场“零人工编码”的实验。</p>
+<p>但如果往深一点看，它其实是在重新定义一件更底层的事：</p>
+<p><strong>当写代码不再是最稀缺的能力时，软件工程究竟还剩下什么？</strong></p>
+<p>OpenAI 给出的答案是：</p>
+<p>还剩下结构，剩下约束，剩下判断，剩下反馈回路，剩下把混乱变成可执行秩序的能力。</p>
+<p>这也是为什么我觉得 harness engineering 值得认真看。它不是一个新名词，而是在提醒我们，工程师的价值并没有消失，只是从“亲手实现”迁移到了“设计让实现能够自动发生的系统”。</p>
+<p>下一阶段最厉害的团队，未必是提示词写得最花的团队，而是那些能把 repo、文档、测试、观测、评审和清理机制组织成一个完整生产系统的团队。</p>
+<p>那时候，代码只是产物。</p>
+<p>真正的产品，是这套能持续驱动智能体工作的工程机器。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-25" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#harness-工程不是让-ai-多写代码而是重新发明软件工程" data-for="harness-工程不是让-ai-多写代码而是重新发明软件工程">Harness 工程，不是让 AI 多写代码，而是重新发明软件工程</a></li><li class="depth-1"><a href="#一真正变化的不是代码生成而是工程师的岗位定义" data-for="一真正变化的不是代码生成而是工程师的岗位定义">一、真正变化的，不是代码生成，而是工程师的岗位定义</a></li><li class="depth-1"><a href="#二harness-工程本质上是在给智能体搭工作台" data-for="二harness-工程本质上是在给智能体搭工作台">二、Harness 工程，本质上是在给智能体搭工作台</a></li><li class="depth-1"><a href="#三为什么-openai-说要给地图不要给百科全书" data-for="三为什么-openai-说要给地图不要给百科全书">三、为什么 OpenAI 说：要给地图，不要给百科全书</a></li><li class="depth-1"><a href="#四在-agent-first-的代码库里看不见就等于不存在" data-for="四在-agent-first-的代码库里看不见就等于不存在">四、在 Agent-First 的代码库里，“看不见”就等于“不存在”</a></li><li class="depth-1"><a href="#五为什么架构约束在这个时代不是负担而是杠杆" data-for="五为什么架构约束在这个时代不是负担而是杠杆">五、为什么架构约束在这个时代不是负担，而是杠杆</a></li><li class="depth-1"><a href="#六所谓智能体可读性其实是在重写我们对好代码的判断标准" data-for="六所谓智能体可读性其实是在重写我们对好代码的判断标准">六、所谓“智能体可读性”，其实是在重写我们对好代码的判断标准</a></li><li class="depth-1"><a href="#七真正让智能体变强的不是多给几句提示词而是让它看见-ui日志和指标" data-for="七真正让智能体变强的不是多给几句提示词而是让它看见-ui日志和指标">七、真正让智能体变强的，不是多给几句提示词，而是让它看见 UI、日志和指标</a></li><li class="depth-1"><a href="#八吞吐量一变很多正确流程都会变" data-for="八吞吐量一变很多正确流程都会变">八、吞吐量一变，很多“正确流程”都会变</a></li><li class="depth-1"><a href="#九智能体最危险的问题不是犯错而是高速复制坏模式" data-for="九智能体最危险的问题不是犯错而是高速复制坏模式">九、智能体最危险的问题，不是犯错，而是高速复制坏模式</a></li><li class="depth-1"><a href="#十这篇文章真正给我们的启发不是照着抄而是认清主战场已经变了" data-for="十这篇文章真正给我们的启发不是照着抄而是认清主战场已经变了">十、这篇文章真正给我们的启发，不是“照着抄”，而是认清主战场已经变了</a></li><li class="depth-1"><a href="#结语" data-for="结语">结语</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>
