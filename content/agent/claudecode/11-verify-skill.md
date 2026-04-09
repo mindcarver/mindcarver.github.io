@@ -41,7 +41,7 @@ Surface 是用户（人或者程序）与代码变更发生交互的界面。Ver
 
 [source: skill-verify-skill.md]
 
-这六种 Surface 覆盖了绝大多数代码变更的可观测面。关键在于，Surface 始终是"外部"的，是用户能触碰到的界面，不是内部的函数实现。
+六种 Surface 覆盖了绝大多数代码变更的可观测面。关键在于，Surface 始终是"外部"的，是用户能触碰到的界面，不是内部的函数实现。
 
 对于内部函数，Verify Skill 的态度很明确：
 
@@ -67,7 +67,7 @@ Verify Skill 用三个明确的禁令划定了验证的边界。
 
 > "Don't run tests. Don't typecheck. CI ran both before you got here — green checks on the PR mean they passed. Running them again proves you can run CI. Not as a warm-up, not 'just to be sure,' not as a regression sweep after. The time goes to running the app instead." [source: skill-verify-skill.md]
 
-逻辑很简单：CI 已经运行过测试和类型检查了。如果 PR 上有绿色的勾，说明它们通过了。重新运行测试只能证明你能运行 CI，不能证明变更在实际应用中的行为。验证者的时间应该花在运行应用上。
+逻辑很简单：CI 已经运行过测试和类型检查了。PR 上有绿色的勾，说明它们通过了。重新运行测试只能证明你能运行 CI，不能证明变更在实际应用中的行为。验证者的时间应该花在运行应用上。
 
 **Don't import-and-call：**
 
@@ -95,7 +95,7 @@ gh pr diff                            # if in a PR context
 
 [source: skill-verify-skill.md]
 
-注意使用 `@{u}..` 而不是 `HEAD~1`，因为一个分支可能包含多个 commit。报告中也必须说明 commit 数量。如果 diff 太大被截断，应该重定向到临时文件然后用 Read 读取。如果没有 diff，则直接报告并停止。
+注意使用 `@{u}..` 而不是 `HEAD~1`，因为一个分支可能包含多个 commit。报告中必须说明 commit 数量。如果 diff 太大被截断，应该重定向到临时文件然后用 Read 读取。没有 diff 则直接报告并停止。
 
 最关键的判断原则在这一句：
 
@@ -111,7 +111,7 @@ diff 是 ground truth，它客观记录了代码发生了什么变化。PR descr
 
 > ".claude/skills/*verifier*/ — if one matches your surface (CLI verifier for a CLI change, etc.), route to it. It knows readiness signals and env gotchas you don't. Mismatched surface → skip that one, try the next. Stale verifier (fails on mechanics unrelated to the change) → ask the user whether to patch it; don't FAIL the change for verifier rot." [source: skill-verify-skill.md]
 
-如果项目已经有针对特定 Surface 的 verifier skill（比如 CLI 变更有 CLI verifier），直接使用它。它知道环境中的就绪信号和常见陷阱。但如果 Surface 不匹配则跳过；如果 verifier 过时了（在无关的环节上失败），不应该把变更判定为 FAIL，而应该询问用户是否需要修复 verifier。
+如果项目已经有针对特定 Surface 的 verifier skill（比如 CLI 变更有 CLI verifier），直接使用它。它知道环境中的就绪信号和常见陷阱。Surface 不匹配则跳过；verifier 过时了（在无关的环节上失败），不应该把变更判定为 FAIL，而应该询问用户是否需要修复 verifier。
 
 第二级，查找 run skill：
 
@@ -123,7 +123,7 @@ run skill 知道如何构建和启动应用，可以借用它的基础设施。
 
 > "Neither — cold start from README/package.json/Makefile. Timebox ~15min. Stuck → BLOCKED with exactly where, plus a filled-in /run-skill-generator prompt. Got through → mention /init-verifiers in your report so next time is faster." [source: skill-verify-skill.md]
 
-如果两者都没有，就从 README、package.json、Makefile 冷启动。时间限制约 15 分钟。如果卡住了，报告 BLOCKED 并附上精确的卡住位置和填好的 `/run-skill-generator` 提示。如果成功通过了，在报告中建议运行 `/init-verifiers`，这样下次验证就不需要再次冷启动。
+如果两者都没有，就从 README、package.json、Makefile 冷启动。时间限制约 15 分钟。卡住了，报告 BLOCKED 并附上精确的卡住位置和填好的 `/run-skill-generator` 提示。成功通过了，在报告中建议运行 `/init-verifiers`，这样下次验证就不需要再次冷启动。
 
 这个三级策略体现了 Verify Skill 的实用主义：优先利用已有知识，但在没有现成工具时也能从零开始，同时确保每次冷启动的痛苦都会转化为未来的便利。
 
@@ -133,14 +133,14 @@ run skill 知道如何构建和启动应用，可以借用它的基础设施。
 
 > "Smallest path that makes the changed code execute" [source: skill-verify-skill.md]
 
-具体的策略随变更类型而定：
+具体策略随变更类型而定：
 
 - 改了一个 flag？带着它运行。
 - 改了一个 handler？访问那个路由。
 - 改了错误处理？触发那个错误。
 - 改了一个内部函数？找到能触达它的 CLI 命令/请求/渲染路径，运行那个。
 
-Verify Skill 还要求在执行前进行一项关键的自我检查：
+Verify Skill 还要求在执行前进行一项自我检查：
 
 > "Read your plan back before running. If every step is build / typecheck / run test file — you've planned a CI rerun, not a verification. Find a step that reaches the surface or report BLOCKED." [source: skill-verify-skill.md]
 
@@ -205,7 +205,7 @@ Findings 部分的门槛很低：
 
 > "Not just bugs — friction, surprises, anything a first-time user would trip on." [source: skill-verify-skill.md]
 
-不限于 bug，还包括摩擦、意外情况、任何初次使用者会踩到的坑。原文给出了具体例子："Took three tries to find the right flag.""Error message on typo was unhelpful.""Default seems odd for the common case.""Works, but slower than I expected." 判断标准是："if it made you pause, it goes here."
+不限于 bug，还包括摩擦、意外情况、任何初次使用者会踩到的坑。原文给出了具体例子："Took three tries to find the right flag。""Error message on typo was unhelpful。""Default seems odd for the common case.""Works, but slower than I expected." 判断标准是："if it made you pause, it goes here."
 
 值得注意的条目用警告标记开头，它们会被提升到 PR 评论的可见区域。Findings 为空是允许的，但"nothing sticking out is itself rare"。
 
@@ -347,7 +347,7 @@ curl -si localhost:3000/api/thing | head -20
 
 [source: skill-verify-serverapi-changes-example-for-verify-skill.md]
 
-几个值得注意的操作细节：先用循环快速发送请求来触发速率限制（根据 diff 得知限制是 5 次/秒），用 `curl -w "%{http_code}"` 只捕获状态码以确认 429 被触发，然后再用 `curl -si` 捕获完整的响应头。这种分步验证确保了每一步的观察都有据可依。
+几个值得注意的操作细节：先用循环快速发送请求来触发速率限制（根据 diff 得知限制是 5 次/秒），用 `curl -w "%{http_code}"` 只捕获状态码以确认 429 被触发，然后再用 `curl -si` 捕获完整的响应头。分步验证确保了每一步的观察都有据可依。
 
 FAIL 的情况包括：
 
@@ -363,12 +363,12 @@ FAIL 的情况包括：
 
 Verify Skill 的设计思想可以提炼为四个关键词：**运行时优先、Surface 导向、证据唯一性、不对称错误代价**。
 
-运行时优先意味着所有验证都必须基于应用的实际运行，排除了代码审查、测试运行和类型检查作为验证手段。这不是对这三种实践的否定，而是对验证角色的精确定位：CI 负责测试和类型检查，代码审查负责逻辑和风格，验证者负责在真实运行环境中观察行为。三者互补，不互相替代。
+运行时优先意味着所有验证都必须基于应用的实际运行，排除了代码审查、测试运行和类型检查作为验证手段。这不是对这三种实践的否定，是对验证角色的精确定位：CI 负责测试和类型检查，代码审查负责逻辑和风格，验证者负责在真实运行环境中观察行为。三者互补，不互相替代。
 
 Surface 导向确保了验证总是发生在用户可达的界面，而不是内部实现细节上。六种 Surface 类型覆盖了从 CLI 到 CI 的完整变更可达面。内部函数不是 Surface，你必须沿着调用链追踪到用户可触碰的界面，这保证了验证的端到端性质。
 
-证据唯一性，"Captured output is evidence; your memory isn't"，确保了验证结果的可审查性。stdout、response body、截图是客观的、可复现的证据，而人的记忆是主观的、会衰减的。这种对客观证据的坚持，使得验证报告能够经受住独立审查。
+证据唯一性，"Captured output is evidence; your memory isn't"，确保了验证结果的可审查性。stdout、response body、截图是客观的、可复现的证据，而人的记忆是主观的、会衰减的。对客观证据的坚持，使得验证报告能够经受住独立审查。
 
-不对称错误代价，"When in doubt, FAIL"，是 Verify Skill 的风险偏好。在软件发布场景中，错误 PASS（放行破损代码）的代价远高于错误 FAIL（多一次人工审查）。这种偏好不是保守，而是对生产环境安全的理性计算。
+不对称错误代价，"When in doubt, FAIL"，是 Verify Skill 的风险偏好。在软件发布场景中，错误 PASS（放行破损代码）的代价远高于错误 FAIL（多一次人工审查）。这种偏好不是保守，是对生产环境安全的理性计算。
 
 Verify Skill 的整个流程构成了一个完整的闭环：Find the change（确定范围）到 Get a handle（找到运行方法）到 Drive it（驱动到变更执行）到 Capture（捕获证据）到 Report（结构化报告）。每一个环节都有明确的约束和判断标准，使得验证过程可重复、可审查、可传授。
