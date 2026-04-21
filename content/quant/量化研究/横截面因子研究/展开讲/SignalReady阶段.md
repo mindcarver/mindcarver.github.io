@@ -90,95 +90,136 @@ QROS 里至少要把它分成：
 
 ## 3. 本阶段真正要冻结的五组内容
 
-## 3.1 `factor_identity`
+当前 `quant-research-os` 的 signal 层已经不再只用“某个因子名字”来冻结，
+而是更强调：
 
-这是因子的“身份信息”。
+- `signal_expression`
+- `param_identity`
+- `time_semantics`
+- `signal_schema`
+- `delivery_contract`
 
-至少要包括：
+也就是说，概念层当然仍然可以讨论 `factor_identity / factor_role / factor_structure`，
+但真正供下游 Train/Test 直接消费的，已经是一组**显式物化过的 `param_id` 与对应 signal artifacts**。
 
-- `factor_id`
-- `factor_name`
-- `raw_factor_fields`
-- `derived_factor_fields`
-- `signal_timestamp`
-- `available_after`
+## 3.1 `signal_expression`
+
+这组解决的是：
+
+> baseline signal 到底按什么公式、什么字段、什么确定性变换被算出来。
+
+至少要写清：
+
+- 原始输入字段
+- 派生字段
+- 公式或变换链
+- 是否 `single_factor` 还是 `multi_factor_score`
+- 如果是 `multi_factor_score`，组合方式是否 deterministic
 
 例如：
 
 ```yaml
-factor_id: MOM_20D
-raw_factor_fields:
-  - close
-derived_factor_fields:
-  - ret_20d
-time_semantics:
-  signal_timestamp: close_time
-  available_after: next_bar_open
+signal_expression:
+  signal_family: momentum
+  structure: single_factor
+  raw_fields:
+    - close
+  derived_fields:
+    - ret_20d
+  formula: ret_20d
 ```
 
-SignalReady 最危险的错误之一，就是在这一层写得太松，导致后面人各自脑补。
+这里最危险的错误，是只留下“20 日动量”这种自然语言标签，
+却没把真正的计算表达式冻结下来。
 
-## 3.2 `factor_role_contract`
+## 3.2 `param_identity`
 
-这组的核心是：
+这组解决的是：
 
-> 后续应该用什么证据逻辑去检这个因子？
+> 下游到底允许消费哪些 `param_id`，以及每个 `param_id` 对应的是谁。
 
-比如：
+current skill 的硬要求是：
 
-- `standalone_alpha`：要看排序能力
-- `regime_filter`：要看 gated vs ungated 是否改善
-- `combo_filter`：要看组合后分布和风险是否改善
-
-角色一旦冻结，下游不能再因为结果不好就改成另一个角色。
-
-## 3.3 `factor_structure_contract`
-
-这里决定这个因子的内部结构。
-
-如果是 `single_factor`，应明确：
-
-- 单一核心公式
-- 不允许后续偷偷拼接多个条件轴
-
-如果是 `multi_factor_score`，应明确：
-
-- 每个组成字段
-- 组合方式
-- 是否先标准化再线性组合
-
-但是不能写成：
-
-- “后面训练再学权重”
-
-那已经不是合同层，而是训练层。
-
-## 3.4 `neutralization_policy`
-
-这一层不只是“要不要中性化”，更是在定义：
-
-> 这个因子的正式输出语义，到底是不是已经剔除了某些暴露。
+- 所有将被 Train/Test 消费的 `param_id`，都必须在本阶段显式落入 `param_manifest.csv`
+- 不能等到 Train 阶段才第一次引入一个此前从未物化过的新 `param_id`
+- 第一版通常只允许冻结 baseline signal，而不是直接把 full search batch 一次性塞进来
 
 例如：
 
-- `none`
-- `market_beta_neutral`
-- `group_neutral`
+```csv
+param_id,signal_family,structure,role,status
+MOM_20D_BASE,momentum,single_factor,standalone_alpha,materialized
+```
 
-如果写成 `group_neutral`，必须同时绑定：
+所以在 current 口径里，
+“这个信号是谁”不只靠 `factor_name` 来讲，
+而是要靠 **`param_id -> signal expression -> timeseries artifact`** 这条映射来冻结。
 
-- group taxonomy 从哪里来
-- taxonomy 版本是什么
+## 3.3 `time_semantics`
+
+这组解决的是：
+
+> 这个信号到底对应哪个时间点，以及它最早什么时候可以被合法消费。
+
+至少要包括：
+
+- `signal_timestamp`
+- `available_after`
+- 缺失值语义
+- 是否沿用 DataReady 的 `close_time / next_bar_open` 口径
+
+例如：
+
+```yaml
+time_semantics:
+  signal_timestamp: close_time
+  available_after: next_bar_open
+  missing_policy: leave_null_and_record_coverage
+```
+
+这组如果冻结不严，下游最容易在 Train/Test 里各自脑补一版时点定义。
+
+## 3.4 `signal_schema`
+
+这组解决的是：
+
+> `params/` 里真实落盘的 signal 文件，列结构到底长什么样。
+
+要冻结的不只是“有一张表”，而是：
+
+- parquet 或等价 timeseries 文件的真实 schema
+- 哪些列是主键
+- 哪些列是 signal value / quality / coverage 字段
+- `signal_contract.md` 与 `signal_fields_contract.md` 是否能逐列解释这些字段
+
+如果这里没写清，就会出现：
+
+- 文档里说的是一个信号
+- 下游代码实际读取的是另一套列结构
+
+尤其是 current review 还会检查：
+
+- `field_dictionary.md` 是否覆盖 `params/` 里实际存在的列
+- `signal_fields_contract.md` 是否和落盘 schema 一致
 
 ## 3.5 `delivery_contract`
 
-这个阶段不应该只输出文字说明，还要输出可被机器消费的产物：
+按照 current skill，本阶段不应只停在概念说明，
+而应至少真实交付这些机器可消费产物：
 
-- `factor_panel.parquet`
-- `factor_manifest.yaml`
-- `factor_coverage.parquet`
+- `param_manifest.csv`
+- `params/`
+- `signal_coverage.csv`
+- `signal_coverage.md`
+- `signal_coverage_summary.md`
+- `signal_contract.md`
+- `signal_fields_contract.md`
+- `signal_gate_decision.md`
+- `artifact_catalog.md`
+- `field_dictionary.md`
 
-这样后面进入 TrainFreeze 时，使用的是同一个信号实体，而不是“描述上的同一个信号”。
+只有这样，TrainFreeze 才是在消费**同一个 signal 实体**，
+而不是在消费“描述上差不多”的几个实现。
 
 ---
 
@@ -259,6 +300,45 @@ weights = fit_model(X_train, y_train)
 
 所以中性化政策必须明确，不然下游评估会混语义。
 
+## 5.5 current skill 里的 baseline-only 纪律
+
+这是这套文档最值得补充的一条。
+
+在 current `qros-signal-ready-author/review` 口径里，
+SignalReady 第一版通常只允许冻结 baseline signal：
+
+- 可以是 1 个 baseline `param_id`
+- 也可以是极少数明确声明的 baseline `param_id`
+- 但不应直接在这一版里塞入 full search batch 或 full frozen grid
+
+换句话说：
+
+> 先把“这个 baseline signal 是谁”冻结干净，
+> 再让 TrainFreeze 去消费它，
+> 而不是一上来就把整片参数搜索空间包装成 signal ready。
+
+这条纪律的价值在于：
+
+- 限制上游定义漂移
+- 限制参数空间膨胀
+- 防止 Train 阶段第一次发现 signal schema 其实没冻结干净
+
+## 5.6 `skipped params` 不能静默消失
+
+如果某些 `param_id`：
+
+- 生成失败
+- coverage 太差
+- 因 schema 或输入问题未能物化
+
+就必须在 `signal_coverage.md` 里单独列出来，并写清原因。
+
+在 current skill 里，`skipped params > 0` 时通常最多只能给到：
+
+- `CONDITIONAL PASS`
+
+而不是把这些失败对象静默省略，然后假装整批 signal 都已冻结完成。
+
 ---
 
 ## 6. 这一阶段常见的错误
@@ -317,16 +397,19 @@ SignalReady 不能只停留在文档语义层。
 
 必须真实产出：
 
-- `factor_panel.parquet`
-- `factor_manifest.yaml`
-- `factor_coverage.parquet`
+- `param_manifest.csv`
+- `params/`
+- `signal_coverage.csv`
+- `signal_contract.md`
+- `signal_fields_contract.md`
 
 原因很直接：
 
 - TrainFreeze 需要直接消费这些 artifact
-- 后面所有阶段都需要知道“到底评的是哪个版本的信号”
+- 后面所有阶段都需要知道“到底评的是哪个 `param_id`、哪套 schema、哪份 coverage”
 
-如果只有 Markdown 描述，没有真实 panel，那么下游每个人都会自己实现一版“我理解中的这个因子”。
+如果只有 Markdown 描述，没有真实 signal artifacts，
+那么下游每个人都会自己实现一版“我理解中的这个因子”。
 
 ---
 
@@ -351,6 +434,7 @@ TrainFreeze 只能在已冻结的 signal 合同上学习训练窗尺子。
 
 合格的 SignalReady，应该满足这样一个条件：
 
-> 一个不参与当前讨论的人，只看 `factor_manifest`、`factor_contract` 和 `factor_panel`，就能知道这个因子是什么、扮演什么角色、后面应怎样被评估。
+> 一个不参与当前讨论的人，只看 `param_manifest.csv`、`signal_contract.md`、`signal_fields_contract.md` 和 `params/`，
+> 就能知道这个 baseline signal 是什么、对应哪个 `param_id`、后面应怎样被评估。
 
 如果做不到这一点，说明信号合同还没有真正冻结。

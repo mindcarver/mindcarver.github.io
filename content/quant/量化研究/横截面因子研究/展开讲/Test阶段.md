@@ -61,11 +61,22 @@ TestEvidence 这个阶段真正要回答的是：
 
 TestEvidence 不是在交易层宣布大胜，但它确实要冻结：
 
-- 哪些候选可以进入 backtest
-- 哪些候选被拒绝
+- 哪些 symbol / param 组合具备继续进入 backtest 的资格
+- 冻结后的 `selected_symbols` 是谁
+- 冻结后的 `best_h` 是谁
+- 哪些对象被拒绝
 - 为什么被拒绝
 
-这就是 `factor_selection` 与 `selected_factor_spec` 的意义。
+在 current skill 里，这一步不再只是泛泛写一份“挑中了哪个因子”的说明，
+而是要把后续 BacktestReady 能直接消费的冻结对象落进：
+
+- `selected_symbols_test.csv`
+- `selected_symbols_test.parquet`
+- `frozen_spec.json`
+
+也就是说，
+TestEvidence 结束时不仅要回答“谁通过了证据门禁”，
+还要回答“Backtest 到底允许消费哪一版白名单和哪一个 `best_h`”。
 
 ---
 
@@ -124,8 +135,20 @@ TestEvidence 不是在交易层宣布大胜，但它确实要冻结：
 - 多重比较修正
 - 负结果归档
 - 边界情况说明
+- crowding / distinctiveness 审计
 
 其重点在于留下完整证据，而不是只留下好看的结果。
+
+特别要补一句 current skill 里的硬边界：
+
+> `crowding_review.md` 属于 `audit_contract`，
+> 不是 `formal_gate_contract` 的直接阻断条件。
+
+也就是说：
+
+- 可以把 crowding 发现写进审计层
+- 可以提示后续 Backtest / Holdout 注意 distinctiveness 风险
+- 但不能把“拥挤度高”直接偷偷写进 formal gate，当成阻断证据门禁的理由
 
 ## 3.5 `delivery_contract`
 
@@ -133,6 +156,20 @@ TestEvidence 不是在交易层宣布大胜，但它确实要冻结：
 
 - TestEvidence 结束后，哪些机器可读产物必须存在
 - 哪些冻结对象要供 BacktestReady 直接消费
+
+按照 current skill，至少应显式落下：
+
+- `report_by_h.parquet`
+- `symbol_summary.parquet`
+- `admissibility_report.parquet`
+- `test_gate_table.csv`
+- `crowding_review.md`
+- `selected_symbols_test.csv`
+- `selected_symbols_test.parquet`
+- `frozen_spec.json`
+- `test_gate_decision.md`
+- `artifact_catalog.md`
+- `field_dictionary.md`
 
 ---
 
@@ -236,13 +273,16 @@ TestEvidence 不是在交易层宣布大胜，但它确实要冻结：
 
 如果它只是减少了样本，结果看起来“更干净”，不一定代表真的有改善价值。
 
-## 6.4 冻结 factor_selection
+## 6.4 冻结 `selected_symbols` 与 `frozen_spec`
 
 TestEvidence 结束时，应该明确：
 
 - 哪些对象进入 backtest
 - 哪些不进入
 - 原因是什么
+- `selected_symbols` 是否已经冻结
+- `best_h` 是否已经冻结
+- 这些冻结对象是否已写入 `frozen_spec.json`
 
 这里最忌讳的不是错选，而是“只留下当前一个版本，看不见背后的筛选过程”。
 
@@ -252,22 +292,28 @@ TestEvidence 结束时，应该明确：
 
 典型输出物包括：
 
-- `rank_ic_timeseries.parquet`
-- `bucket_returns.parquet`
+- `report_by_h.parquet`
+- `symbol_summary.parquet`
 - `admissibility_report.parquet`
-- `factor_selection.csv`
-- `factor_selection.parquet`
-- `selected_factor_spec.json`
 - `test_gate_table.csv`
+- `crowding_review.md`
+- `selected_symbols_test.csv`
+- `selected_symbols_test.parquet`
+- `frozen_spec.json`
 - `test_gate_decision.md`
 
 其中最关键的通常是：
 
-### `selected_factor_spec.json`
+### `frozen_spec.json`
 
-它要保证 BacktestReady 消费的是一个**被正式冻结的候选**，而不是一段口头描述。
+它要保证 BacktestReady 消费的是一套**被正式冻结的对象**，而不是一段口头描述。
 
-### `factor_selection.csv`
+在 current skill 里，它至少应同时包含：
+
+- `selected_symbols`
+- `best_h`
+
+### `selected_symbols_test.csv`
 
 它要让团队看得到：
 
@@ -314,8 +360,25 @@ TestEvidence 结束时，应该明确：
 
 ## 8.4 输出 `best_horizon`
 
-横截面阶段里，`best_horizon` 这种表达非常危险。  
-因为它会把 Test 重新变成参数选择器，而不是证据冻结层。
+这里要特别改成更精确的说法。
+
+危险的不是**写出 `best_h` 这个冻结对象本身**，
+而是：
+
+- 没有在上游约束范围内定义 horizon 集合
+- 看完更多下游结果后再事后重估一个更好看的 `best_h`
+- 把 `best_h` 当成可以在 Backtest 阶段继续扭动的旋钮
+
+current QROS skill 的要求恰恰是：
+
+- TestEvidence 结束时，要把 `best_h` 正式写入 `frozen_spec.json`
+- BacktestReady 只能消费这个已冻结的 `best_h`
+- 不能在 Backtest 或 Holdout 再重新估一个更好看的 horizon
+
+所以更准确的表述应是：
+
+> 任意事后重估 `best_horizon` 很危险；
+> 但把已经按阶段纪律冻结好的 `best_h` 正式落盘，是 current TestEvidence contract 的一部分。
 
 ---
 
@@ -323,13 +386,14 @@ TestEvidence 结束时，应该明确：
 
 BacktestReady 只能消费：
 
-- 已冻结的 `selected_factor_spec`
-- `factor_selection`
+- 已冻结的 `selected_symbols_test`
+- 已冻结的 `frozen_spec.json`
 - admissibility 结论
 
 BacktestReady 不应再做：
 
-- 因子重选
+- symbol 白名单重选
+- `best_h` 重估
 - 训练尺子重估
 - 信号身份重解释
 
@@ -341,6 +405,9 @@ BacktestReady 不应再做：
 
 合格的 TestEvidence，应该满足：
 
-> 即便先不跑任何交易层仿真，团队也能清楚知道：这个对象是否拥有独立样本上的正式证据，是否有资格继续进入 BacktestReady。
+> 即便先不跑任何交易层仿真，团队也能清楚知道：
+> 这个对象是否拥有独立样本上的正式证据，
+> `selected_symbols` 和 `best_h` 是否已经冻结，
+> 以及 BacktestReady 到底应该消费哪一版 `frozen_spec.json`。
 
 如果还在把这一步写成“半个回测”，说明阶段边界还没收紧。
