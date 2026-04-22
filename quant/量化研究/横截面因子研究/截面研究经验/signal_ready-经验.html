@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>signal_ready 经验</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="signal_ready 经验"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="signal_ready 经验"/><meta name="twitter:description" content="这组 csf_signal_ready 的 author / review，比 csf_data_ready 更接近你整套研究 OS 的核心。 如果说 data_ready 冻结的是研究母体，那 signal_ready 冻结的就是： 你到底在研究什么因子，它在策略里扮演什么角色，它以什么确定性规则被表达成正式可比较的横截面分数。 我重新想了一遍后，觉得这阶段最值得沉淀的，不是“怎么把 factor 算出来”，而是下面这些方法论和高频坑。 一、先给这个阶段一个准确定位 csf_signal_ready 不是普通的“因子开发”，也不是“先写个公式试试看”。 它真正冻结的是 5 件事： 1."/><meta property="og:description" content="这组 csf_signal_ready 的 author / review，比 csf_data_ready 更接近你整套研究 OS 的核心。 如果说 data_ready 冻结的是研究母体，那 signal_ready 冻结的就是： 你到底在研究什么因子，它在策略里扮演什么角色，它以什么确定性规则被表达成正式可比较的横截面分数。 我重新想了一遍后，觉得这阶段最值得沉淀的，不是“怎么把 factor 算出来”，而是下面这些方法论和高频坑。 一、先给这个阶段一个准确定位 csf_signal_ready 不是普通的“因子开发”，也不是“先写个公式试试看”。 它真正冻结的是 5 件事： 1."/><meta property="og:image:alt" content="这组 csf_signal_ready 的 author / review，比 csf_data_ready 更接近你整套研究 OS 的核心。 如果说 data_ready 冻结的是研究母体，那 signal_ready 冻结的就是： 你到底在研究什么因子，它在策略里扮演什么角色，它以什么确定性规则被表达成正式可比较的横截面分数。 我重新想了一遍后，觉得这阶段最值得沉淀的，不是“怎么把 factor 算出来”，而是下面这些方法论和高频坑。 一、先给这个阶段一个准确定位 csf_signal_ready 不是普通的“因子开发”，也不是“先写个公式试试看”。 它真正冻结的是 5 件事： 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/quant/量化研究/横截面因子研究/截面研究经验/signal_ready-经验"/><meta property="twitter:url" content="https://https//mindcarver.top/quant/量化研究/横截面因子研究/截面研究经验/signal_ready-经验"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="这组 csf_signal_ready 的 author / review，比 csf_data_ready 更接近你整套研究 OS 的核心。 如果说 data_ready 冻结的是研究母体，那 signal_ready 冻结的就是： 你到底在研究什么因子，它在策略里扮演什么角色，它以什么确定性规则被表达成正式可比较的横截面分数。 我重新想了一遍后，觉得这阶段最值得沉淀的，不是“怎么把 factor 算出来”，而是下面这些方法论和高频坑。 一、先给这个阶段一个准确定位 csf_signal_ready 不是普通的“因子开发”，也不是“先写个公式试试看”。 它真正冻结的是 5 件事： 1."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="quant/量化研究/横截面因子研究/截面研究经验/signal_ready-经验"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-656"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-656" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/">quant</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/量化研究/">量化研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/量化研究/横截面因子研究/">横截面因子研究</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../quant/量化研究/横截面因子研究/截面研究经验/">截面研究经验</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>signal_ready 经验</a></div></nav><h1 class="article-title">signal_ready 经验</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-22T11:03:04.333Z">2026年4月22日</time><span>19分钟阅读</span></p></div></div><article class="popover-hint"><p>这组 <code>csf_signal_ready</code> 的 author / review，比 <code>csf_data_ready</code> 更接近你整套研究 OS 的核心。<br/>
+如果说 <code>data_ready</code> 冻结的是<strong>研究母体</strong>，那 <code>signal_ready</code> 冻结的就是：</p>
+<blockquote>
+<p><strong>你到底在研究什么因子，它在策略里扮演什么角色，它以什么确定性规则被表达成正式可比较的横截面分数。</strong></p>
+</blockquote>
+<p>我重新想了一遍后，觉得这阶段最值得沉淀的，不是“怎么把 factor 算出来”，而是下面这些方法论和高频坑。</p>
+<hr/>
+<h1 id="一先给这个阶段一个准确定位">一、先给这个阶段一个准确定位<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一先给这个阶段一个准确定位" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p><code>csf_signal_ready</code> 不是普通的“因子开发”，也不是“先写个公式试试看”。</p>
+<p>它真正冻结的是 5 件事：</p>
+<h3 id="1-因子身份">1. 因子身份<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-因子身份" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>factor_id</code></p>
+</li>
+<li>
+<p><code>factor_version</code></p>
+</li>
+<li>
+<p><code>factor_direction</code></p>
+</li>
+</ul>
+<p>也就是：<strong>这到底是不是同一个因子</strong>。</p>
+<hr/>
+<h3 id="2-因子角色">2. 因子角色<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-因子角色" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>standalone_alpha</code></p>
+</li>
+<li>
+<p><code>regime_filter</code></p>
+</li>
+<li>
+<p><code>combo_filter</code></p>
+</li>
+</ul>
+<p>也就是：<strong>这个因子在策略里到底干什么</strong>。</p>
+<hr/>
+<h3 id="3-因子结构">3. 因子结构<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-因子结构" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>single_factor</code></p>
+</li>
+<li>
+<p><code>multi_factor_score</code></p>
+</li>
+</ul>
+<p>也就是：<strong>它是单一因子，还是一个确定性组合分数</strong>。</p>
+<hr/>
+<h3 id="4-组合表达与中性化">4. 组合表达与中性化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-组合表达与中性化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>portfolio_expression</code></p>
+</li>
+<li>
+<p><code>neutralization_policy</code></p>
+</li>
+</ul>
+<p>也就是：<strong>这个因子准备被怎么消费，而不是留到 train/test 再解释。</strong></p>
+<hr/>
+<h3 id="5-正式机器产物">5. 正式机器产物<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-正式机器产物" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>factor_panel.parquet</code></p>
+</li>
+<li>
+<p><code>factor_manifest.yaml</code></p>
+</li>
+<li>
+<p>coverage / dictionary / contract / catalog / run_manifest</p>
+</li>
+</ul>
+<p>也就是：<strong>它不是口头概念，而是一个真实可消费、可重建、可审查的 factor contract。</strong></p>
+<hr/>
+<p>所以一句话说：</p>
+<blockquote>
+<p><code>csf_signal_ready</code> 冻结的不是“研究想法”，而是“正式因子合同”。</p>
+</blockquote>
+<hr/>
+<h1 id="二它和-csf_data_ready-的本质区别">二、它和 <code>csf_data_ready</code> 的本质区别<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二它和-csf_data_ready-的本质区别" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这个特别值得沉淀，因为两阶段很容易混。</p>
+<hr/>
+<h2 id="csf_data_ready-冻结的是"><code>csf_data_ready</code> 冻结的是<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#csf_data_ready-冻结的是" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>
+<p>研究母体</p>
+</li>
+<li>
+<p>面板主键</p>
+</li>
+<li>
+<p>universe membership</p>
+</li>
+<li>
+<p>eligibility 底座</p>
+</li>
+<li>
+<p>taxonomy/shared feature base</p>
+</li>
+<li>
+<p>coverage 证据</p>
+</li>
+</ul>
+<p>也就是：</p>
+<blockquote>
+<p><strong>研究是在什么世界里进行。</strong></p>
+</blockquote>
+<hr/>
+<h2 id="csf_signal_ready-冻结的是"><code>csf_signal_ready</code> 冻结的是<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#csf_signal_ready-冻结的是" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>
+<p>因子身份</p>
+</li>
+<li>
+<p>因子角色</p>
+</li>
+<li>
+<p>因子结构</p>
+</li>
+<li>
+<p>score 公式</p>
+</li>
+<li>
+<p>factor direction</p>
+</li>
+<li>
+<p>coverage / missing / eligibility 传递</p>
+</li>
+<li>
+<p>portfolio expression / neutralization</p>
+</li>
+</ul>
+<p>也就是：</p>
+<blockquote>
+<p><strong>在这个世界里，你定义了一个什么因子。</strong></p>
+</blockquote>
+<hr/>
+<p>所以最值得沉淀的一条原则是：</p>
+<blockquote>
+<p><strong>data_ready 冻结研究母体，signal_ready 冻结研究语义。</strong></p>
+</blockquote>
+<p>如果这两层不分开，后面 train/test 很容易把：</p>
+<ul>
+<li>
+<p>universe 变化</p>
+</li>
+<li>
+<p>eligibility 变化</p>
+</li>
+<li>
+<p>score 变化</p>
+</li>
+<li>
+<p>factor direction 变化</p>
+</li>
+</ul>
+<p>混成一团。</p>
+<hr/>
+<h1 id="三从-author--review-里提炼出的核心经验主线">三、从 author / review 里提炼出的核心经验主线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三从-author--review-里提炼出的核心经验主线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>我觉得可以沉淀成 7 条。</p>
+<hr/>
+<h2 id="主线-1signal_ready-最重要的是禁止下游重新解释因子">主线 1：signal_ready 最重要的是“禁止下游重新解释因子”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-1signal_ready-最重要的是禁止下游重新解释因子" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>review gate 里最关键的几句其实是：</p>
+<ul>
+<li>
+<p><code>factor_direction</code> 必须冻结</p>
+</li>
+<li>
+<p><code>factor_role</code> 必须冻结</p>
+</li>
+<li>
+<p><code>factor_structure</code> 必须冻结</p>
+</li>
+<li>
+<p><code>portfolio_expression</code> 必须冻结</p>
+</li>
+<li>
+<p><code>neutralization_policy</code> 必须冻结</p>
+</li>
+<li>
+<p>多因子组合公式必须是确定性的</p>
+</li>
+<li>
+<p>不得把 test 才知道的 quantile / cutoff 偷写回 signal</p>
+</li>
+<li>
+<p>不得依赖 train/test/backtest 结果回写</p>
+</li>
+</ul>
+<p>这背后说明 signal_ready 真正要防的是：</p>
+<blockquote>
+<p><strong>下游靠回测结果反过来“发明”因子定义。</strong></p>
+</blockquote>
+<h3 id="这是横截面研究里最危险的漂移源之一">这是横截面研究里最危险的漂移源之一<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#这是横截面研究里最危险的漂移源之一" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>比如：</p>
+<ul>
+<li>
+<p>test 后才说“这个因子其实是反向的”</p>
+</li>
+<li>
+<p>backtest 后才说“其实做 group neutral 更合理”</p>
+</li>
+<li>
+<p>train 后才说“这个多因子权重应该学出来”</p>
+</li>
+<li>
+<p>看到回测后再定义 cutoff / quantile / rank 区间</p>
+</li>
+</ul>
+<p>这些都不是 train 阶段行为，而是在<strong>篡改 signal contract</strong>。</p>
+<h3 id="经验沉淀">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这个阶段必须强制回答：</p>
+<blockquote>
+<p><strong>如果 train/test 都还没开始，我能不能把这个因子的方向、角色、结构和消费方式完整讲清楚？</strong></p>
+</blockquote>
+<p>如果不能，signal_ready 还没完成。</p>
+<hr/>
+<h2 id="主线-2factor_role-是一级语义不是注释信息">主线 2：factor_role 是一级语义，不是注释信息<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-2factor_role-是一级语义不是注释信息" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这个 skill 最有价值的地方之一，是强制把 <code>factor_role</code> 显式化：</p>
+<ul>
+<li>
+<p><code>standalone_alpha</code></p>
+</li>
+<li>
+<p><code>regime_filter</code></p>
+</li>
+<li>
+<p><code>combo_filter</code></p>
+</li>
+</ul>
+<p>这非常重要，因为很多研究失败，不是 factor 没效果，而是：</p>
+<blockquote>
+<p><strong>作者和 reviewer 根本没说清这个 factor 是拿来排序、拿来过滤，还是拿来做组合覆盖层的。</strong></p>
+</blockquote>
+<h3 id="典型错位">典型错位<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#典型错位" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="错位-1把-filter-伪装成-alpha">错位 1：把 filter 伪装成 alpha<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错位-1把-filter-伪装成-alpha" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>比如一个 volatility regime 条件，本来只是：</p>
+<ul>
+<li>
+<p>高波动不交易</p>
+</li>
+<li>
+<p>趋势强时不用反转</p>
+</li>
+</ul>
+<p>却被包装成“独立 alpha 因子”。</p>
+<p>结果 reviewer 会错误地拿：</p>
+<ul>
+<li>
+<p>Rank IC</p>
+</li>
+<li>
+<p>bucket returns</p>
+</li>
+<li>
+<p>monotonicity</p>
+</li>
+</ul>
+<p>去评估它。</p>
+<hr/>
+<h4 id="错位-2把-alpha-因子评成-filter">错位 2：把 alpha 因子评成 filter<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错位-2把-alpha-因子评成-filter" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>本来 residual 是横截面排序因子，却只看：</p>
+<ul>
+<li>gated vs ungated improvement</li>
+</ul>
+<p>这样会把真正的 alpha 证据漏掉。</p>
+<h3 id="经验沉淀-1">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>要把这一条写成长期原则：</p>
+<blockquote>
+<p><strong>先定义因子角色，再定义证据标准，再定义 portfolio expression。</strong></p>
+</blockquote>
+<p>不是反过来。</p>
+<hr/>
+<h2 id="主线-3factor_structure-的价值在于把单因子和确定性多因子分数严格分层">主线 3：factor_structure 的价值在于把“单因子”和“确定性多因子分数”严格分层<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-3factor_structure-的价值在于把单因子和确定性多因子分数严格分层" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这阶段强制：</p>
+<ul>
+<li>
+<p><code>single_factor</code></p>
+</li>
+<li>
+<p><code>multi_factor_score</code></p>
+</li>
+</ul>
+<p>并且规定：</p>
+<ul>
+<li>
+<p>第一版 <code>multi_factor_score</code> 只能是确定性公式</p>
+</li>
+<li>
+<p>不允许 train-learned weights</p>
+</li>
+</ul>
+<p>这背后是在防一种非常常见的混乱：</p>
+<blockquote>
+<p><strong>把 signal contract 和 train contract 混在一起。</strong></p>
+</blockquote>
+<h3 id="常见坏味道">常见坏味道<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见坏味道" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="1-多因子写成一句综合打分">1. 多因子写成一句“综合打分”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-多因子写成一句综合打分" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>但没有明确：</p>
+<ul>
+<li>
+<p>子项是什么</p>
+</li>
+<li>
+<p>哪些是 raw factor</p>
+</li>
+<li>
+<p>哪些是 derived factor</p>
+</li>
+<li>
+<p>最终 score field 是什么</p>
+</li>
+<li>
+<p>组合公式是什么</p>
+</li>
+</ul>
+<hr/>
+<h4 id="2-用之后训练学习权重来定义-signal">2. 用“之后训练学习权重”来定义 signal<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-用之后训练学习权重来定义-signal" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>这会导致 signal_ready 根本没有冻结因子，只冻结了一个愿望。</p>
+<hr/>
+<h4 id="3-多因子结构实际上依赖后续样本表现">3. 多因子结构实际上依赖后续样本表现<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-多因子结构实际上依赖后续样本表现" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>这等于把 signal_ready 延迟到 train/test。</p>
+<h3 id="经验沉淀-2">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-2" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>你这个阶段特别应该沉淀一条规则：</p>
+<blockquote>
+<p><strong>signal_ready 只允许冻结“静态可复现映射”，不允许冻结“未来再决定的组合过程”。</strong></p>
+</blockquote>
+<p>也就是：</p>
+<ul>
+<li>
+<p>可以是固定线性组合</p>
+</li>
+<li>
+<p>可以是 rank 加和</p>
+</li>
+<li>
+<p>可以是布尔 gating</p>
+</li>
+<li>
+<p>但不能是未来训练再学权重</p>
+</li>
+</ul>
+<hr/>
+<h2 id="主线-4portfolio_expression-和-neutralization_policy-必须在-signal_ready-冻结不要拖到-trainbacktest">主线 4：portfolio_expression 和 neutralization_policy 必须在 signal_ready 冻结，不要拖到 train/backtest<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-4portfolio_expression-和-neutralization_policy-必须在-signal_ready-冻结不要拖到-trainbacktest" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这个设计非常对，而且很值得强调。</p>
+<p>因为很多团队会把：</p>
+<ul>
+<li>
+<p><code>long_short_market_neutral</code></p>
+</li>
+<li>
+<p><code>long_only_rank</code></p>
+</li>
+<li>
+<p><code>group_relative_long_short</code></p>
+</li>
+<li>
+<p><code>target_strategy_filter</code></p>
+</li>
+<li>
+<p><code>target_strategy_overlay</code></p>
+</li>
+</ul>
+<p>留到后面再说。</p>
+<p>但你这里明确规定：</p>
+<ul>
+<li>
+<p>角色决定合法表达集合</p>
+</li>
+<li>
+<p>neutralization 也必须显式冻结</p>
+</li>
+<li>
+<p><code>group_neutral</code> 必须关联 group taxonomy version</p>
+</li>
+</ul>
+<p>这说明你已经抓住一个核心问题：</p>
+<blockquote>
+<p><strong>组合表达并不是纯交易层实现细节，它反过来定义了这个 factor 在研究语义上“到底押什么”。</strong></p>
+</blockquote>
+<h3 id="举例">举例<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#举例" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>同一个 factor：</p>
+<ul>
+<li>
+<p><code>long_only_rank</code><br/>
+押的是绝对涨跌</p>
+</li>
+<li>
+<p><code>long_short_market_neutral</code><br/>
+押的是相对强弱</p>
+</li>
+<li>
+<p><code>group_relative_long_short</code><br/>
+押的是组内相对关系</p>
+</li>
+</ul>
+<p>这三者不是同一个研究命题。</p>
+<h3 id="经验沉淀-3">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-3" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>signal_ready 阶段要形成固定心智：</p>
+<blockquote>
+<p><strong>factor definition = score semantics + consumption semantics</strong></p>
+</blockquote>
+<p>不是只冻结一个数字列。</p>
+<hr/>
+<h2 id="主线-5factor_direction-必须被当成正式合同而不是-downstream-interpretation">主线 5：factor_direction 必须被当成正式合同，而不是 downstream interpretation<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-5factor_direction-必须被当成正式合同而不是-downstream-interpretation" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>review 里写得很硬：</p>
+<ul>
+<li>
+<p><code>factor_direction</code> 已冻结</p>
+</li>
+<li>
+<p>不允许到 test/backtest 再解释</p>
+</li>
+<li>
+<p><code>factor_direction</code> 不清楚是 blocking</p>
+</li>
+<li>
+<p><code>factor_direction</code>、<code>final_score_field</code>、<code>score_combination_formula</code> 都不能空</p>
+</li>
+</ul>
+<p>这是非常关键的经验。</p>
+<h3 id="为什么这么重要">为什么这么重要<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#为什么这么重要" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>因为横截面研究最常见的“伪成功”之一就是：</p>
+<blockquote>
+<p><strong>先算一个东西，再到 test 阶段看它正向好还是反向好。</strong></p>
+</blockquote>
+<p>这等于把 test 信息写回 signal。</p>
+<h3 id="常见坏味道-1">常见坏味道<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见坏味道-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>“这个 residual 可能越高越好，也可能越低越好，先跑跑看”</p>
+</li>
+<li>
+<p>“这个 score 暂时先不写 direction，等 test 再决定”</p>
+</li>
+<li>
+<p>“先出 raw value，后面谁大谁好看结果再说”</p>
+</li>
+</ul>
+<h3 id="经验沉淀-4">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-4" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>signal_ready 必须有一条长期纪律：</p>
+<blockquote>
+<p><strong>如果一个因子在进入 test 前还不能回答“高分到底意味着什么”，那它还不是正式因子。</strong></p>
+</blockquote>
+<hr/>
+<h2 id="主线-6eligibility--coverage--missing-semantics-在-signal_ready-里必须继续传递而不是默认继承">主线 6：eligibility / coverage / missing semantics 在 signal_ready 里必须继续传递，而不是默认继承<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-6eligibility--coverage--missing-semantics-在-signal_ready-里必须继续传递而不是默认继承" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这点特别值得沉淀。</p>
+<p>review 明确要求：</p>
+<ul>
+<li>
+<p>缺失值策略冻结</p>
+</li>
+<li>
+<p>coverage contract 冻结</p>
+</li>
+<li>
+<p>eligibility 传递规则冻结</p>
+</li>
+<li>
+<p>raw/derived/final score 字段写清</p>
+</li>
+<li>
+<p>factor_panel 非空且 <code>(date, asset)</code> 唯一</p>
+</li>
+</ul>
+<p>这说明 signal_ready 阶段虽然消费 data_ready，但不能偷懒地说：</p>
+<blockquote>
+<p>“eligibility 和缺失值在上游定义过了，这里默认沿用。”</p>
+</blockquote>
+<p>因为 signal 层还会引入新的问题：</p>
+<h3 id="新问题包括">新问题包括<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#新问题包括" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>原始字段缺失如何传递到因子缺失</p>
+</li>
+<li>
+<p>多因子组合时任一子项缺失怎么办</p>
+</li>
+<li>
+<p>coverage 是按 raw factor 还是 final score 统计</p>
+</li>
+<li>
+<p>factor 是否允许部分资产无值</p>
+</li>
+<li>
+<p>eligibility false 和 factor missing 是否区分</p>
+</li>
+<li>
+<p>group context 缺失时 group-neutral 是否还能做</p>
+</li>
+</ul>
+<h3 id="经验沉淀-5">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-5" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>signal_ready 最好沉淀出一类固定模板：</p>
+<ul>
+<li>
+<p><code>input_field_missing_semantics</code></p>
+</li>
+<li>
+<p><code>derived_factor_missing_semantics</code></p>
+</li>
+<li>
+<p><code>eligibility_propagation_rule</code></p>
+</li>
+<li>
+<p><code>coverage_definition_for_final_score</code></p>
+</li>
+</ul>
+<hr/>
+<h2 id="主线-7signal_ready-里最值钱的产物不是-factor_panel而是-factor_manifest">主线 7：signal_ready 里最值钱的产物不是 factor_panel，而是 factor_manifest<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#主线-7signal_ready-里最值钱的产物不是-factor_panel而是-factor_manifest" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这点很容易被忽略。</p>
+<p>很多人会把重点放在：</p>
+<ul>
+<li>算出一个 <code>factor_panel.parquet</code></li>
+</ul>
+<p>但从你这套 skill 看，真正的一致性锚点其实是：</p>
+<ul>
+<li>
+<p><code>factor_manifest.yaml</code></p>
+</li>
+<li>
+<p><code>factor_contract.md</code></p>
+</li>
+<li>
+<p><code>factor_field_dictionary.md</code></p>
+</li>
+<li>
+<p><code>route_inheritance_contract.yaml</code>（review 里出现）</p>
+</li>
+<li>
+<p><code>artifact_catalog.md</code></p>
+</li>
+<li>
+<p><code>field_dictionary.md</code></p>
+</li>
+<li>
+<p><code>run_manifest.json</code></p>
+</li>
+</ul>
+<p>这背后说明一个很重要的方法论：</p>
+<blockquote>
+<p><strong>因子值本身不是因子合同，因子合同是“字段 + 角色 + 方向 + 结构 + 表达 + 继承关系 + 缺失/覆盖/传递语义”的整体。</strong></p>
+</blockquote>
+<h3 id="经验沉淀-6">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-6" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>要把 reviewer / author 都训练成先看 manifest，再看 panel，不要只看数值文件。</p>
+<hr/>
+<h1 id="四这个阶段最容易遇到的高频问题">四、这个阶段最容易遇到的高频问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四这个阶段最容易遇到的高频问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>我按类型给你归纳。</p>
+<hr/>
+<h2 id="a-身份类问题">A. 身份类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#a-身份类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="常见问题">常见问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>factor_id</code> 命名不稳定</p>
+</li>
+<li>
+<p>改了公式但没升 version</p>
+</li>
+<li>
+<p><code>factor_direction</code> 空着</p>
+</li>
+<li>
+<p><code>factor_direction</code> 与 <code>portfolio_expression</code> 不一致</p>
+</li>
+</ul>
+<h3 id="风险">风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#风险" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>后面你根本分不清：</p>
+<ul>
+<li>
+<p>是同一个 factor 的版本更新</p>
+</li>
+<li>
+<p>还是已经变成另一个 factor</p>
+</li>
+</ul>
+<h3 id="经验沉淀-7">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-7" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>必须建立一套：</p>
+<ul>
+<li>
+<p>id/version 规则</p>
+</li>
+<li>
+<p>什么时候 bump version</p>
+</li>
+<li>
+<p>什么时候开 child lineage</p>
+</li>
+</ul>
+<hr/>
+<h2 id="b-角色类问题">B. 角色类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#b-角色类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="常见问题-1">常见问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见问题-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>把 <code>regime_filter</code> 写成 <code>standalone_alpha</code></p>
+</li>
+<li>
+<p><code>combo_filter</code> 没有 target strategy reference</p>
+</li>
+<li>
+<p>非 standalone 但没有说明作用对象</p>
+</li>
+<li>
+<p>一个 factor 同时想当 alpha 又想当 filter</p>
+</li>
+</ul>
+<h3 id="风险-1">风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#风险-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>证据标准、gate、portfolio expression 全部错位。</p>
+<h3 id="经验沉淀-8">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-8" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>角色要先于评价指标冻结。</p>
+<hr/>
+<h2 id="c-结构类问题">C. 结构类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#c-结构类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="常见问题-2">常见问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见问题-2" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p><code>multi_factor_score</code> 只写一句“综合打分”</p>
+</li>
+<li>
+<p>没写 raw / derived / final score</p>
+</li>
+<li>
+<p>子项来源不清</p>
+</li>
+<li>
+<p>组合公式依赖未来训练</p>
+</li>
+</ul>
+<h3 id="风险-2">风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#风险-2" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>signal_ready 名义上冻结了因子，实际上没冻结。</p>
+<h3 id="经验沉淀-9">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-9" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>多因子必须回答这几个问题：</p>
+<ul>
+<li>
+<p>子项有哪些</p>
+</li>
+<li>
+<p>子项来自 data_ready 哪些字段</p>
+</li>
+<li>
+<p>组合方式是什么</p>
+</li>
+<li>
+<p>是 deterministic 吗</p>
+</li>
+<li>
+<p>final_score_field 是哪个</p>
+</li>
+</ul>
+<hr/>
+<h2 id="d-中性化与组上下文类问题">D. 中性化与组上下文类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#d-中性化与组上下文类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="常见问题-3">常见问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见问题-3" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>写了 <code>group_neutral</code>，但没 group taxonomy reference</p>
+</li>
+<li>
+<p>需要组内排序，但没冻结 group context</p>
+</li>
+<li>
+<p>taxonomy 版本和 data_ready 不一致</p>
+</li>
+<li>
+<p>neutralization_policy 和 portfolio_expression 冲突</p>
+</li>
+</ul>
+<h3 id="风险-3">风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#风险-3" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>后面回测时 silently 补组信息，导致 signal contract 被改写。</p>
+<h3 id="经验沉淀-10">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-10" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><code>group_neutral</code> 一旦出现，就必须把它当成依赖冻结资产，而不是一个配置选项。</p>
+<hr/>
+<h2 id="e-传递语义类问题">E. 传递语义类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#e-传递语义类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="常见问题-4">常见问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见问题-4" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>eligibility 和 factor missing 混掉</p>
+</li>
+<li>
+<p>组合后 coverage 下降但没说明</p>
+</li>
+<li>
+<p>某些字段缺失时到底 drop 还是 NaN 不清楚</p>
+</li>
+<li>
+<p>input field 缺失语义无法追踪到 final score</p>
+</li>
+</ul>
+<h3 id="风险-4">风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#风险-4" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>reviewer 不知道 coverage 变化来自：</p>
+<ul>
+<li>
+<p>data_ready 母体</p>
+</li>
+<li>
+<p>signal 计算</p>
+</li>
+<li>
+<p>组合逻辑</p>
+</li>
+<li>
+<p>group context 缺失</p>
+</li>
+</ul>
+<h3 id="经验沉淀-11">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-11" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>必须把“信号层缺失”和“上游不可研究”分开。</p>
+<hr/>
+<h2 id="f-伪完成类问题">F. 伪完成类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#f-伪完成类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="常见问题-5">常见问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见问题-5" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>有 <code>factor_contract.md</code>，没真实 factor panel</p>
+</li>
+<li>
+<p>有 panel，但只是 placeholder</p>
+</li>
+<li>
+<p>author skill 和 review skill 的输出名不一致</p>
+</li>
+<li>
+<p>没有真实 provenance / run manifest</p>
+</li>
+</ul>
+<h3 id="风险-5">风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#风险-5" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>signal_ready 形式完成，实质没有下游可消费资产。</p>
+<h3 id="经验沉淀-12">经验沉淀<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#经验沉淀-12" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>和 data_ready 一样，这阶段也要反复强调：</p>
+<blockquote>
+<p><strong>完成 = 可重建、可审计、可消费，不是“说清楚了”。</strong></p>
+</blockquote>
+<hr/>
+<h1 id="五我认为这套文档里有几处值得你主动统一补强的地方">五、我认为这套文档里有几处值得你主动统一/补强的地方<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五我认为这套文档里有几处值得你主动统一补强的地方" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这个很重要，因为你要做 skill 体系，文档内一致性比局部规则更关键。</p>
+<hr/>
+<h2 id="1-输出文件名存在不一致">1. 输出文件名存在不一致<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-输出文件名存在不一致" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>author Required Outputs 写的是：</p>
+<ul>
+<li><code>factor_coverage.parquet</code></li>
+</ul>
+<p>但 mandatory discipline 又提到：</p>
+<ul>
+<li>
+<p><code>factor_coverage_report.parquet</code></p>
+</li>
+<li>
+<p><code>factor_group_context.parquet</code></p>
+</li>
+</ul>
+<p>review Required Outputs 写的是：</p>
+<ul>
+<li>
+<p><code>factor_coverage_report.parquet</code></p>
+</li>
+<li>
+<p><code>route_inheritance_contract.yaml</code></p>
+</li>
+</ul>
+<h3 id="建议">建议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#建议" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>你最好统一成一个明确集合，否则 reviewer 会遇到歧义：</p>
+<ul>
+<li>
+<p>author 说自己交付了 <code>factor_coverage.parquet</code></p>
+</li>
+<li>
+<p>reviewer 却按 <code>factor_coverage_report.parquet</code> 查 blocking</p>
+</li>
+</ul>
+<p>这类不一致非常容易制造假性 <code>FIX_REQUIRED</code>。</p>
+<hr/>
+<h2 id="2-route_inheritance_contractyaml-在-review-里要求但-author-里没列-required-outputs">2. <code>route_inheritance_contract.yaml</code> 在 review 里要求，但 author 里没列 Required Outputs<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-route_inheritance_contractyaml-在-review-里要求但-author-里没列-required-outputs" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这说明 review 在检查一个 author skill 没明确要求产出的东西。</p>
+<h3 id="建议-1">建议<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#建议-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>你要么：</p>
+<ul>
+<li>
+<p>把它补进 author Required Outputs<br/>
+要么</p>
+</li>
+<li>
+<p>从 review 必需输出里删掉<br/>
+要么</p>
+</li>
+<li>
+<p>写清它是否由系统自动生成、或是否包含在 <code>factor_manifest.yaml</code></p>
+</li>
+</ul>
+<p>否则 author/reviewer contract 不闭环。</p>
+<hr/>
+<h2 id="3-portfolio_expression-被要求来自-mandate-冻结但-author-working-rules-看起来像在本阶段收敛确认">3. <code>portfolio_expression</code> 被要求来自 mandate 冻结，但 author Working Rules 看起来像在本阶段收敛确认<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-portfolio_expression-被要求来自-mandate-冻结但-author-working-rules-看起来像在本阶段收敛确认" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>review checklist 写：</p>
+<ul>
+<li><code>factor_role、factor_structure、portfolio_expression、neutralization_policy 均来自 mandate 冻结</code></li>
+</ul>
+<p>但 author skill 似乎允许在 signal_ready 阶段逐组确认这些内容。</p>
+<h3 id="这里要补一个清楚口径">这里要补一个清楚口径<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#这里要补一个清楚口径" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>到底是：</p>
+<h4 id="方案-a">方案 A<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-a" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>mandate 只冻结候选范围，signal_ready 正式冻结具体选择</p>
+<p>还是</p>
+<h4 id="方案-b">方案 B<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方案-b" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>mandate 已冻结具体值，signal_ready 只能继承，不得重新选择</p>
+<p>这两种流程含义完全不同。</p>
+<p>我更建议用 A，但要写得明确：</p>
+<blockquote>
+<p>mandate 冻结允许集合与上层研究命题，signal_ready 冻结正式 factor contract 的具体实例。</p>
+</blockquote>
+<hr/>
+<h1 id="六如果沉淀经验我建议重点做这几类长期资产">六、如果沉淀经验，我建议重点做这几类“长期资产”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六如果沉淀经验我建议重点做这几类长期资产" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<hr/>
+<h2 id="1-csf_signal_ready-的-anti-pattern-文档">1. <code>csf_signal_ready</code> 的 anti-pattern 文档<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-csf_signal_ready-的-anti-pattern-文档" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>可以专门列：</p>
+<ul>
+<li>
+<p>用 test/backtest 才知道的东西回写 signal</p>
+</li>
+<li>
+<p>role 不清，filter 伪装 alpha</p>
+</li>
+<li>
+<p>multi-factor 没有 deterministic formula</p>
+</li>
+<li>
+<p>direction 留到 downstream 再解释</p>
+</li>
+<li>
+<p>group_neutral 没有 taxonomy reference</p>
+</li>
+<li>
+<p>coverage / eligibility / missing semantics 混在一起</p>
+</li>
+<li>
+<p>factor panel 有值，但 contract 没冻结</p>
+</li>
+</ul>
+<p>这个会非常实用。</p>
+<hr/>
+<h2 id="2-reviewer-的优先检查顺序">2. reviewer 的优先检查顺序<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-reviewer-的优先检查顺序" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>建议 reviewer 固定先查：</p>
+<ol>
+<li>
+<p><code>factor_manifest.yaml</code></p>
+</li>
+<li>
+<p><code>factor_contract.md</code></p>
+</li>
+<li>
+<p><code>factor_panel.parquet</code></p>
+</li>
+<li>
+<p>coverage / missing / eligibility 传递</p>
+</li>
+<li>
+<p>group context / taxonomy reference</p>
+</li>
+<li>
+<p>run_manifest / provenance</p>
+</li>
+<li>
+<p>catalog / dictionary</p>
+</li>
+</ol>
+<p>不要先看公式细节，否则容易陷入局部正确、整体失焦。</p>
+<hr/>
+<h2 id="3-一套-factor-contract-模板">3. 一套 factor contract 模板<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-一套-factor-contract-模板" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>我建议长期固定这些字段：</p>
+<ul>
+<li>
+<p>factor_id</p>
+</li>
+<li>
+<p>factor_version</p>
+</li>
+<li>
+<p>factor_role</p>
+</li>
+<li>
+<p>factor_structure</p>
+</li>
+<li>
+<p>factor_direction</p>
+</li>
+<li>
+<p>raw_factor_fields</p>
+</li>
+<li>
+<p>derived_factor_fields</p>
+</li>
+<li>
+<p>final_score_field</p>
+</li>
+<li>
+<p>score_combination_formula</p>
+</li>
+<li>
+<p>portfolio_expression</p>
+</li>
+<li>
+<p>neutralization_policy</p>
+</li>
+<li>
+<p>group_taxonomy_reference</p>
+</li>
+<li>
+<p>eligibility_propagation_rule</p>
+</li>
+<li>
+<p>missing_value_semantics</p>
+</li>
+<li>
+<p>coverage_definition</p>
+</li>
+<li>
+<p>route_inheritance</p>
+</li>
+</ul>
+<p>这会极大减少后续阶段漂移。</p>
+<hr/>
+<h2 id="4-一套-lineage-触发条件案例库">4. 一套 lineage 触发条件案例库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-一套-lineage-触发条件案例库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这个阶段特别值得沉淀：</p>
+<h3 id="哪些改动只是修文档">哪些改动只是修文档<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#哪些改动只是修文档" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>补说明</p>
+</li>
+<li>
+<p>补 catalog</p>
+</li>
+<li>
+<p>补 dictionary</p>
+</li>
+</ul>
+<h3 id="哪些改动要-bump-factor_version">哪些改动要 bump factor_version<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#哪些改动要-bump-factor_version" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>方向改了</p>
+</li>
+<li>
+<p>组合公式改了</p>
+</li>
+<li>
+<p>final score 字段改了</p>
+</li>
+<li>
+<p>role 语义改了</p>
+</li>
+</ul>
+<h3 id="哪些改动必须-child-lineage">哪些改动必须 child lineage<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#哪些改动必须-child-lineage" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>
+<p>因子结构从横截面改成时序</p>
+</li>
+<li>
+<p>角色发生实质变化</p>
+</li>
+<li>
+<p>因子不再研究同一命题</p>
+</li>
+</ul>
+<p>这个对研究 OS 会非常关键。</p>
+<hr/>
+<h1 id="七如果让我用一句话总结-signal_ready-最值得沉淀的经验">七、如果让我用一句话总结 signal_ready 最值得沉淀的经验<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七如果让我用一句话总结-signal_ready-最值得沉淀的经验" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>我会写成：</p>
+<blockquote>
+<p><strong><code>csf_signal_ready</code> 最重要的经验沉淀，不是“如何算出一个 factor 值”，而是“如何把横截面因子的身份、角色、方向、结构、组合表达和中性化语义冻结成一个不依赖 train/test 回写、可重建、可审查、可下游直接消费的正式合同”。</strong></p>
+</blockquote>
+<hr/>
+<h1 id="八最后给你一个很实用的-reviewer--author-共用八问">八、最后给你一个很实用的 reviewer / author 共用八问<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八最后给你一个很实用的-reviewer--author-共用八问" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<ol>
+<li>
+<p><strong>这个 factor 的高分到底代表什么，是否已冻结 direction？</strong></p>
+</li>
+<li>
+<p><strong>它是 alpha、filter，还是 overlay，角色是否明确？</strong></p>
+</li>
+<li>
+<p><strong>它是 single factor 还是 deterministic multi-factor score？</strong></p>
+</li>
+<li>
+<p><strong>raw / derived / final score 三层字段是否清楚？</strong></p>
+</li>
+<li>
+<p><strong>portfolio_expression 和 neutralization_policy 是否已冻结，而不是留给回测解释？</strong></p>
+</li>
+<li>
+<p><strong>eligibility、coverage、missing semantics 是否从 data_ready 正式传递到 signal_ready？</strong></p>
+</li>
+<li>
+<p><strong>如果启用 group_neutral，group context 和 taxonomy reference 是否已冻结？</strong></p>
+</li>
+<li>
+<p><strong>下游 train/test 是否还能偷偷改变这个因子的定义？如果还能，这阶段就没完成。</strong></p>
+</li>
+</ol>
+<hr/></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-364" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#一先给这个阶段一个准确定位" data-for="一先给这个阶段一个准确定位">一、先给这个阶段一个准确定位</a></li><li class="depth-2"><a href="#1-因子身份" data-for="1-因子身份">1. 因子身份</a></li><li class="depth-2"><a href="#2-因子角色" data-for="2-因子角色">2. 因子角色</a></li><li class="depth-2"><a href="#3-因子结构" data-for="3-因子结构">3. 因子结构</a></li><li class="depth-2"><a href="#4-组合表达与中性化" data-for="4-组合表达与中性化">4. 组合表达与中性化</a></li><li class="depth-2"><a href="#5-正式机器产物" data-for="5-正式机器产物">5. 正式机器产物</a></li><li class="depth-0"><a href="#二它和-csf_data_ready-的本质区别" data-for="二它和-csf_data_ready-的本质区别">二、它和 csf_data_ready 的本质区别</a></li><li class="depth-1"><a href="#csf_data_ready-冻结的是" data-for="csf_data_ready-冻结的是">csf_data_ready 冻结的是</a></li><li class="depth-1"><a href="#csf_signal_ready-冻结的是" data-for="csf_signal_ready-冻结的是">csf_signal_ready 冻结的是</a></li><li class="depth-0"><a href="#三从-author--review-里提炼出的核心经验主线" data-for="三从-author--review-里提炼出的核心经验主线">三、从 author / review 里提炼出的核心经验主线</a></li><li class="depth-1"><a href="#主线-1signal_ready-最重要的是禁止下游重新解释因子" data-for="主线-1signal_ready-最重要的是禁止下游重新解释因子">主线 1：signal_ready 最重要的是“禁止下游重新解释因子”</a></li><li class="depth-2"><a href="#这是横截面研究里最危险的漂移源之一" data-for="这是横截面研究里最危险的漂移源之一">这是横截面研究里最危险的漂移源之一</a></li><li class="depth-2"><a href="#经验沉淀" data-for="经验沉淀">经验沉淀</a></li><li class="depth-1"><a href="#主线-2factor_role-是一级语义不是注释信息" data-for="主线-2factor_role-是一级语义不是注释信息">主线 2：factor_role 是一级语义，不是注释信息</a></li><li class="depth-2"><a href="#典型错位" data-for="典型错位">典型错位</a></li><li class="depth-2"><a href="#经验沉淀-1" data-for="经验沉淀-1">经验沉淀</a></li><li class="depth-1"><a href="#主线-3factor_structure-的价值在于把单因子和确定性多因子分数严格分层" data-for="主线-3factor_structure-的价值在于把单因子和确定性多因子分数严格分层">主线 3：factor_structure 的价值在于把“单因子”和“确定性多因子分数”严格分层</a></li><li class="depth-2"><a href="#常见坏味道" data-for="常见坏味道">常见坏味道</a></li><li class="depth-2"><a href="#经验沉淀-2" data-for="经验沉淀-2">经验沉淀</a></li><li class="depth-1"><a href="#主线-4portfolio_expression-和-neutralization_policy-必须在-signal_ready-冻结不要拖到-trainbacktest" data-for="主线-4portfolio_expression-和-neutralization_policy-必须在-signal_ready-冻结不要拖到-trainbacktest">主线 4：portfolio_expression 和 neutralization_policy 必须在 signal_ready 冻结，不要拖到 train/backtest</a></li><li class="depth-2"><a href="#举例" data-for="举例">举例</a></li><li class="depth-2"><a href="#经验沉淀-3" data-for="经验沉淀-3">经验沉淀</a></li><li class="depth-1"><a href="#主线-5factor_direction-必须被当成正式合同而不是-downstream-interpretation" data-for="主线-5factor_direction-必须被当成正式合同而不是-downstream-interpretation">主线 5：factor_direction 必须被当成正式合同，而不是 downstream interpretation</a></li><li class="depth-2"><a href="#为什么这么重要" data-for="为什么这么重要">为什么这么重要</a></li><li class="depth-2"><a href="#常见坏味道-1" data-for="常见坏味道-1">常见坏味道</a></li><li class="depth-2"><a href="#经验沉淀-4" data-for="经验沉淀-4">经验沉淀</a></li><li class="depth-1"><a href="#主线-6eligibility--coverage--missing-semantics-在-signal_ready-里必须继续传递而不是默认继承" data-for="主线-6eligibility--coverage--missing-semantics-在-signal_ready-里必须继续传递而不是默认继承">主线 6：eligibility / coverage / missing semantics 在 signal_ready 里必须继续传递，而不是默认继承</a></li><li class="depth-2"><a href="#新问题包括" data-for="新问题包括">新问题包括</a></li><li class="depth-2"><a href="#经验沉淀-5" data-for="经验沉淀-5">经验沉淀</a></li><li class="depth-1"><a href="#主线-7signal_ready-里最值钱的产物不是-factor_panel而是-factor_manifest" data-for="主线-7signal_ready-里最值钱的产物不是-factor_panel而是-factor_manifest">主线 7：signal_ready 里最值钱的产物不是 factor_panel，而是 factor_manifest</a></li><li class="depth-2"><a href="#经验沉淀-6" data-for="经验沉淀-6">经验沉淀</a></li><li class="depth-0"><a href="#四这个阶段最容易遇到的高频问题" data-for="四这个阶段最容易遇到的高频问题">四、这个阶段最容易遇到的高频问题</a></li><li class="depth-1"><a href="#a-身份类问题" data-for="a-身份类问题">A. 身份类问题</a></li><li class="depth-2"><a href="#常见问题" data-for="常见问题">常见问题</a></li><li class="depth-2"><a href="#风险" data-for="风险">风险</a></li><li class="depth-2"><a href="#经验沉淀-7" data-for="经验沉淀-7">经验沉淀</a></li><li class="depth-1"><a href="#b-角色类问题" data-for="b-角色类问题">B. 角色类问题</a></li><li class="depth-2"><a href="#常见问题-1" data-for="常见问题-1">常见问题</a></li><li class="depth-2"><a href="#风险-1" data-for="风险-1">风险</a></li><li class="depth-2"><a href="#经验沉淀-8" data-for="经验沉淀-8">经验沉淀</a></li><li class="depth-1"><a href="#c-结构类问题" data-for="c-结构类问题">C. 结构类问题</a></li><li class="depth-2"><a href="#常见问题-2" data-for="常见问题-2">常见问题</a></li><li class="depth-2"><a href="#风险-2" data-for="风险-2">风险</a></li><li class="depth-2"><a href="#经验沉淀-9" data-for="经验沉淀-9">经验沉淀</a></li><li class="depth-1"><a href="#d-中性化与组上下文类问题" data-for="d-中性化与组上下文类问题">D. 中性化与组上下文类问题</a></li><li class="depth-2"><a href="#常见问题-3" data-for="常见问题-3">常见问题</a></li><li class="depth-2"><a href="#风险-3" data-for="风险-3">风险</a></li><li class="depth-2"><a href="#经验沉淀-10" data-for="经验沉淀-10">经验沉淀</a></li><li class="depth-1"><a href="#e-传递语义类问题" data-for="e-传递语义类问题">E. 传递语义类问题</a></li><li class="depth-2"><a href="#常见问题-4" data-for="常见问题-4">常见问题</a></li><li class="depth-2"><a href="#风险-4" data-for="风险-4">风险</a></li><li class="depth-2"><a href="#经验沉淀-11" data-for="经验沉淀-11">经验沉淀</a></li><li class="depth-1"><a href="#f-伪完成类问题" data-for="f-伪完成类问题">F. 伪完成类问题</a></li><li class="depth-2"><a href="#常见问题-5" data-for="常见问题-5">常见问题</a></li><li class="depth-2"><a href="#风险-5" data-for="风险-5">风险</a></li><li class="depth-2"><a href="#经验沉淀-12" data-for="经验沉淀-12">经验沉淀</a></li><li class="depth-0"><a href="#五我认为这套文档里有几处值得你主动统一补强的地方" data-for="五我认为这套文档里有几处值得你主动统一补强的地方">五、我认为这套文档里有几处值得你主动统一/补强的地方</a></li><li class="depth-1"><a href="#1-输出文件名存在不一致" data-for="1-输出文件名存在不一致">1. 输出文件名存在不一致</a></li><li class="depth-2"><a href="#建议" data-for="建议">建议</a></li><li class="depth-1"><a href="#2-route_inheritance_contractyaml-在-review-里要求但-author-里没列-required-outputs" data-for="2-route_inheritance_contractyaml-在-review-里要求但-author-里没列-required-outputs">2. route_inheritance_contract.yaml 在 review 里要求，但 author 里没列 Required Outputs</a></li><li class="depth-2"><a href="#建议-1" data-for="建议-1">建议</a></li><li class="depth-1"><a href="#3-portfolio_expression-被要求来自-mandate-冻结但-author-working-rules-看起来像在本阶段收敛确认" data-for="3-portfolio_expression-被要求来自-mandate-冻结但-author-working-rules-看起来像在本阶段收敛确认">3. portfolio_expression 被要求来自 mandate 冻结，但 author Working Rules 看起来像在本阶段收敛确认</a></li><li class="depth-2"><a href="#这里要补一个清楚口径" data-for="这里要补一个清楚口径">这里要补一个清楚口径</a></li><li class="depth-0"><a href="#六如果沉淀经验我建议重点做这几类长期资产" data-for="六如果沉淀经验我建议重点做这几类长期资产">六、如果沉淀经验，我建议重点做这几类“长期资产”</a></li><li class="depth-1"><a href="#1-csf_signal_ready-的-anti-pattern-文档" data-for="1-csf_signal_ready-的-anti-pattern-文档">1. csf_signal_ready 的 anti-pattern 文档</a></li><li class="depth-1"><a href="#2-reviewer-的优先检查顺序" data-for="2-reviewer-的优先检查顺序">2. reviewer 的优先检查顺序</a></li><li class="depth-1"><a href="#3-一套-factor-contract-模板" data-for="3-一套-factor-contract-模板">3. 一套 factor contract 模板</a></li><li class="depth-1"><a href="#4-一套-lineage-触发条件案例库" data-for="4-一套-lineage-触发条件案例库">4. 一套 lineage 触发条件案例库</a></li><li class="depth-2"><a href="#哪些改动只是修文档" data-for="哪些改动只是修文档">哪些改动只是修文档</a></li><li class="depth-2"><a href="#哪些改动要-bump-factor_version" data-for="哪些改动要-bump-factor_version">哪些改动要 bump factor_version</a></li><li class="depth-2"><a href="#哪些改动必须-child-lineage" data-for="哪些改动必须-child-lineage">哪些改动必须 child lineage</a></li><li class="depth-0"><a href="#七如果让我用一句话总结-signal_ready-最值得沉淀的经验" data-for="七如果让我用一句话总结-signal_ready-最值得沉淀的经验">七、如果让我用一句话总结 signal_ready 最值得沉淀的经验</a></li><li class="depth-0"><a href="#八最后给你一个很实用的-reviewer--author-共用八问" data-for="八最后给你一个很实用的-reviewer--author-共用八问">八、最后给你一个很实用的 reviewer / author 共用八问</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>
