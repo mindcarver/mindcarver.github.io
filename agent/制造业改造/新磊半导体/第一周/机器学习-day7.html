@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>机器学习 day7</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="机器学习 day7"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="机器学习 day7"/><meta name="twitter:description" content="Day 7：第一周复盘 —— 从“懂模型”升级到“能设计半导体 AI 项目” Day 7 不学新模型。 今天的目标是把前 6 天全部串起来，让你形成一个完整的判断能力： 当客户说“我想用 AI 提高外延片良率”，你不能马上说用大模型、用深度学习、用 Agent。 你要先判断：这是分类问题、回归问题、异常检测问题，还是一个组合型质量风险系统。 1."/><meta property="og:description" content="Day 7：第一周复盘 —— 从“懂模型”升级到“能设计半导体 AI 项目” Day 7 不学新模型。 今天的目标是把前 6 天全部串起来，让你形成一个完整的判断能力： 当客户说“我想用 AI 提高外延片良率”，你不能马上说用大模型、用深度学习、用 Agent。 你要先判断：这是分类问题、回归问题、异常检测问题，还是一个组合型质量风险系统。 1."/><meta property="og:image:alt" content="Day 7：第一周复盘 —— 从“懂模型”升级到“能设计半导体 AI 项目” Day 7 不学新模型。 今天的目标是把前 6 天全部串起来，让你形成一个完整的判断能力： 当客户说“我想用 AI 提高外延片良率”，你不能马上说用大模型、用深度学习、用 Agent。 你要先判断：这是分类问题、回归问题、异常检测问题，还是一个组合型质量风险系统。 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/制造业改造/新磊半导体/第一周/机器学习-day7"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/制造业改造/新磊半导体/第一周/机器学习-day7"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="Day 7：第一周复盘 —— 从“懂模型”升级到“能设计半导体 AI 项目” Day 7 不学新模型。 今天的目标是把前 6 天全部串起来，让你形成一个完整的判断能力： 当客户说“我想用 AI 提高外延片良率”，你不能马上说用大模型、用深度学习、用 Agent。 你要先判断：这是分类问题、回归问题、异常检测问题，还是一个组合型质量风险系统。 1."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/制造业改造/新磊半导体/第一周/机器学习-day7"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-101"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-101" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/">制造业改造</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/新磊半导体/">新磊半导体</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/新磊半导体/第一周/">第一周</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>机器学习 day7</a></div></nav><h1 class="article-title">机器学习 day7</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-27T09:55:11.143Z">2026年4月27日</time><span>26分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="day-7第一周复盘--从懂模型升级到能设计半导体-ai-项目">Day 7：第一周复盘 —— 从“懂模型”升级到“能设计半导体 AI 项目”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#day-7第一周复盘--从懂模型升级到能设计半导体-ai-项目" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>Day 7 不学新模型。</p>
+<p>今天的目标是把前 6 天全部串起来，让你形成一个完整的判断能力：</p>
+<blockquote>
+<p>当客户说“我想用 AI 提高外延片良率”，你不能马上说用大模型、用深度学习、用 Agent。<br/>
+你要先判断：这是分类问题、回归问题、异常检测问题，还是一个组合型质量风险系统。</p>
+</blockquote>
+<hr/>
+<h1 id="1-第一周你到底学了什么">1. 第一周你到底学了什么？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-第一周你到底学了什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>第一周其实不是在教你机器学习公式，而是在训练你建立一套 AI 应用分析框架。</p>
+<p>你已经学了 6 个核心模块：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Day 1：</span></span>
+<span data-line><span>把新磊外延片业务链路拆成 AI 场景</span></span>
+<span data-line> </span>
+<span data-line><span>Day 2：</span></span>
+<span data-line><span>理解 X、y、训练集、测试集、预测时间点、数据泄露</span></span>
+<span data-line> </span>
+<span data-line><span>Day 3：</span></span>
+<span data-line><span>分类问题：Pass / Fail 质量风险预测</span></span>
+<span data-line> </span>
+<span data-line><span>Day 4：</span></span>
+<span data-line><span>回归问题：预测 PL、XRD、厚度、缺陷数量等关键指标</span></span>
+<span data-line> </span>
+<span data-line><span>Day 5：</span></span>
+<span data-line><span>异常检测：没有 Fail 标签时，先识别异常 run / 异常设备 / 工艺漂移</span></span>
+<span data-line> </span>
+<span data-line><span>Day 6：</span></span>
+<span data-line><span>把分类、回归、异常检测组合成一个 Mini 外延片质量风险评分系统</span></span></code></pre></figure>
+<p>你现在要从“知道这些概念”变成“能拿这些概念设计方案”。</p>
+<hr/>
+<h1 id="2-第一周最重要的一张总图">2. 第一周最重要的一张总图<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-第一周最重要的一张总图" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你要把下面这张图记住。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>半导体 AI 项目不是从模型开始。</span></span>
+<span data-line> </span>
+<span data-line><span>正确顺序是：</span></span>
+<span data-line> </span>
+<span data-line><span>业务问题</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>预测时间点</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>数据来源</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>一行数据代表什么</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>X 是什么</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>y 是什么</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>是否有标签</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>选择任务类型</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>选择模型</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>评估指标</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>风险解释</span></span>
+<span data-line><span>    ↓</span></span>
+<span data-line><span>业务动作</span></span></code></pre></figure>
+<p>很多人做 AI 项目失败，是因为他直接从这里开始：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我要用什么模型？</span></span></code></pre></figure>
+<p>但真正应该从这里开始：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这个业务问题到底要在什么时间点，基于哪些已知信息，预测什么结果？</span></span></code></pre></figure>
+<hr/>
+<h1 id="3-你现在应该能看懂这-6-类问题">3. 你现在应该能看懂这 6 类问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-你现在应该能看懂这-6-类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="问题-1这批外延片会不会不合格">问题 1：这批外延片会不会不合格？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-1这批外延片会不会不合格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>分类问题</span></span></code></pre></figure>
+<p>典型模型：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>CatBoostClassifier</span></span>
+<span data-line><span>LightGBMClassifier</span></span>
+<span data-line><span>XGBoostClassifier</span></span>
+<span data-line><span>RandomForestClassifier</span></span>
+<span data-line><span>LogisticRegression</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率</span></span>
+<span data-line><span>风险等级</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>高风险 run 进入工程师复核列表</span></span></code></pre></figure>
+<hr/>
+<h2 id="问题-2这批片的-pl-强度是多少">问题 2：这批片的 PL 强度是多少？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-2这批片的-pl-强度是多少" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>回归问题</span></span></code></pre></figure>
+<p>典型模型：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>CatBoostRegressor</span></span>
+<span data-line><span>LightGBMRegressor</span></span>
+<span data-line><span>XGBoostRegressor</span></span>
+<span data-line><span>RandomForestRegressor</span></span>
+<span data-line><span>LinearRegression</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>预测 PL 强度</span></span>
+<span data-line><span>预测 XRD FWHM</span></span>
+<span data-line><span>预测厚度均匀性</span></span>
+<span data-line><span>预测缺陷数量</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>如果预测值超过规格线，则优先复查对应检测项</span></span></code></pre></figure>
+<hr/>
+<h2 id="问题-3这次-mbe-生长过程是否异常">问题 3：这次 MBE 生长过程是否异常？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-3这次-mbe-生长过程是否异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测问题</span></span></code></pre></figure>
+<p>典型模型：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Z-score</span></span>
+<span data-line><span>IQR</span></span>
+<span data-line><span>Isolation Forest</span></span>
+<span data-line><span>One-Class SVM</span></span>
+<span data-line><span>AutoEncoder</span></span>
+<span data-line><span>Control Chart</span></span>
+<span data-line><span>EWMA</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>anomaly_score</span></span>
+<span data-line><span>异常等级</span></span>
+<span data-line><span>异常字段</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常 run 优先检测；</span></span>
+<span data-line><span>异常设备进入维护排查；</span></span>
+<span data-line><span>异常 recipe 进入工艺复核。</span></span></code></pre></figure>
+<hr/>
+<h2 id="问题-4这个-recipe-最近是不是漂移了">问题 4：这个 recipe 最近是不是漂移了？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-4这个-recipe-最近是不是漂移了" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>漂移检测 / 趋势检测问题</span></span></code></pre></figure>
+<p>典型方法：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>移动平均</span></span>
+<span data-line><span>EWMA</span></span>
+<span data-line><span>Control Chart</span></span>
+<span data-line><span>PSI</span></span>
+<span data-line><span>KS Test</span></span>
+<span data-line><span>趋势分析</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>是否漂移</span></span>
+<span data-line><span>漂移方向</span></span>
+<span data-line><span>漂移开始时间</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>暂停自动放行；</span></span>
+<span data-line><span>复查最近几炉；</span></span>
+<span data-line><span>对比设备、材料、维护记录。</span></span></code></pre></figure>
+<hr/>
+<h2 id="问题-5外延片晶圆图有没有缺陷">问题 5：外延片/晶圆图有没有缺陷？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-5外延片晶圆图有没有缺陷" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>图像分类 / 目标检测 / 图像分割问题</span></span></code></pre></figure>
+<p>典型模型：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>CNN</span></span>
+<span data-line><span>ResNet</span></span>
+<span data-line><span>EfficientNet</span></span>
+<span data-line><span>YOLO</span></span>
+<span data-line><span>U-Net</span></span>
+<span data-line><span>Vision Transformer</span></span>
+<span data-line><span>AutoEncoder</span></span>
+<span data-line><span>PatchCore</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>缺陷类型</span></span>
+<span data-line><span>缺陷位置</span></span>
+<span data-line><span>缺陷面积</span></span>
+<span data-line><span>风险等级</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>减少人工看图；</span></span>
+<span data-line><span>提高检测一致性；</span></span>
+<span data-line><span>沉淀缺陷模式和工艺原因之间的关系。</span></span></code></pre></figure>
+<hr/>
+<h2 id="问题-6客户投诉后怎么找原因">问题 6：客户投诉后怎么找原因？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-6客户投诉后怎么找原因" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>RAG + Agent + 根因分析问题</span></span></code></pre></figure>
+<p>典型技术：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>文档解析</span></span>
+<span data-line><span>向量数据库</span></span>
+<span data-line><span>RAG</span></span>
+<span data-line><span>知识图谱</span></span>
+<span data-line><span>LLM Agent</span></span>
+<span data-line><span>工具调用</span></span>
+<span data-line><span>历史相似案例检索</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>相关批次</span></span>
+<span data-line><span>相关检测报告</span></span>
+<span data-line><span>相似历史案例</span></span>
+<span data-line><span>可能根因</span></span>
+<span data-line><span>建议复查项</span></span>
+<span data-line><span>客户回复草稿</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>缩短工程师排查时间；</span></span>
+<span data-line><span>提高客户响应速度；</span></span>
+<span data-line><span>沉淀专家经验。</span></span></code></pre></figure>
+<hr/>
+<h1 id="4-第一周最核心的-3-个模型思维">4. 第一周最核心的 3 个模型思维<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-第一周最核心的-3-个模型思维" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你现在要形成 3 个基本判断。</p>
+<hr/>
+<h2 id="41-有明确-pass--fail-标签用分类">4.1 有明确 Pass / Fail 标签，用分类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#41-有明确-pass--fail-标签用分类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>条件：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>历史数据里有足够多 Pass 样本</span></span>
+<span data-line><span>也有足够多 Fail 样本</span></span>
+<span data-line><span>标签比较稳定</span></span>
+<span data-line><span>预测时间点清楚</span></span></code></pre></figure>
+<p>就可以做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Pass / Fail 分类模型</span></span></code></pre></figure>
+<p>目标不是自动判废，而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>输出 Fail 风险概率</span></span>
+<span data-line><span>让工程师优先复核高风险批次</span></span></code></pre></figure>
+<p>你要重点看：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail Recall</span></span>
+<span data-line><span>Precision</span></span>
+<span data-line><span>PR-AUC</span></span>
+<span data-line><span>Top-K Recall</span></span></code></pre></figure>
+<p>不要只看：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Accuracy</span></span></code></pre></figure>
+<hr/>
+<h2 id="42-有连续质量指标用回归">4.2 有连续质量指标，用回归<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#42-有连续质量指标用回归" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>条件：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>有 PL、XRD、厚度、缺陷数量、电学指标等连续数值</span></span>
+<span data-line><span>但最终 Pass / Fail 标签不一定多</span></span></code></pre></figure>
+<p>可以先做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>关键质量指标回归预测</span></span></code></pre></figure>
+<p>比如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>预测 PL intensity</span></span>
+<span data-line><span>预测 XRD FWHM</span></span>
+<span data-line><span>预测 thickness_uniformity</span></span>
+<span data-line><span>预测 surface_defect_count</span></span></code></pre></figure>
+<p>然后结合规格线转成风险：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL &lt; 70 → PL 风险</span></span>
+<span data-line><span>XRD FWHM > 55 → XRD 风险</span></span>
+<span data-line><span>厚度均匀性 > 5% → 厚度风险</span></span></code></pre></figure>
+<p>这比单纯 Pass / Fail 更容易解释。</p>
+<hr/>
+<h2 id="43-没有足够标签用异常检测">4.3 没有足够标签，用异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#43-没有足够标签用异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>条件：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>没有足够 Fail 标签</span></span>
+<span data-line><span>但有大量正常生产数据</span></span>
+<span data-line><span>有设备参数、工艺参数、过程曲线、报警日志</span></span></code></pre></figure>
+<p>就先做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测</span></span></code></pre></figure>
+<p>目标不是直接预测 Fail，而是判断：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>当前 run 是否不像历史正常 run</span></span>
+<span data-line><span>当前设备是否不像历史健康状态</span></span>
+<span data-line><span>当前 recipe 是否开始漂移</span></span></code></pre></figure>
+<p>这在真实半导体项目早期非常有价值。</p>
+<hr/>
+<h1 id="5-第一周最重要的一个产品原型">5. 第一周最重要的一个产品原型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-第一周最重要的一个产品原型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你第一个可讲给客户的产品不是“一个模型”，而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>外延片质量风险评分系统</span></span></code></pre></figure>
+<p>完整结构如下：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>输入：</span></span>
+<span data-line><span>MBE run 级工艺参数</span></span>
+<span data-line><span>设备状态</span></span>
+<span data-line><span>recipe 信息</span></span>
+<span data-line><span>衬底批次</span></span>
+<span data-line><span>源材料状态</span></span>
+<span data-line> </span>
+<span data-line><span>模型层：</span></span>
+<span data-line><span>1. 异常检测模型</span></span>
+<span data-line><span>2. Pass / Fail 分类模型</span></span>
+<span data-line><span>3. 关键指标回归模型</span></span>
+<span data-line><span>4. 规则评分器</span></span>
+<span data-line> </span>
+<span data-line><span>输出：</span></span>
+<span data-line><span>Fail 风险概率</span></span>
+<span data-line><span>异常分数</span></span>
+<span data-line><span>预测 PL</span></span>
+<span data-line><span>预测 XRD</span></span>
+<span data-line><span>预测厚度均匀性</span></span>
+<span data-line><span>综合风险等级</span></span>
+<span data-line><span>建议复查动作</span></span></code></pre></figure>
+<p>你要记住一句话：</p>
+<blockquote>
+<p>真正能落地的不是模型，而是“风险评分 + 原因解释 + 业务动作”。</p>
+</blockquote>
+<hr/>
+<h1 id="6-用一个完整案例复盘">6. 用一个完整案例复盘<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-用一个完整案例复盘" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>假设客户给你一条新 run 数据：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Run ID：RUN2026-0018</span></span>
+<span data-line><span>产品：HEMT</span></span>
+<span data-line><span>Recipe：R-HEMT-017</span></span>
+<span data-line><span>设备：MBE-03</span></span>
+<span data-line> </span>
+<span data-line><span>actual_temp_std = 3.9</span></span>
+<span data-line><span>pressure_std_ratio = 0.16</span></span>
+<span data-line><span>flux_std = 0.08</span></span>
+<span data-line><span>alarm_count = 3</span></span>
+<span data-line><span>days_since_maintenance = 98</span></span>
+<span data-line><span>source_usage_hours = 840</span></span></code></pre></figure>
+<p>你现在不能只说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这批可能有问题。</span></span></code></pre></figure>
+<p>你应该用第一周学到的框架这样拆。</p>
+<hr/>
+<h2 id="第一步判断预测时间点">第一步：判断预测时间点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第一步判断预测时间点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>当前是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>MBE 生长完成后，检测前</span></span></code></pre></figure>
+<p>所以可以用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>生长过程统计特征</span></span>
+<span data-line><span>设备状态</span></span>
+<span data-line><span>recipe</span></span>
+<span data-line><span>衬底批次</span></span>
+<span data-line><span>源材料状态</span></span></code></pre></figure>
+<p>不能用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL 检测结果</span></span>
+<span data-line><span>XRD 检测结果</span></span>
+<span data-line><span>最终 QC</span></span>
+<span data-line><span>客户反馈</span></span></code></pre></figure>
+<hr/>
+<h2 id="第二步做异常检测">第二步：做异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第二步做异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>异常检测输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>anomaly_score = 0.84</span></span></code></pre></figure>
+<p>解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>当前 run 的温度波动、压力波动、报警次数、源材料使用时长组合起来，明显偏离历史正常 run。</span></span></code></pre></figure>
+<p>业务含义：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这次生长过程不像正常状态，应该优先复核。</span></span></code></pre></figure>
+<hr/>
+<h2 id="第三步做分类预测">第三步：做分类预测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第三步做分类预测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>分类模型输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail probability = 0.63</span></span></code></pre></figure>
+<p>业务含义：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型认为这次 run 的 Fail 风险偏高。</span></span></code></pre></figure>
+<p>但你不能说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>它一定是 Fail。</span></span></code></pre></figure>
+<p>你应该说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>它应该进入工程师复核队列。</span></span></code></pre></figure>
+<hr/>
+<h2 id="第四步做回归预测">第四步：做回归预测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第四步做回归预测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>回归模型输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>预测 PL intensity = 68.2</span></span>
+<span data-line><span>规格线：>= 70</span></span>
+<span data-line> </span>
+<span data-line><span>预测 XRD FWHM = 52.5</span></span>
+<span data-line><span>规格线：&lt;= 55</span></span>
+<span data-line> </span>
+<span data-line><span>预测 thickness_uniformity = 4.8%</span></span>
+<span data-line><span>规格线：&lt;= 5%</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL 有明显风险；</span></span>
+<span data-line><span>XRD 目前预测正常；</span></span>
+<span data-line><span>厚度均匀性接近上限，需要关注。</span></span></code></pre></figure>
+<hr/>
+<h2 id="第五步生成综合风险">第五步：生成综合风险<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#第五步生成综合风险" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>结合：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常分数高</span></span>
+<span data-line><span>Fail 概率高</span></span>
+<span data-line><span>PL 预测低于规格线</span></span>
+<span data-line><span>厚度均匀性接近上限</span></span></code></pre></figure>
+<p>综合输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>风险等级：高风险</span></span></code></pre></figure>
+<p>建议动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>1. 优先做 PL mapping 复查</span></span>
+<span data-line><span>2. 复查温控曲线</span></span>
+<span data-line><span>3. 复查真空/压力日志</span></span>
+<span data-line><span>4. 检查源材料使用状态</span></span>
+<span data-line><span>5. 暂缓直接放行，进入工程师复核</span></span></code></pre></figure>
+<p>这就是一个完整的 AI 应用输出。</p>
+<hr/>
+<h1 id="7-你现在应该怎么跟老板解释">7. 你现在应该怎么跟老板解释？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-你现在应该怎么跟老板解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你不要这样讲：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我们用 CatBoost、LightGBM、Isolation Forest、SHAP 做一个模型。</span></span></code></pre></figure>
+<p>老板不关心这些。</p>
+<p>你要这样讲：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>第一阶段我们不直接做自动判废，而是做一个外延片质量风险评分系统。</span></span>
+<span data-line> </span>
+<span data-line><span>系统会在 MBE 生长完成后、检测前，根据工艺参数、设备状态、recipe、衬底和源材料信息，给每次 run 输出质量风险等级。</span></span>
+<span data-line> </span>
+<span data-line><span>如果某次 run 的温度波动、压力波动、报警次数、源材料状态和历史正常状态明显不同，系统会标记为高风险，并建议工程师优先复查 PL、XRD 或表面检测。</span></span>
+<span data-line> </span>
+<span data-line><span>这样做的价值是：</span></span>
+<span data-line><span>第一，提前发现高风险批次；</span></span>
+<span data-line><span>第二，减少工程师盲目排查；</span></span>
+<span data-line><span>第三，逐步沉淀质量问题和工艺参数之间的关系；</span></span>
+<span data-line><span>第四，等数据积累足够后，再升级到良率预测和 recipe 推荐。</span></span></code></pre></figure>
+<p>这段话你可以直接拿去讲。</p>
+<hr/>
+<h1 id="8-你现在应该怎么跟工程师解释">8. 你现在应该怎么跟工程师解释？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-你现在应该怎么跟工程师解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>工程师不一定信 AI，所以不能说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型判断这批片有问题。</span></span></code></pre></figure>
+<p>你要说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型不是替代你的判断，而是帮你把历史数据里的异常模式提前排出来。</span></span>
+<span data-line> </span>
+<span data-line><span>它会告诉你：</span></span>
+<span data-line><span>这次 run 哪些参数偏离了同 recipe 的历史正常范围；</span></span>
+<span data-line><span>哪些设备状态可能异常；</span></span>
+<span data-line><span>预测哪些质量指标可能接近规格线；</span></span>
+<span data-line><span>建议你优先看哪些检测项。</span></span>
+<span data-line> </span>
+<span data-line><span>最终是否放行，仍然由工程师判断。</span></span></code></pre></figure>
+<p>这句话很重要。</p>
+<p>因为工业 AI 早期最怕让工程师觉得：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>AI 要替我做决定。</span></span></code></pre></figure>
+<p>正确定位应该是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>AI 是质量工程师的风险雷达。</span></span></code></pre></figure>
+<hr/>
+<h1 id="9-第一周最容易犯的-8-个错误">9. 第一周最容易犯的 8 个错误<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-第一周最容易犯的-8-个错误" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="错误-1一上来就问用什么模型">错误 1：一上来就问用什么模型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-1一上来就问用什么模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>正确做法：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>先定义预测时间点、X、y、业务动作。</span></span></code></pre></figure>
+<hr/>
+<h2 id="错误-2把检测后字段当输入">错误 2：把检测后字段当输入<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-2把检测后字段当输入" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如你在检测前预测质量，却把：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL</span></span>
+<span data-line><span>XRD</span></span>
+<span data-line><span>final_qc_result</span></span>
+<span data-line><span>engineer_comment</span></span></code></pre></figure>
+<p>放进 X。</p>
+<p>这就是数据泄露。</p>
+<hr/>
+<h2 id="错误-3只看-accuracy">错误 3：只看 Accuracy<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-3只看-accuracy" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>质量异常通常是少数样本。</p>
+<p>模型全部预测 Pass，Accuracy 也可能很高，但业务上完全没用。</p>
+<p>应该重点看：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail Recall</span></span>
+<span data-line><span>Top-K Recall</span></span>
+<span data-line><span>Precision</span></span>
+<span data-line><span>PR-AUC</span></span></code></pre></figure>
+<hr/>
+<h2 id="错误-4没有-fail-标签还硬做分类">错误 4：没有 Fail 标签还硬做分类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-4没有-fail-标签还硬做分类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果 Fail 样本太少，不要硬做 Pass / Fail 分类。</p>
+<p>先做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测</span></span>
+<span data-line><span>质量指标回归</span></span>
+<span data-line><span>工程师风险等级标注</span></span></code></pre></figure>
+<hr/>
+<h2 id="错误-5所有产品和-recipe-混在一起建模">错误 5：所有产品和 recipe 混在一起建模<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-5所有产品和-recipe-混在一起建模" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>HEMT、HBT、VCSEL、APD 的工艺逻辑不同。</p>
+<p>同一个温度值，在不同 recipe 里意义可能完全不同。</p>
+<p>所以要考虑：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>product_type</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>相对 recipe 偏差</span></span>
+<span data-line><span>分组建模</span></span></code></pre></figure>
+<hr/>
+<h2 id="错误-6只输出分数没有解释">错误 6：只输出分数，没有解释<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-6只输出分数没有解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模型输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail probability = 0.68</span></span></code></pre></figure>
+<p>还不够。</p>
+<p>必须输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>为什么高风险？</span></span>
+<span data-line><span>哪些参数异常？</span></span>
+<span data-line><span>建议复查什么？</span></span></code></pre></figure>
+<hr/>
+<h2 id="错误-7试图第一版就自动闭环控制">错误 7：试图第一版就自动闭环控制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-7试图第一版就自动闭环控制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>比如直接让模型推荐 recipe，甚至自动调机台。</p>
+<p>这太早了。</p>
+<p>正确路线是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>先风险识别</span></span>
+<span data-line><span>再指标预测</span></span>
+<span data-line><span>再异常解释</span></span>
+<span data-line><span>再工程师复核</span></span>
+<span data-line><span>最后才是参数优化</span></span></code></pre></figure>
+<hr/>
+<h2 id="错误-8没有工程师反馈闭环">错误 8：没有工程师反馈闭环<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#错误-8没有工程师反馈闭环" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模型上线后必须记录：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>工程师是否认可</span></span>
+<span data-line><span>是否误报</span></span>
+<span data-line><span>是否漏报</span></span>
+<span data-line><span>最终检测结果如何</span></span>
+<span data-line><span>客户是否反馈</span></span></code></pre></figure>
+<p>没有反馈闭环，模型无法持续变好。</p>
+<hr/>
+<h1 id="10-第一周能力验收测试">10. 第一周能力验收测试<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-第一周能力验收测试" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你现在可以自测一下。</p>
+<hr/>
+<h2 id="测试-1判断任务类型">测试 1：判断任务类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#测试-1判断任务类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="问题-a">问题 A<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-a" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>根据 MBE 生长过程参数预测最终 Pass / Fail。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>分类问题</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-b">问题 B<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-b" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>根据工艺参数预测 PL intensity。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>回归问题</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-c">问题 C<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-c" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>只有正常 run 数据，想发现当前 run 是否不像正常生产状态。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测问题</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-d">问题 D<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-d" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>同一个 recipe 最近 30 炉 XRD FWHM 慢慢升高。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>漂移检测 / 趋势检测问题</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-e">问题 E<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-e" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>根据 wafer map 判断缺陷类型。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>图像分类问题</span></span></code></pre></figure>
+<hr/>
+<h1 id="11-测试-2判断字段能不能用">11. 测试 2：判断字段能不能用<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-测试-2判断字段能不能用" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>预测时间点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>MBE 生长完成后，PL/XRD 检测前</span></span></code></pre></figure>
+<p>字段：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>pl_intensity</span></span>
+<span data-line><span>xrd_fwhm</span></span>
+<span data-line><span>final_qc_result</span></span>
+<span data-line><span>customer_complaint</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>source_usage_hours</span></span></code></pre></figure>
+<p>可以用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>source_usage_hours</span></span></code></pre></figure>
+<p>不能用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>pl_intensity</span></span>
+<span data-line><span>xrd_fwhm</span></span>
+<span data-line><span>final_qc_result</span></span>
+<span data-line><span>customer_complaint</span></span></code></pre></figure>
+<p>原因：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这些字段在检测后、最终判定后或出货后才知道。</span></span></code></pre></figure>
+<hr/>
+<h1 id="12-测试-3判断业务指标">12. 测试 3：判断业务指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-测试-3判断业务指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>假设测试集中：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>真实 Fail = 100 批</span></span>
+<span data-line><span>模型报警 = 150 批</span></span>
+<span data-line><span>报警中真实 Fail = 70 批</span></span></code></pre></figure>
+<p>那么：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>TP = 70</span></span>
+<span data-line><span>FP = 80</span></span>
+<span data-line><span>FN = 30</span></span></code></pre></figure>
+<p>Recall：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>70 / 100 = 70%</span></span></code></pre></figure>
+<p>Precision：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>70 / 150 = 46.7%</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型抓出了 70% 的异常批次；</span></span>
+<span data-line><span>但报警批次里只有约 47% 真实异常；</span></span>
+<span data-line><span>这可能适合作为工程师复核系统，但不适合自动判废。</span></span></code></pre></figure>
+<p>这就是你要会讲的。</p>
+<hr/>
+<h1 id="13-你现在应该形成的项目落地顺序">13. 你现在应该形成的“项目落地顺序”<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#13-你现在应该形成的项目落地顺序" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>如果你未来真的去做新磊这种项目，不要一上来就做大系统。</p>
+<p>第一阶段应该这样走：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>第 1 步：业务访谈</span></span>
+<span data-line><span>弄清楚外延片生产流程、检测流程、质量判定规则。</span></span>
+<span data-line> </span>
+<span data-line><span>第 2 步：数据盘点</span></span>
+<span data-line><span>有哪些数据？在哪些系统？字段含义是什么？能不能按 run / wafer / lot 串起来？</span></span>
+<span data-line> </span>
+<span data-line><span>第 3 步：定义预测时间点</span></span>
+<span data-line><span>生长前、生长中、生长后检测前、检测后出货前，各自能用的数据不同。</span></span>
+<span data-line> </span>
+<span data-line><span>第 4 步：定义第一版任务</span></span>
+<span data-line><span>建议先做 MBE 生长后、检测前的 run 级质量风险评分。</span></span>
+<span data-line> </span>
+<span data-line><span>第 5 步：数据审计</span></span>
+<span data-line><span>检查缺失值、异常值、标签分布、时间范围、产品类型、recipe 数量。</span></span>
+<span data-line> </span>
+<span data-line><span>第 6 步：建立 v0.1 模型</span></span>
+<span data-line><span>异常检测 + 分类 + 回归 + 规则评分。</span></span>
+<span data-line> </span>
+<span data-line><span>第 7 步：离线回测</span></span>
+<span data-line><span>看历史上高风险批次是否能被提前识别。</span></span>
+<span data-line> </span>
+<span data-line><span>第 8 步：工程师复核</span></span>
+<span data-line><span>让工程师看 Top 50 高风险 run，判断模型解释是否合理。</span></span>
+<span data-line> </span>
+<span data-line><span>第 9 步：影子模式试运行</span></span>
+<span data-line><span>模型只打分，不干预生产，观察 2~4 周。</span></span>
+<span data-line> </span>
+<span data-line><span>第 10 步：小范围上线</span></span>
+<span data-line><span>先做提醒系统，不做自动判废系统。</span></span></code></pre></figure>
+<hr/>
+<h1 id="14-第一周最终项目文档模板">14. 第一周最终项目文档模板<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#14-第一周最终项目文档模板" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你现在可以写一份迷你方案文档。</p>
+<p>标题：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>新磊半导体外延片质量风险评分系统 v0.1</span></span></code></pre></figure>
+<p>结构如下：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>1. 项目背景</span></span>
+<span data-line> </span>
+<span data-line><span>2. 业务目标</span></span>
+<span data-line> </span>
+<span data-line><span>3. 预测时间点</span></span>
+<span data-line> </span>
+<span data-line><span>4. 数据输入</span></span>
+<span data-line> </span>
+<span data-line><span>5. 不能使用的数据</span></span>
+<span data-line> </span>
+<span data-line><span>6. 模型设计</span></span>
+<span data-line><span>   6.1 异常检测模型</span></span>
+<span data-line><span>   6.2 Pass / Fail 分类模型</span></span>
+<span data-line><span>   6.3 关键指标回归模型</span></span>
+<span data-line><span>   6.4 规则评分器</span></span>
+<span data-line> </span>
+<span data-line><span>7. 输出结果</span></span>
+<span data-line> </span>
+<span data-line><span>8. 风险等级定义</span></span>
+<span data-line> </span>
+<span data-line><span>9. 工程师建议动作</span></span>
+<span data-line> </span>
+<span data-line><span>10. 评估指标</span></span>
+<span data-line> </span>
+<span data-line><span>11. 试点流程</span></span>
+<span data-line> </span>
+<span data-line><span>12. 后续升级方向</span></span></code></pre></figure>
+<p>这个模板非常重要。它比你单纯会写模型代码更值钱。</p>
+<hr/>
+<h1 id="15-第一周最终作业">15. 第一周最终作业<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#15-第一周最终作业" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天作业不是写代码，而是写一份项目方案。</p>
+<hr/>
+<h2 id="作业-1写项目背景">作业 1：写项目背景<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-1写项目背景" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模板：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>新磊半导体的核心业务是化合物半导体外延片制造，MBE 生长过程对温度、压力、束流、源材料状态和设备稳定性非常敏感。</span></span>
+<span data-line> </span>
+<span data-line><span>传统质量判断主要依赖检测结果和工程师经验，存在问题发现滞后、排查效率低、经验难沉淀的问题。</span></span>
+<span data-line> </span>
+<span data-line><span>因此，第一阶段可以建设一个外延片质量风险评分系统，在 MBE 生长完成后、检测前，根据工艺和设备数据提前识别高风险 run，辅助工程师优先检测和复核。</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-2写第一版任务定义">作业 2：写第一版任务定义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-2写第一版任务定义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模板：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>任务名称：</span></span>
+<span data-line><span>MBE 生长后外延片质量风险评分</span></span>
+<span data-line> </span>
+<span data-line><span>预测时间点：</span></span>
+<span data-line><span>MBE 生长完成后，PL/XRD/AFM/表面检测前</span></span>
+<span data-line> </span>
+<span data-line><span>一行数据代表：</span></span>
+<span data-line><span>一次 MBE run</span></span>
+<span data-line> </span>
+<span data-line><span>输入 X：</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>chamber_id</span></span>
+<span data-line><span>substrate_batch</span></span>
+<span data-line><span>source_material_batch</span></span>
+<span data-line><span>growth_temp_mean</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_mean</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>flux_mean</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>source_usage_hours</span></span>
+<span data-line> </span>
+<span data-line><span>输出：</span></span>
+<span data-line><span>Fail 风险概率</span></span>
+<span data-line><span>异常分数</span></span>
+<span data-line><span>预测 PL</span></span>
+<span data-line><span>预测 XRD</span></span>
+<span data-line><span>预测厚度均匀性</span></span>
+<span data-line><span>综合风险等级</span></span>
+<span data-line><span>建议动作</span></span>
+<span data-line> </span>
+<span data-line><span>不能使用：</span></span>
+<span data-line><span>PL 检测结果</span></span>
+<span data-line><span>XRD 检测结果</span></span>
+<span data-line><span>AFM 结果</span></span>
+<span data-line><span>表面检测结果</span></span>
+<span data-line><span>最终 QC</span></span>
+<span data-line><span>客户反馈</span></span>
+<span data-line><span>工程师最终评语</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-3写模型设计">作业 3：写模型设计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-3写模型设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模板：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型 1：异常检测模型</span></span>
+<span data-line><span>方法：Isolation Forest + Z-score</span></span>
+<span data-line><span>作用：识别当前 run 是否偏离历史正常工艺状态</span></span>
+<span data-line> </span>
+<span data-line><span>模型 2：Pass / Fail 分类模型</span></span>
+<span data-line><span>方法：CatBoost / LightGBM</span></span>
+<span data-line><span>作用：预测最终 Fail 风险概率</span></span>
+<span data-line> </span>
+<span data-line><span>模型 3：关键指标回归模型</span></span>
+<span data-line><span>方法：CatBoostRegressor / LightGBMRegressor</span></span>
+<span data-line><span>作用：预测 PL、XRD、厚度均匀性等关键质量指标</span></span>
+<span data-line> </span>
+<span data-line><span>模型 4：规则评分器</span></span>
+<span data-line><span>方法：模型结果 + 规格线 + 工程经验规则</span></span>
+<span data-line><span>作用：生成综合风险等级和建议动作</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-4写评估指标">作业 4：写评估指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-4写评估指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模板：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>分类模型：</span></span>
+<span data-line><span>重点看 Fail Recall、Precision、PR-AUC、Top-K Recall，不以 Accuracy 作为唯一指标。</span></span>
+<span data-line> </span>
+<span data-line><span>回归模型：</span></span>
+<span data-line><span>重点看 MAE、RMSE、规格线附近预测误差、超规格识别能力。</span></span>
+<span data-line> </span>
+<span data-line><span>异常检测：</span></span>
+<span data-line><span>重点看 Top 异常 run 是否被工程师认可，异常分数是否能提前发现设备/工艺漂移。</span></span>
+<span data-line> </span>
+<span data-line><span>业务指标：</span></span>
+<span data-line><span>高风险 run 中真实异常占比；</span></span>
+<span data-line><span>工程师复核效率提升；</span></span>
+<span data-line><span>异常批次提前发现率；</span></span>
+<span data-line><span>误报成本是否可接受；</span></span>
+<span data-line><span>是否减少客户质量风险。</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-5写最终输出报告模板">作业 5：写最终输出报告模板<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-5写最终输出报告模板" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模板：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Run ID：</span></span>
+<span data-line><span>产品类型：</span></span>
+<span data-line><span>Recipe：</span></span>
+<span data-line><span>设备：</span></span>
+<span data-line> </span>
+<span data-line><span>综合风险等级：</span></span>
+<span data-line> </span>
+<span data-line><span>模型输出：</span></span>
+<span data-line><span>- Fail 风险概率：</span></span>
+<span data-line><span>- 异常分数：</span></span>
+<span data-line><span>- 预测 PL：</span></span>
+<span data-line><span>- 预测 XRD FWHM：</span></span>
+<span data-line><span>- 预测厚度均匀性：</span></span>
+<span data-line> </span>
+<span data-line><span>主要风险原因：</span></span>
+<span data-line><span>1.</span></span>
+<span data-line><span>2.</span></span>
+<span data-line><span>3.</span></span>
+<span data-line> </span>
+<span data-line><span>建议动作：</span></span>
+<span data-line><span>1.</span></span>
+<span data-line><span>2.</span></span>
+<span data-line><span>3.</span></span></code></pre></figure>
+<hr/>
+<h1 id="16-day-7-验收标准">16. Day 7 验收标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#16-day-7-验收标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天学完，第一周就算完成。</p>
+<p>你合格的标准是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>1. 能把外延片质量问题拆成分类、回归、异常检测</span></span>
+<span data-line><span>2. 能定义预测时间点</span></span>
+<span data-line><span>3. 能说明哪些字段能用，哪些字段不能用</span></span>
+<span data-line><span>4. 能解释什么是数据泄露</span></span>
+<span data-line><span>5. 能说清楚为什么不能只看 Accuracy</span></span>
+<span data-line><span>6. 能解释 Fail Recall 和 Top-K Recall 的业务意义</span></span>
+<span data-line><span>7. 能说明异常检测为什么适合无标签早期场景</span></span>
+<span data-line><span>8. 能把多个模型组合成质量风险评分系统</span></span>
+<span data-line><span>9. 能把模型输出转成工程师建议动作</span></span>
+<span data-line><span>10. 能写出一个 v0.1 项目方案</span></span></code></pre></figure>
+<hr/>
+<h1 id="17-第一周最终总结">17. 第一周最终总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#17-第一周最终总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你第一周真正学到的是：</p>
+<blockquote>
+<p>机器学习不是先选模型，而是先把业务问题定义成一个可预测、可验证、可解释、可行动的问题。</p>
+</blockquote>
+<p>对于新磊这种外延片企业，第一阶段最合适的 AI 项目不是大模型聊天机器人，也不是一上来做自动调参，而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>MBE 生长后、检测前的外延片质量风险评分系统。</span></span></code></pre></figure>
+<p>它由 4 部分组成：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测：</span></span>
+<span data-line><span>发现不像正常工艺状态的 run</span></span>
+<span data-line> </span>
+<span data-line><span>分类模型：</span></span>
+<span data-line><span>预测 Pass / Fail 风险</span></span>
+<span data-line> </span>
+<span data-line><span>回归模型：</span></span>
+<span data-line><span>预测 PL、XRD、厚度、缺陷等关键指标</span></span>
+<span data-line> </span>
+<span data-line><span>规则评分器：</span></span>
+<span data-line><span>结合规格线和工程经验生成风险等级与建议动作</span></span></code></pre></figure>
+<p>最终目标不是替代工程师，而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>让工程师更早看到高风险批次；</span></span>
+<span data-line><span>更快知道该查什么；</span></span>
+<span data-line><span>更系统地沉淀质量问题和工艺参数之间的关系。</span></span></code></pre></figure>
+<hr/>
+<h1 id="18-day-8-预告">18. Day 8 预告<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#18-day-8-预告" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>从 Day 8 开始，进入第二周：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>表格数据建模：质量预测 / 良率预测</span></span></code></pre></figure>
+<p>接下来会更偏实战：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>数据清洗</span></span>
+<span data-line><span>缺失值处理</span></span>
+<span data-line><span>类别变量处理</span></span>
+<span data-line><span>特征工程</span></span>
+<span data-line><span>LightGBM / CatBoost 建模</span></span>
+<span data-line><span>类别不平衡处理</span></span>
+<span data-line><span>SHAP 解释</span></span>
+<span data-line><span>模型报告生成</span></span></code></pre></figure>
+<p>Day 8 的主题是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>制造业数据清洗：拿到一张外延片数据表后，第一眼应该检查什么？</span></span></code></pre></figure>
+<p>第二周开始，你会逐渐进入真正的代码和数据处理。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-40" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#day-7第一周复盘--从懂模型升级到能设计半导体-ai-项目" data-for="day-7第一周复盘--从懂模型升级到能设计半导体-ai-项目">Day 7：第一周复盘 —— 从“懂模型”升级到“能设计半导体 AI 项目”</a></li><li class="depth-0"><a href="#1-第一周你到底学了什么" data-for="1-第一周你到底学了什么">1. 第一周你到底学了什么？</a></li><li class="depth-0"><a href="#2-第一周最重要的一张总图" data-for="2-第一周最重要的一张总图">2. 第一周最重要的一张总图</a></li><li class="depth-0"><a href="#3-你现在应该能看懂这-6-类问题" data-for="3-你现在应该能看懂这-6-类问题">3. 你现在应该能看懂这 6 类问题</a></li><li class="depth-1"><a href="#问题-1这批外延片会不会不合格" data-for="问题-1这批外延片会不会不合格">问题 1：这批外延片会不会不合格？</a></li><li class="depth-1"><a href="#问题-2这批片的-pl-强度是多少" data-for="问题-2这批片的-pl-强度是多少">问题 2：这批片的 PL 强度是多少？</a></li><li class="depth-1"><a href="#问题-3这次-mbe-生长过程是否异常" data-for="问题-3这次-mbe-生长过程是否异常">问题 3：这次 MBE 生长过程是否异常？</a></li><li class="depth-1"><a href="#问题-4这个-recipe-最近是不是漂移了" data-for="问题-4这个-recipe-最近是不是漂移了">问题 4：这个 recipe 最近是不是漂移了？</a></li><li class="depth-1"><a href="#问题-5外延片晶圆图有没有缺陷" data-for="问题-5外延片晶圆图有没有缺陷">问题 5：外延片/晶圆图有没有缺陷？</a></li><li class="depth-1"><a href="#问题-6客户投诉后怎么找原因" data-for="问题-6客户投诉后怎么找原因">问题 6：客户投诉后怎么找原因？</a></li><li class="depth-0"><a href="#4-第一周最核心的-3-个模型思维" data-for="4-第一周最核心的-3-个模型思维">4. 第一周最核心的 3 个模型思维</a></li><li class="depth-1"><a href="#41-有明确-pass--fail-标签用分类" data-for="41-有明确-pass--fail-标签用分类">4.1 有明确 Pass / Fail 标签，用分类</a></li><li class="depth-1"><a href="#42-有连续质量指标用回归" data-for="42-有连续质量指标用回归">4.2 有连续质量指标，用回归</a></li><li class="depth-1"><a href="#43-没有足够标签用异常检测" data-for="43-没有足够标签用异常检测">4.3 没有足够标签，用异常检测</a></li><li class="depth-0"><a href="#5-第一周最重要的一个产品原型" data-for="5-第一周最重要的一个产品原型">5. 第一周最重要的一个产品原型</a></li><li class="depth-0"><a href="#6-用一个完整案例复盘" data-for="6-用一个完整案例复盘">6. 用一个完整案例复盘</a></li><li class="depth-1"><a href="#第一步判断预测时间点" data-for="第一步判断预测时间点">第一步：判断预测时间点</a></li><li class="depth-1"><a href="#第二步做异常检测" data-for="第二步做异常检测">第二步：做异常检测</a></li><li class="depth-1"><a href="#第三步做分类预测" data-for="第三步做分类预测">第三步：做分类预测</a></li><li class="depth-1"><a href="#第四步做回归预测" data-for="第四步做回归预测">第四步：做回归预测</a></li><li class="depth-1"><a href="#第五步生成综合风险" data-for="第五步生成综合风险">第五步：生成综合风险</a></li><li class="depth-0"><a href="#7-你现在应该怎么跟老板解释" data-for="7-你现在应该怎么跟老板解释">7. 你现在应该怎么跟老板解释？</a></li><li class="depth-0"><a href="#8-你现在应该怎么跟工程师解释" data-for="8-你现在应该怎么跟工程师解释">8. 你现在应该怎么跟工程师解释？</a></li><li class="depth-0"><a href="#9-第一周最容易犯的-8-个错误" data-for="9-第一周最容易犯的-8-个错误">9. 第一周最容易犯的 8 个错误</a></li><li class="depth-1"><a href="#错误-1一上来就问用什么模型" data-for="错误-1一上来就问用什么模型">错误 1：一上来就问用什么模型</a></li><li class="depth-1"><a href="#错误-2把检测后字段当输入" data-for="错误-2把检测后字段当输入">错误 2：把检测后字段当输入</a></li><li class="depth-1"><a href="#错误-3只看-accuracy" data-for="错误-3只看-accuracy">错误 3：只看 Accuracy</a></li><li class="depth-1"><a href="#错误-4没有-fail-标签还硬做分类" data-for="错误-4没有-fail-标签还硬做分类">错误 4：没有 Fail 标签还硬做分类</a></li><li class="depth-1"><a href="#错误-5所有产品和-recipe-混在一起建模" data-for="错误-5所有产品和-recipe-混在一起建模">错误 5：所有产品和 recipe 混在一起建模</a></li><li class="depth-1"><a href="#错误-6只输出分数没有解释" data-for="错误-6只输出分数没有解释">错误 6：只输出分数，没有解释</a></li><li class="depth-1"><a href="#错误-7试图第一版就自动闭环控制" data-for="错误-7试图第一版就自动闭环控制">错误 7：试图第一版就自动闭环控制</a></li><li class="depth-1"><a href="#错误-8没有工程师反馈闭环" data-for="错误-8没有工程师反馈闭环">错误 8：没有工程师反馈闭环</a></li><li class="depth-0"><a href="#10-第一周能力验收测试" data-for="10-第一周能力验收测试">10. 第一周能力验收测试</a></li><li class="depth-1"><a href="#测试-1判断任务类型" data-for="测试-1判断任务类型">测试 1：判断任务类型</a></li><li class="depth-2"><a href="#问题-a" data-for="问题-a">问题 A</a></li><li class="depth-2"><a href="#问题-b" data-for="问题-b">问题 B</a></li><li class="depth-2"><a href="#问题-c" data-for="问题-c">问题 C</a></li><li class="depth-2"><a href="#问题-d" data-for="问题-d">问题 D</a></li><li class="depth-2"><a href="#问题-e" data-for="问题-e">问题 E</a></li><li class="depth-0"><a href="#11-测试-2判断字段能不能用" data-for="11-测试-2判断字段能不能用">11. 测试 2：判断字段能不能用</a></li><li class="depth-0"><a href="#12-测试-3判断业务指标" data-for="12-测试-3判断业务指标">12. 测试 3：判断业务指标</a></li><li class="depth-0"><a href="#13-你现在应该形成的项目落地顺序" data-for="13-你现在应该形成的项目落地顺序">13. 你现在应该形成的“项目落地顺序”</a></li><li class="depth-0"><a href="#14-第一周最终项目文档模板" data-for="14-第一周最终项目文档模板">14. 第一周最终项目文档模板</a></li><li class="depth-0"><a href="#15-第一周最终作业" data-for="15-第一周最终作业">15. 第一周最终作业</a></li><li class="depth-1"><a href="#作业-1写项目背景" data-for="作业-1写项目背景">作业 1：写项目背景</a></li><li class="depth-1"><a href="#作业-2写第一版任务定义" data-for="作业-2写第一版任务定义">作业 2：写第一版任务定义</a></li><li class="depth-1"><a href="#作业-3写模型设计" data-for="作业-3写模型设计">作业 3：写模型设计</a></li><li class="depth-1"><a href="#作业-4写评估指标" data-for="作业-4写评估指标">作业 4：写评估指标</a></li><li class="depth-1"><a href="#作业-5写最终输出报告模板" data-for="作业-5写最终输出报告模板">作业 5：写最终输出报告模板</a></li><li class="depth-0"><a href="#16-day-7-验收标准" data-for="16-day-7-验收标准">16. Day 7 验收标准</a></li><li class="depth-0"><a href="#17-第一周最终总结" data-for="17-第一周最终总结">17. 第一周最终总结</a></li><li class="depth-0"><a href="#18-day-8-预告" data-for="18-day-8-预告">18. Day 8 预告</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>

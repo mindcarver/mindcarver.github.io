@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>机器学习day5</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="机器学习day5"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="机器学习day5"/><meta name="twitter:description" content="Day 5：异常检测 —— 没有 Fail 标签时，怎么发现 MBE 工艺/设备异常？ 前 4 天我们讲了： Day 1：半导体业务问题怎么变成 AI 问题 Day 2：X、y、训练集、测试集、数据泄露 Day 3：分类问题，Pass / Fail 预测 Day 4：回归问题，预测 PL、XRD、厚度、缺陷数量等指标 今天讲第三类非常重要的问题： 异常检测 Anomaly Detection 它特别适合半导体，因为很多时候企业没有足够干净的 Fail 标签。 1."/><meta property="og:description" content="Day 5：异常检测 —— 没有 Fail 标签时，怎么发现 MBE 工艺/设备异常？ 前 4 天我们讲了： Day 1：半导体业务问题怎么变成 AI 问题 Day 2：X、y、训练集、测试集、数据泄露 Day 3：分类问题，Pass / Fail 预测 Day 4：回归问题，预测 PL、XRD、厚度、缺陷数量等指标 今天讲第三类非常重要的问题： 异常检测 Anomaly Detection 它特别适合半导体，因为很多时候企业没有足够干净的 Fail 标签。 1."/><meta property="og:image:alt" content="Day 5：异常检测 —— 没有 Fail 标签时，怎么发现 MBE 工艺/设备异常？ 前 4 天我们讲了： Day 1：半导体业务问题怎么变成 AI 问题 Day 2：X、y、训练集、测试集、数据泄露 Day 3：分类问题，Pass / Fail 预测 Day 4：回归问题，预测 PL、XRD、厚度、缺陷数量等指标 今天讲第三类非常重要的问题： 异常检测 Anomaly Detection 它特别适合半导体，因为很多时候企业没有足够干净的 Fail 标签。 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/制造业改造/新磊半导体/第一周/机器学习day5"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/制造业改造/新磊半导体/第一周/机器学习day5"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="Day 5：异常检测 —— 没有 Fail 标签时，怎么发现 MBE 工艺/设备异常？ 前 4 天我们讲了： Day 1：半导体业务问题怎么变成 AI 问题 Day 2：X、y、训练集、测试集、数据泄露 Day 3：分类问题，Pass / Fail 预测 Day 4：回归问题，预测 PL、XRD、厚度、缺陷数量等指标 今天讲第三类非常重要的问题： 异常检测 Anomaly Detection 它特别适合半导体，因为很多时候企业没有足够干净的 Fail 标签。 1."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/制造业改造/新磊半导体/第一周/机器学习day5"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-109"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-109" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/">制造业改造</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/新磊半导体/">新磊半导体</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/新磊半导体/第一周/">第一周</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>机器学习day5</a></div></nav><h1 class="article-title">机器学习day5</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-27T09:55:11.143Z">2026年4月27日</time><span>27分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="day-5异常检测--没有-fail-标签时怎么发现-mbe-工艺设备异常">Day 5：异常检测 —— 没有 Fail 标签时，怎么发现 MBE 工艺/设备异常？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#day-5异常检测--没有-fail-标签时怎么发现-mbe-工艺设备异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>前 4 天我们讲了：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Day 1：半导体业务问题怎么变成 AI 问题</span></span>
+<span data-line><span>Day 2：X、y、训练集、测试集、数据泄露</span></span>
+<span data-line><span>Day 3：分类问题，Pass / Fail 预测</span></span>
+<span data-line><span>Day 4：回归问题，预测 PL、XRD、厚度、缺陷数量等指标</span></span></code></pre></figure>
+<p>今天讲第三类非常重要的问题：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测 Anomaly Detection</span></span></code></pre></figure>
+<p>它特别适合半导体，因为很多时候企业没有足够干净的 Fail 标签。</p>
+<hr/>
+<h1 id="1-今天先记住一句话">1. 今天先记住一句话<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-今天先记住一句话" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p><strong>分类模型回答：这批片像不像历史上的 Fail？<br/>
+异常检测回答：这次工艺/设备状态像不像历史上的正常状态？</strong></p>
+</blockquote>
+<p>这是两种不同思路。</p>
+<p>分类需要：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>大量 Pass 样本</span></span>
+<span data-line><span>大量 Fail 样本</span></span>
+<span data-line><span>明确标签 y</span></span></code></pre></figure>
+<p>异常检测可以只基于：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>大量正常样本</span></span>
+<span data-line><span>少量甚至没有 Fail 样本</span></span></code></pre></figure>
+<p>所以在真实半导体项目里，如果一开始没有足够 Fail 标签，<strong>异常检测往往比分类更适合作为第一步</strong>。</p>
+<hr/>
+<h1 id="2-为什么新磊这种外延片场景很适合异常检测">2. 为什么新磊这种外延片场景很适合异常检测？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-为什么新磊这种外延片场景很适合异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>MBE 外延生长是一个高度依赖稳定性的过程。</p>
+<p>你不一定马上知道这批片最终会不会 Fail，但你可以先判断：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这次生长过程是否不像正常生长过程？</span></span>
+<span data-line><span>这台设备最近是否不像历史正常状态？</span></span>
+<span data-line><span>这个 recipe 最近是否开始漂移？</span></span>
+<span data-line><span>某个参数组合是否异常？</span></span></code></pre></figure>
+<p>外延质量很容易受到这些因素影响：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>温度波动</span></span>
+<span data-line><span>腔体压力波动</span></span>
+<span data-line><span>真空状态变化</span></span>
+<span data-line><span>源炉状态变化</span></span>
+<span data-line><span>束流漂移</span></span>
+<span data-line><span>快门时序异常</span></span>
+<span data-line><span>报警次数增加</span></span>
+<span data-line><span>维护周期过长</span></span>
+<span data-line><span>衬底批次变化</span></span>
+<span data-line><span>源材料使用时长过长</span></span></code></pre></figure>
+<p>很多异常不是一个字段单独超标，而是多个字段组合起来“不对劲”。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>温度没有超规格</span></span>
+<span data-line><span>压力也没有超规格</span></span>
+<span data-line><span>束流也没有超规格</span></span>
+<span data-line> </span>
+<span data-line><span>但三者组合起来，和历史正常 run 很不一样。</span></span></code></pre></figure>
+<p>这就是异常检测的价值。</p>
+<hr/>
+<h1 id="3-异常检测和分类的区别">3. 异常检测和分类的区别<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-异常检测和分类的区别" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>对比项</th><th>分类</th><th>异常检测</th></tr></thead><tbody><tr><td>是否需要 Fail 标签</td><td>需要</td><td>不一定需要</td></tr><tr><td>学习目标</td><td>区分 Pass / Fail</td><td>学习什么是正常</td></tr><tr><td>输出</td><td>Fail 概率</td><td>异常分数</td></tr><tr><td>适合阶段</td><td>有足够历史标签后</td><td>早期数据不足时</td></tr><tr><td>典型用途</td><td>质量预测</td><td>设备漂移、工艺异常、未知风险发现</td></tr><tr><td>最大价值</td><td>预测已知失败类型</td><td>发现未知异常模式</td></tr></tbody></table></div>
+<p>你可以这样理解：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>分类模型：学习过去发生过的坏事。</span></span>
+<span data-line><span>异常检测：发现当前状态不像过去的正常状态。</span></span></code></pre></figure>
+<p>这非常适合半导体。</p>
+<p>因为很多真实异常一开始没有标签，工程师只是觉得：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>最近这台设备状态不太对。</span></span>
+<span data-line><span>最近这个 recipe 不太稳。</span></span>
+<span data-line><span>这批数据看起来怪怪的。</span></span></code></pre></figure>
+<p>异常检测就是把这种“怪怪的”量化成分数。</p>
+<hr/>
+<h1 id="4-异常检测的输出是什么">4. 异常检测的输出是什么？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-异常检测的输出是什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>异常检测通常不直接输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Pass / Fail</span></span></code></pre></figure>
+<p>而是输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>anomaly_score = 异常分数</span></span></code></pre></figure>
+<p>例如：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>run_id</th><th style="text-align:right;">anomaly_score</th><th>风险等级</th></tr></thead><tbody><tr><td>RUN001</td><td style="text-align:right;">0.05</td><td>正常</td></tr><tr><td>RUN002</td><td style="text-align:right;">0.18</td><td>轻微异常</td></tr><tr><td>RUN003</td><td style="text-align:right;">0.63</td><td>高异常</td></tr><tr><td>RUN004</td><td style="text-align:right;">0.91</td><td>严重异常</td></tr></tbody></table></div>
+<p>然后你把异常分数转成业务动作：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th style="text-align:right;">异常分数</th><th>风险等级</th><th>业务动作</th></tr></thead><tbody><tr><td style="text-align:right;">0.00 ~ 0.20</td><td>正常</td><td>正常流程</td></tr><tr><td style="text-align:right;">0.20 ~ 0.50</td><td>关注</td><td>工程师抽查</td></tr><tr><td style="text-align:right;">0.50 ~ 0.80</td><td>高异常</td><td>优先复核检测结果</td></tr><tr><td style="text-align:right;">0.80 ~ 1.00</td><td>严重异常</td><td>暂缓放行，检查设备/工艺</td></tr></tbody></table></div>
+<p>注意：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常 ≠ 一定 Fail</span></span></code></pre></figure>
+<p>异常只是说明：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这次状态不像历史正常状态，值得工程师重点看。</span></span></code></pre></figure>
+<hr/>
+<h1 id="5-外延片场景里有哪些异常检测任务">5. 外延片场景里有哪些异常检测任务？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-外延片场景里有哪些异常检测任务" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="任务-1mbe-run-级异常检测">任务 1：MBE run 级异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-1mbe-run-级异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>一行代表一次 MBE 生长任务。</p>
+<p>输入：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>growth_temp_mean</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_mean</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>flux_mean</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>source_usage_hours</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这个 run 是否异常</span></span>
+<span data-line><span>异常分数是多少</span></span>
+<span data-line><span>哪些字段导致异常</span></span></code></pre></figure>
+<p>业务价值：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>生长后、检测前，先把异常 run 标出来，优先检测和复核。</span></span></code></pre></figure>
+<hr/>
+<h2 id="任务-2设备状态异常检测">任务 2：设备状态异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-2设备状态异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>一行代表一台设备在某一天、某一周或某个窗口的状态。</p>
+<p>输入：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>设备最近 N 次 run 的温度波动</span></span>
+<span data-line><span>压力波动</span></span>
+<span data-line><span>报警次数</span></span>
+<span data-line><span>Fail 比例</span></span>
+<span data-line><span>维护间隔</span></span>
+<span data-line><span>源炉状态</span></span>
+<span data-line><span>真空恢复时间</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>设备健康分</span></span>
+<span data-line><span>是否需要维护</span></span>
+<span data-line><span>哪个设备风险最高</span></span></code></pre></figure>
+<p>业务价值：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>从事后维修变成提前预警。</span></span></code></pre></figure>
+<hr/>
+<h2 id="任务-3recipe-漂移检测">任务 3：recipe 漂移检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-3recipe-漂移检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>同一个 recipe，理论上应该比较稳定。</p>
+<p>如果最近几炉的输出开始变差，就要发现。</p>
+<p>输入：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>同 recipe 最近 N 次 run 的 PL、XRD、厚度、缺陷数量分布</span></span></code></pre></figure>
+<p>输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这个 recipe 最近是否漂移</span></span>
+<span data-line><span>漂移方向是什么</span></span>
+<span data-line><span>从什么时候开始漂移</span></span></code></pre></figure>
+<p>业务价值：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>发现工艺窗口变窄、设备变差、材料批次变化。</span></span></code></pre></figure>
+<hr/>
+<h2 id="任务-4检测指标异常检测">任务 4：检测指标异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-4检测指标异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>即使没有最终 Pass / Fail 标签，也可以判断某个检测指标是否异常。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL intensity 是否异常低</span></span>
+<span data-line><span>XRD FWHM 是否异常高</span></span>
+<span data-line><span>thickness_uniformity 是否异常差</span></span>
+<span data-line><span>surface_defect_count 是否异常多</span></span></code></pre></figure>
+<p>业务价值：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>建立质量指标的自动预警系统。</span></span></code></pre></figure>
+<hr/>
+<h1 id="6-异常有几种类型">6. 异常有几种类型？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-异常有几种类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="61-单点异常">6.1 单点异常<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-单点异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>某个值突然非常离谱。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>某次 run 的 pressure_std 是历史平均的 5 倍。</span></span></code></pre></figure>
+<p>适合方法：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Z-score</span></span>
+<span data-line><span>IQR</span></span>
+<span data-line><span>3-sigma</span></span></code></pre></figure>
+<hr/>
+<h2 id="62-上下文异常">6.2 上下文异常<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-上下文异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>单独看不异常，但在当前上下文里异常。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>温度 610℃ 对 HEMT recipe 正常，</span></span>
+<span data-line><span>但对 VCSEL recipe 可能异常。</span></span></code></pre></figure>
+<p>所以不能所有产品混在一起看。</p>
+<p>必须考虑：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>product_type</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>chamber_id</span></span></code></pre></figure>
+<hr/>
+<h2 id="63-组合异常">6.3 组合异常<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-组合异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>每个字段单独看都正常，但组合起来异常。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>温度略高</span></span>
+<span data-line><span>压力略高</span></span>
+<span data-line><span>束流略波动</span></span>
+<span data-line><span>报警次数略多</span></span>
+<span data-line> </span>
+<span data-line><span>每个都没超标，</span></span>
+<span data-line><span>但组合起来就是不像正常 run。</span></span></code></pre></figure>
+<p>适合方法：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Isolation Forest</span></span>
+<span data-line><span>One-Class SVM</span></span>
+<span data-line><span>AutoEncoder</span></span></code></pre></figure>
+<hr/>
+<h2 id="64-漂移异常">6.4 漂移异常<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#64-漂移异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>不是突然坏，而是慢慢变差。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>同一台 MBE 设备最近 30 天 pressure_std 慢慢升高。</span></span>
+<span data-line><span>同一个 recipe 最近 20 炉 PL 均值逐渐下降。</span></span></code></pre></figure>
+<p>适合方法：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>移动平均</span></span>
+<span data-line><span>EWMA</span></span>
+<span data-line><span>Control Chart</span></span>
+<span data-line><span>PSI</span></span>
+<span data-line><span>KS Test</span></span>
+<span data-line><span>趋势检测</span></span></code></pre></figure>
+<hr/>
+<h1 id="7-最简单的异常检测z-score">7. 最简单的异常检测：Z-score<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-最简单的异常检测z-score" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>Z-score 适合判断一个数值是否偏离历史正常水平。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>growth_temp_std = 4.8</span></span>
+<span data-line><span>历史平均 temp_std = 1.5</span></span>
+<span data-line><span>历史标准差 = 0.8</span></span></code></pre></figure>
+<p>Z-score 公式是：</p>
+<p>genui{“learning_block_v3”:{“content”:“z=\frac{x-\mu}{\sigma}”}}</p>
+<p>直觉解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>当前值距离历史平均值有几个标准差。</span></span></code></pre></figure>
+<p>如果：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>|z| > 3</span></span></code></pre></figure>
+<p>通常可以认为非常异常。</p>
+<hr/>
+<h2 id="用外延片例子解释">用外延片例子解释<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#用外延片例子解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>假设：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>历史正常 run 的 temp_std 平均值 = 1.5</span></span>
+<span data-line><span>历史正常 run 的 temp_std 标准差 = 0.7</span></span>
+<span data-line><span>当前 run 的 temp_std = 4.0</span></span></code></pre></figure>
+<p>那么：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>z = (4.0 - 1.5) / 0.7 = 3.57</span></span></code></pre></figure>
+<p>这说明：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>当前温度波动远高于历史正常水平。</span></span></code></pre></figure>
+<p>业务动作：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>标记为温度稳定性异常；</span></span>
+<span data-line><span>建议复查该 run 的温控曲线和相关检测结果。</span></span></code></pre></figure>
+<hr/>
+<h1 id="8-z-score-的局限">8. Z-score 的局限<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-z-score-的局限" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>Z-score 很简单，但有几个问题。</p>
+<h2 id="问题-1假设数据大致稳定">问题 1：假设数据大致稳定<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-1假设数据大致稳定" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果数据分布本身不稳定，Z-score 会误报。</p>
+<hr/>
+<h2 id="问题-2容易受极端值影响">问题 2：容易受极端值影响<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-2容易受极端值影响" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果历史数据里已经有异常值，平均值和标准差会被拉偏。</p>
+<hr/>
+<h2 id="问题-3只能看单个变量">问题 3：只能看单个变量<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-3只能看单个变量" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>它很难识别组合异常。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>temp_std 不算异常</span></span>
+<span data-line><span>pressure_std 不算异常</span></span>
+<span data-line><span>flux_std 不算异常</span></span>
+<span data-line> </span>
+<span data-line><span>但三者组合起来异常。</span></span></code></pre></figure>
+<p>这时候要用机器学习异常检测。</p>
+<hr/>
+<h1 id="9-iqr更稳健的单变量异常检测">9. IQR：更稳健的单变量异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-iqr更稳健的单变量异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>IQR 适合数据有极端值时使用。</p>
+<p>核心是看四分位数：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Q1 = 25% 分位数</span></span>
+<span data-line><span>Q3 = 75% 分位数</span></span>
+<span data-line><span>IQR = Q3 - Q1</span></span></code></pre></figure>
+<p>通常定义：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>低于 Q1 - 1.5 * IQR → 异常低</span></span>
+<span data-line><span>高于 Q3 + 1.5 * IQR → 异常高</span></span></code></pre></figure>
+<p>适合检测：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>pressure_std 是否异常高</span></span>
+<span data-line><span>alarm_count 是否异常多</span></span>
+<span data-line><span>surface_defect_count 是否异常多</span></span>
+<span data-line><span>xrd_fwhm 是否异常高</span></span></code></pre></figure>
+<hr/>
+<h1 id="10-control-chart工业现场很常用的思想">10. Control Chart：工业现场很常用的思想<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-control-chart工业现场很常用的思想" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>控制图的核心思想是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>只要工艺稳定，指标应该在一个正常波动范围内。</span></span>
+<span data-line><span>一旦指标超出控制限，或者连续偏向一侧，就说明过程可能失控。</span></span></code></pre></figure>
+<p>例如监控：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>同一 recipe 的 PL intensity</span></span>
+<span data-line><span>同一设备的 pressure_std</span></span>
+<span data-line><span>同一 chamber 的 alarm_count</span></span>
+<span data-line><span>同一源炉的 flux_std</span></span></code></pre></figure>
+<p>你可以设置：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>中心线：历史均值</span></span>
+<span data-line><span>上控制限：均值 + 3σ</span></span>
+<span data-line><span>下控制限：均值 - 3σ</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>不是等最终 Fail 才报警，</span></span>
+<span data-line><span>而是当过程指标开始偏离正常控制范围时就提醒。</span></span></code></pre></figure>
+<hr/>
+<h1 id="11-isolation-forest第一版最推荐的机器学习异常检测模型">11. Isolation Forest：第一版最推荐的机器学习异常检测模型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-isolation-forest第一版最推荐的机器学习异常检测模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>如果你现在有表格数据，但 Fail 标签不多，我建议第一版用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Isolation Forest</span></span></code></pre></figure>
+<p>它适合：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>多变量异常检测</span></span>
+<span data-line><span>无标签数据</span></span>
+<span data-line><span>表格数据</span></span>
+<span data-line><span>快速建立 baseline</span></span></code></pre></figure>
+<p>它的直觉是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常点通常更容易被孤立出来。</span></span></code></pre></figure>
+<p>比如一个 run 的特征组合是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>temp_std 高</span></span>
+<span data-line><span>pressure_std 高</span></span>
+<span data-line><span>alarm_count 多</span></span>
+<span data-line><span>source_usage_hours 长</span></span>
+<span data-line><span>days_since_maintenance 长</span></span></code></pre></figure>
+<p>即使每个字段不一定单独超标，整体也可能被 Isolation Forest 判为异常。</p>
+<hr/>
+<h1 id="12-one-class-svm可以用但第一版不一定优先">12. One-Class SVM：可以用，但第一版不一定优先<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-one-class-svm可以用但第一版不一定优先" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>One-Class SVM 的思路是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>用正常样本学习一个正常边界，</span></span>
+<span data-line><span>边界外的点就是异常。</span></span></code></pre></figure>
+<p>适合：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>样本量不太大</span></span>
+<span data-line><span>特征维度不是特别高</span></span>
+<span data-line><span>数据经过良好标准化</span></span></code></pre></figure>
+<p>缺点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>对参数和特征缩放敏感</span></span>
+<span data-line><span>数据大时训练可能慢</span></span>
+<span data-line><span>解释性不如树模型直观</span></span></code></pre></figure>
+<p>所以第一版我会把它作为对照模型，不作为主力。</p>
+<hr/>
+<h1 id="13-autoencoder适合更复杂的异常检测">13. AutoEncoder：适合更复杂的异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#13-autoencoder适合更复杂的异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>AutoEncoder 的思路是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>用正常数据训练一个模型，让它学会重构正常样本。</span></span>
+<span data-line><span>如果某个样本重构误差很大，就说明它不像正常样本。</span></span></code></pre></figure>
+<p>适合：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>高维数据</span></span>
+<span data-line><span>时间序列</span></span>
+<span data-line><span>图像</span></span>
+<span data-line><span>复杂非线性模式</span></span></code></pre></figure>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>MBE 生长过程完整曲线</span></span>
+<span data-line><span>RHEED 图像/视频</span></span>
+<span data-line><span>PL mapping 图</span></span>
+<span data-line><span>wafer map 图</span></span></code></pre></figure>
+<p>但第一版不要急着上 AutoEncoder，除非你已经有大量过程曲线或图像数据。</p>
+<hr/>
+<h1 id="14-不同数据形态对应的方法">14. 不同数据形态对应的方法<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#14-不同数据形态对应的方法" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>数据形态</th><th>例子</th><th>推荐方法</th></tr></thead><tbody><tr><td>单个指标</td><td>temp_std、pressure_std</td><td>Z-score / IQR</td></tr><tr><td>多个 run 级特征</td><td>温度、压力、束流、报警数</td><td>Isolation Forest</td></tr><tr><td>稳定过程监控</td><td>同 recipe 的 PL 趋势</td><td>Control Chart / EWMA</td></tr><tr><td>多变量时间序列</td><td>MBE 生长曲线</td><td>AutoEncoder / LSTM AutoEncoder</td></tr><tr><td>图像</td><td>表面图、wafer map</td><td>CNN AutoEncoder / PatchCore</td></tr><tr><td>没有标签但有正常样本</td><td>历史稳定 run</td><td>One-Class SVM / Isolation Forest</td></tr></tbody></table></div>
+<p>第一版建议：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Z-score + IQR + Isolation Forest</span></span></code></pre></figure>
+<p>这三种足够做一个可解释的早期异常检测系统。</p>
+<hr/>
+<h1 id="15-外延片异常检测第一版怎么做">15. 外延片异常检测第一版怎么做？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#15-外延片异常检测第一版怎么做" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>我建议你定义这个任务：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>任务名称：</span></span>
+<span data-line><span>MBE 生长后 run 级异常检测</span></span>
+<span data-line> </span>
+<span data-line><span>预测时间点：</span></span>
+<span data-line><span>MBE 生长完成后，PL/XRD/AFM 检测前</span></span>
+<span data-line> </span>
+<span data-line><span>一行数据代表：</span></span>
+<span data-line><span>一次 MBE run</span></span>
+<span data-line> </span>
+<span data-line><span>输入 X：</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>chamber_id</span></span>
+<span data-line><span>growth_temp_mean</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_mean</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>flux_mean</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>growth_time</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>source_usage_hours</span></span>
+<span data-line> </span>
+<span data-line><span>输出：</span></span>
+<span data-line><span>anomaly_score</span></span>
+<span data-line><span>risk_level</span></span>
+<span data-line><span>top_anomaly_features</span></span>
+<span data-line> </span>
+<span data-line><span>业务动作：</span></span>
+<span data-line><span>异常分数高的 run 优先进入检测和工程师复核。</span></span></code></pre></figure>
+<hr/>
+<h1 id="16-但这里有一个大坑不能把不同-recipe-混在一起直接比">16. 但这里有一个大坑：不能把不同 recipe 混在一起直接比<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#16-但这里有一个大坑不能把不同-recipe-混在一起直接比" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>比如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>HEMT 的正常温度范围</span></span>
+<span data-line><span>VCSEL 的正常温度范围</span></span>
+<span data-line><span>APD 的正常温度范围</span></span></code></pre></figure>
+<p>可能完全不同。</p>
+<p>如果你把所有产品、所有 recipe 混在一起做异常检测，模型可能会把正常差异误判成异常。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>R01 recipe 正常 temp = 610℃</span></span>
+<span data-line><span>R02 recipe 正常 temp = 580℃</span></span>
+<span data-line> </span>
+<span data-line><span>如果不区分 recipe，</span></span>
+<span data-line><span>R02 的 580℃ 可能被误判为异常低。</span></span></code></pre></figure>
+<p>所以要做两件事：</p>
+<h2 id="方法-1分组建模">方法 1：分组建模<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方法-1分组建模" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>按下面维度分开：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>product_type</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span></code></pre></figure>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>每个主要 recipe 单独建立正常分布。</span></span></code></pre></figure>
+<p>优点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>更符合工艺逻辑。</span></span></code></pre></figure>
+<p>缺点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>每组样本可能不够。</span></span></code></pre></figure>
+<hr/>
+<h2 id="方法-2做相对偏差特征">方法 2：做相对偏差特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方法-2做相对偏差特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>不要直接用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>actual_temp</span></span></code></pre></figure>
+<p>而是用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>temp_deviation = actual_temp - target_temp</span></span></code></pre></figure>
+<p>不要直接用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>pressure_std</span></span></code></pre></figure>
+<p>而是用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>pressure_std_relative_to_recipe</span></span></code></pre></figure>
+<p>这更适合跨 recipe 建模。</p>
+<hr/>
+<h1 id="17-异常检测特征怎么设计">17. 异常检测特征怎么设计？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#17-异常检测特征怎么设计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>异常检测很依赖特征工程。</p>
+<h2 id="171-基础统计特征">17.1 基础统计特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#171-基础统计特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>growth_temp_mean</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>growth_temp_min</span></span>
+<span data-line><span>growth_temp_max</span></span>
+<span data-line><span>growth_temp_range</span></span>
+<span data-line> </span>
+<span data-line><span>pressure_mean</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>pressure_min</span></span>
+<span data-line><span>pressure_max</span></span>
+<span data-line><span>pressure_spike_count</span></span>
+<span data-line> </span>
+<span data-line><span>flux_mean</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>flux_drift</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>growth_time</span></span></code></pre></figure>
+<hr/>
+<h2 id="172-相对-recipe-偏差特征">17.2 相对 recipe 偏差特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#172-相对-recipe-偏差特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>temp_mean_dev = actual_temp_mean - target_temp</span></span>
+<span data-line><span>growth_time_dev = actual_growth_time - target_growth_time</span></span>
+<span data-line><span>pressure_mean_ratio = actual_pressure_mean / target_pressure</span></span>
+<span data-line><span>flux_dev = actual_flux - target_flux</span></span></code></pre></figure>
+<p>这类特征非常重要。</p>
+<p>因为工艺里更关心：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>实际执行和目标 recipe 偏了多少。</span></span></code></pre></figure>
+<hr/>
+<h2 id="173-稳定性特征">17.3 稳定性特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#173-稳定性特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>temp_std</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>temp_spike_count</span></span>
+<span data-line><span>pressure_spike_count</span></span>
+<span data-line><span>max_deviation_from_setpoint</span></span>
+<span data-line><span>time_out_of_control_range</span></span></code></pre></figure>
+<p>稳定性往往比平均值更重要。</p>
+<hr/>
+<h2 id="174-设备状态特征">17.4 设备状态特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#174-设备状态特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>recent_alarm_count_7d</span></span>
+<span data-line><span>recent_fail_rate_30d</span></span>
+<span data-line><span>equipment_recent_anomaly_rate</span></span>
+<span data-line><span>source_usage_hours</span></span>
+<span data-line><span>chamber_usage_hours</span></span></code></pre></figure>
+<p>这些特征反映设备和材料状态。</p>
+<hr/>
+<h2 id="175-历史窗口特征">17.5 历史窗口特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#175-历史窗口特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>同一设备最近 10 次 temp_std 均值</span></span>
+<span data-line><span>同一设备最近 10 次 pressure_std 均值</span></span>
+<span data-line><span>同一 recipe 最近 20 次 PL 均值</span></span>
+<span data-line><span>同一 chamber 最近 30 天报警次数</span></span></code></pre></figure>
+<p>这类特征用于发现慢性漂移。</p>
+<hr/>
+<h1 id="18-异常检测代码示例-1z-score">18. 异常检测代码示例 1：Z-score<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#18-异常检测代码示例-1z-score" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>假设你有一个 <code>epi_runs.csv</code>：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pandas </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">as</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> numpy </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">as</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> np</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd.read_csv(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;epi_runs.csv&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;growth_temp_std&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">mu </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[feature].mean()</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">sigma </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[feature].std()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_zscore&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (df[feature] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> mu) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sigma</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_is_anomaly&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_zscore&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">].abs() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 3</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(df[[</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;run_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, feature, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_zscore&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_is_anomaly&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]].head())</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>如果 growth_temp_std 的 z-score 绝对值大于 3，</span></span>
+<span data-line><span>说明这次温度波动显著偏离历史正常水平。</span></span></code></pre></figure>
+<hr/>
+<h1 id="19-异常检测代码示例-2按-recipe-做-z-score">19. 异常检测代码示例 2：按 recipe 做 Z-score<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#19-异常检测代码示例-2按-recipe-做-z-score" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这比全局 Z-score 更合理。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pandas </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">as</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd.read_csv(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;epi_runs.csv&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;growth_temp_std&quot;</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_mean&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df.groupby(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;recipe_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)[feature].transform(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;mean&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_std&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df.groupby(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;recipe_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)[feature].transform(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;std&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_zscore&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    df[feature] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_mean&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_std&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_anomaly&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_zscore&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">].abs() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 3</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    df[</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        [</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;run_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;recipe_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            feature,</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_zscore&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">            f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">{</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">feature</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">}</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">_recipe_anomaly&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ].head()</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></figure>
+<p>这个更符合半导体业务。</p>
+<p>因为它问的是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>当前 run 相对于同一个 recipe 的历史正常状态是否异常？</span></span></code></pre></figure>
+<p>而不是相对于所有产品整体是否异常。</p>
+<hr/>
+<h1 id="20-异常检测代码示例-3isolation-forest">20. 异常检测代码示例 3：Isolation Forest<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#20-异常检测代码示例-3isolation-forest" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这是第一版主力。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pandas </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">as</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">from</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sklearn.ensemble </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> IsolationForest</span></span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">from</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sklearn.preprocessing </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> StandardScaler</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd.read_csv(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;epi_runs.csv&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">features </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;temp_mean_dev&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;growth_temp_std&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;pressure_mean_ratio&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;pressure_std&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;flux_std&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;alarm_count&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;days_since_maintenance&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;source_usage_hours&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[features].copy()</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 缺失值简单处理</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> X.fillna(X.median(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">numeric_only</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">True</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 标准化</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">scaler </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> StandardScaler()</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X_scaled </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> scaler.fit_transform(X)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> IsolationForest(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    n_estimators</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">300</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    contamination</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.05</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 假设约 5% 样本异常</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    random_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">42</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model.fit(X_scaled)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># sklearn 输出：-1 表示异常，1 表示正常</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;iforest_label&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> model.predict(X_scaled)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># decision_function 越低越异常，这里转成越高越异常</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">raw_score </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> model.decision_function(X_scaled)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;anomaly_score&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">raw_score</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df[</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;is_anomaly&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;iforest_label&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    df[</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        [</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;run_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;recipe_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;equipment_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;anomaly_score&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">            &quot;is_anomaly&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ].sort_values(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;anomaly_score&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">ascending</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">False</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">).head(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">20</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></figure>
+<p>你今天要看懂：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>features = 用哪些字段判断异常</span></span>
+<span data-line><span>contamination = 预期异常比例</span></span>
+<span data-line><span>anomaly_score = 异常分数</span></span>
+<span data-line><span>is_anomaly = 是否异常</span></span></code></pre></figure>
+<hr/>
+<h1 id="21-contamination-参数怎么设">21. contamination 参数怎么设？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-contamination-参数怎么设" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p><code>contamination</code> 表示你预期有多少比例样本是异常。</p>
+<p>比如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>contamination=0.01 → 认为约 1% 样本异常</span></span>
+<span data-line><span>contamination=0.05 → 认为约 5% 样本异常</span></span>
+<span data-line><span>contamination=0.10 → 认为约 10% 样本异常</span></span></code></pre></figure>
+<p>第一版可以从：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>0.03 ~ 0.10</span></span></code></pre></figure>
+<p>之间试。</p>
+<p>但注意：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这个不是物理真理，而是报警阈值。</span></span></code></pre></figure>
+<p>它应该根据工程师能接受的复核量来调。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>每天 100 个 run，</span></span>
+<span data-line><span>如果 contamination=0.05，</span></span>
+<span data-line><span>每天大概标记 5 个 run 重点复核。</span></span></code></pre></figure>
+<p>这就很容易跟业务动作结合。</p>
+<hr/>
+<h1 id="22-异常检测怎么解释">22. 异常检测怎么解释？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-异常检测怎么解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>Isolation Forest 不像分类模型那样直接有很自然的概率解释。</p>
+<p>第一版可以用两种方式解释。</p>
+<h2 id="方法-1看异常样本的字段偏离">方法 1：看异常样本的字段偏离<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方法-1看异常样本的字段偏离" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如某个 run 被判异常，你输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>growth_temp_std：高于同 recipe 历史 98 分位</span></span>
+<span data-line><span>pressure_std：高于同设备历史 95 分位</span></span>
+<span data-line><span>alarm_count：高于历史 99 分位</span></span>
+<span data-line><span>source_usage_hours：高于历史 90 分位</span></span></code></pre></figure>
+<p>这对工程师很好理解。</p>
+<hr/>
+<h2 id="方法-2用规则--模型混合解释">方法 2：用“规则 + 模型”混合解释<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方法-2用规则--模型混合解释" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模型发现异常后，再用规则解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常原因候选：</span></span>
+<span data-line><span>1. 温度波动异常</span></span>
+<span data-line><span>2. 压力波动异常</span></span>
+<span data-line><span>3. 报警次数异常</span></span>
+<span data-line><span>4. 维护周期过长</span></span>
+<span data-line><span>5. 源材料使用时长偏长</span></span></code></pre></figure>
+<p>这样比直接说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Isolation Forest 认为异常</span></span></code></pre></figure>
+<p>更容易落地。</p>
+<hr/>
+<h1 id="23-异常检测输出示例">23. 异常检测输出示例<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#23-异常检测输出示例" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>一个好的输出不是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常：True</span></span></code></pre></figure>
+<p>而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Run：RUN2026-00427-008</span></span>
+<span data-line><span>产品：HEMT</span></span>
+<span data-line><span>Recipe：R-HEMT-017</span></span>
+<span data-line><span>设备：MBE-03</span></span>
+<span data-line> </span>
+<span data-line><span>异常分数：0.87</span></span>
+<span data-line><span>风险等级：严重异常</span></span>
+<span data-line> </span>
+<span data-line><span>主要异常点：</span></span>
+<span data-line><span>1. growth_temp_std 高于同 recipe 历史 98 分位</span></span>
+<span data-line><span>2. pressure_std 高于同设备历史 96 分位</span></span>
+<span data-line><span>3. alarm_count = 4，高于近期正常水平</span></span>
+<span data-line><span>4. source_usage_hours 接近上限</span></span>
+<span data-line><span>5. days_since_maintenance = 92 天，偏长</span></span>
+<span data-line> </span>
+<span data-line><span>建议动作：</span></span>
+<span data-line><span>1. 优先复查 PL mapping</span></span>
+<span data-line><span>2. 复查 XRD FWHM</span></span>
+<span data-line><span>3. 查看 MBE-03 近期温控和真空日志</span></span>
+<span data-line><span>4. 检查源炉状态</span></span>
+<span data-line><span>5. 暂缓直接放行，进入工程师复核</span></span></code></pre></figure>
+<p>这才是能给客户看的东西。</p>
+<hr/>
+<h1 id="24-异常检测和分类回归怎么组合">24. 异常检测和分类/回归怎么组合？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#24-异常检测和分类回归怎么组合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>最实用的组合是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测：发现这次 run 是否不像正常</span></span>
+<span data-line><span>分类模型：预测这次是否可能 Fail</span></span>
+<span data-line><span>回归模型：预测具体哪个质量指标可能异常</span></span></code></pre></figure>
+<p>最终输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常分数：0.87，高</span></span>
+<span data-line><span>Fail 概率：0.68，高</span></span>
+<span data-line><span>预测 PL：68，低于规格线</span></span>
+<span data-line><span>预测 XRD：正常</span></span>
+<span data-line><span>预测表面缺陷：偏高</span></span></code></pre></figure>
+<p>综合判断：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这批片整体风险高，主要风险来自生长过程异常、PL 偏低、表面缺陷偏多。</span></span></code></pre></figure>
+<p>这比单个模型更有价值。</p>
+<hr/>
+<h1 id="25-异常检测最适合项目早期">25. 异常检测最适合项目早期<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#25-异常检测最适合项目早期" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>如果客户说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我们没有系统整理过 Pass / Fail 标签。</span></span></code></pre></figure>
+<p>你不要卡住。</p>
+<p>你可以说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>没关系，我们可以先从正常工艺状态建模开始。</span></span>
+<span data-line><span>先用历史稳定 run 建立正常基线，做设备和工艺异常检测。</span></span>
+<span data-line><span>等后续质量标签逐渐积累，再升级为 Pass / Fail 预测和关键指标预测。</span></span></code></pre></figure>
+<p>这就是正确路线。</p>
+<hr/>
+<h1 id="26-day-5-课堂练习">26. Day 5 课堂练习<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#26-day-5-课堂练习" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="练习-1判断适合分类还是异常检测">练习 1：判断适合分类还是异常检测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#练习-1判断适合分类还是异常检测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="问题-a">问题 A<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-a" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我们有 5000 条历史数据，其中 800 条明确 Fail。</span></span>
+<span data-line><span>想预测新 run 是否 Fail。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>适合分类。</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-b">问题 B<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-b" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我们只有大量正常生产数据，很少记录 Fail 标签。</span></span>
+<span data-line><span>想知道某次生长过程是否不正常。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>适合异常检测。</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-c">问题 C<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-c" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>同一个 recipe 最近 20 炉 PL 均值持续下降。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>适合漂移检测 / 控制图 / 时间序列趋势检测。</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-d">问题 D<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-d" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型需要判断 wafer map 是中心缺陷还是边缘缺陷。</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这是图像多分类，不是异常检测的第一优先场景。</span></span></code></pre></figure>
+<hr/>
+<h1 id="27-练习-2判断哪个字段异常">27. 练习 2：判断哪个字段异常<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#27-练习-2判断哪个字段异常" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>假设同一 recipe 的历史统计如下：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>growth_temp_std 平均 = 1.5，标准差 = 0.6</span></span>
+<span data-line><span>pressure_std 平均 = 0.04，标准差 = 0.02</span></span>
+<span data-line><span>alarm_count 平均 = 0.3，标准差 = 0.5</span></span></code></pre></figure>
+<p>当前 run：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>growth_temp_std = 3.6</span></span>
+<span data-line><span>pressure_std = 0.11</span></span>
+<span data-line><span>alarm_count = 3</span></span></code></pre></figure>
+<p>你大致判断：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>growth_temp_std 明显异常</span></span>
+<span data-line><span>pressure_std 明显异常</span></span>
+<span data-line><span>alarm_count 明显偏高</span></span></code></pre></figure>
+<p>业务结论：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>该 run 的工艺稳定性风险较高，建议优先复核检测结果。</span></span></code></pre></figure>
+<hr/>
+<h1 id="28-day-5-作业">28. Day 5 作业<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#28-day-5-作业" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天作业有 3 个。</p>
+<hr/>
+<h2 id="作业-1定义一个异常检测任务">作业 1：定义一个异常检测任务<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-1定义一个异常检测任务" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>按照这个模板写：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>任务名称：</span></span>
+<span data-line><span>检测对象：</span></span>
+<span data-line><span>一行数据代表：</span></span>
+<span data-line><span>输入 X：</span></span>
+<span data-line><span>是否需要 y：</span></span>
+<span data-line><span>异常输出：</span></span>
+<span data-line><span>业务动作：</span></span></code></pre></figure>
+<p>示例：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>任务名称：</span></span>
+<span data-line><span>MBE run 级工艺异常检测</span></span>
+<span data-line> </span>
+<span data-line><span>检测对象：</span></span>
+<span data-line><span>一次 MBE 生长任务</span></span>
+<span data-line> </span>
+<span data-line><span>一行数据代表：</span></span>
+<span data-line><span>一个 run</span></span>
+<span data-line> </span>
+<span data-line><span>输入 X：</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>growth_temp_mean</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_mean</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>flux_mean</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>source_usage_hours</span></span>
+<span data-line> </span>
+<span data-line><span>是否需要 y：</span></span>
+<span data-line><span>不强依赖 Pass / Fail 标签，可以先基于历史正常 run 建模</span></span>
+<span data-line> </span>
+<span data-line><span>异常输出：</span></span>
+<span data-line><span>anomaly_score</span></span>
+<span data-line><span>risk_level</span></span>
+<span data-line><span>top_anomaly_features</span></span>
+<span data-line> </span>
+<span data-line><span>业务动作：</span></span>
+<span data-line><span>异常分数高的 run 优先检测，进入工程师复核列表</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-2列出-15-个异常检测特征">作业 2：列出 15 个异常检测特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-2列出-15-个异常检测特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>至少包括：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>5 个工艺稳定性特征</span></span>
+<span data-line><span>5 个设备状态特征</span></span>
+<span data-line><span>5 个相对 recipe 偏差特征</span></span></code></pre></figure>
+<p>参考：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>工艺稳定性：</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>flux_std</span></span>
+<span data-line><span>temp_spike_count</span></span>
+<span data-line><span>pressure_spike_count</span></span>
+<span data-line> </span>
+<span data-line><span>设备状态：</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line><span>recent_alarm_count_7d</span></span>
+<span data-line><span>equipment_recent_anomaly_rate</span></span>
+<span data-line><span>source_usage_hours</span></span>
+<span data-line><span>chamber_usage_hours</span></span>
+<span data-line> </span>
+<span data-line><span>相对 recipe 偏差：</span></span>
+<span data-line><span>temp_mean_dev</span></span>
+<span data-line><span>growth_time_dev</span></span>
+<span data-line><span>pressure_mean_ratio</span></span>
+<span data-line><span>flux_dev</span></span>
+<span data-line><span>max_deviation_from_setpoint</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-3设计异常分数业务动作">作业 3：设计异常分数业务动作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-3设计异常分数业务动作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>按照这个格式写：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>anomaly_score 0.00 ~ ?</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span>
+<span data-line> </span>
+<span data-line><span>anomaly_score ? ~ ?</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span>
+<span data-line> </span>
+<span data-line><span>anomaly_score ? ~ ?</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span>
+<span data-line> </span>
+<span data-line><span>anomaly_score ? ~ 1.00</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span></code></pre></figure>
+<p>参考：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>0.00 ~ 0.20：正常，正常流程</span></span>
+<span data-line><span>0.20 ~ 0.50：关注，工程师抽查</span></span>
+<span data-line><span>0.50 ~ 0.80：高异常，优先检测和复核</span></span>
+<span data-line><span>0.80 ~ 1.00：严重异常，暂缓放行并检查设备/工艺日志</span></span></code></pre></figure>
+<hr/>
+<h1 id="29-day-5-验收标准">29. Day 5 验收标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#29-day-5-验收标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你今天合格的标准是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>1. 能解释异常检测和分类的区别</span></span>
+<span data-line><span>2. 知道异常检测不一定需要 Fail 标签</span></span>
+<span data-line><span>3. 能说出 MBE 外延中哪些状态适合异常检测</span></span>
+<span data-line><span>4. 能解释 Z-score 的直觉</span></span>
+<span data-line><span>5. 能解释为什么要按 recipe / product 分组</span></span>
+<span data-line><span>6. 知道 Isolation Forest 适合第一版表格异常检测</span></span>
+<span data-line><span>7. 能把 anomaly_score 转成业务动作</span></span>
+<span data-line><span>8. 能说出异常检测在没有数据标签时的价值</span></span></code></pre></figure>
+<hr/>
+<h1 id="30-day-5-最核心总结">30. Day 5 最核心总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#30-day-5-最核心总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天你只需要记住这句话：</p>
+<blockquote>
+<p><strong>当 Fail 标签不足时，不要硬做 Pass / Fail 分类；先用异常检测学习“什么是正常工艺状态”，把不像正常状态的 run、设备、recipe 标出来，让工程师优先复核。</strong></p>
+</blockquote>
+<p>在外延片场景里，Day 5 最推荐的第一版组合是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Z-score / IQR：发现单指标异常</span></span>
+<span data-line><span>Isolation Forest：发现多变量组合异常</span></span>
+<span data-line><span>Control Chart / EWMA：发现慢性工艺漂移</span></span></code></pre></figure>
+<p>最终系统输出不应该是冷冰冰的：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常 / 不异常</span></span></code></pre></figure>
+<p>而应该是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常分数</span></span>
+<span data-line><span>风险等级</span></span>
+<span data-line><span>异常原因</span></span>
+<span data-line><span>建议检测项</span></span>
+<span data-line><span>建议工程师动作</span></span></code></pre></figure>
+<p>这才是能落地的半导体 AI 异常检测系统。</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-44" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#day-5异常检测--没有-fail-标签时怎么发现-mbe-工艺设备异常" data-for="day-5异常检测--没有-fail-标签时怎么发现-mbe-工艺设备异常">Day 5：异常检测 —— 没有 Fail 标签时，怎么发现 MBE 工艺/设备异常？</a></li><li class="depth-0"><a href="#1-今天先记住一句话" data-for="1-今天先记住一句话">1. 今天先记住一句话</a></li><li class="depth-0"><a href="#2-为什么新磊这种外延片场景很适合异常检测" data-for="2-为什么新磊这种外延片场景很适合异常检测">2. 为什么新磊这种外延片场景很适合异常检测？</a></li><li class="depth-0"><a href="#3-异常检测和分类的区别" data-for="3-异常检测和分类的区别">3. 异常检测和分类的区别</a></li><li class="depth-0"><a href="#4-异常检测的输出是什么" data-for="4-异常检测的输出是什么">4. 异常检测的输出是什么？</a></li><li class="depth-0"><a href="#5-外延片场景里有哪些异常检测任务" data-for="5-外延片场景里有哪些异常检测任务">5. 外延片场景里有哪些异常检测任务？</a></li><li class="depth-1"><a href="#任务-1mbe-run-级异常检测" data-for="任务-1mbe-run-级异常检测">任务 1：MBE run 级异常检测</a></li><li class="depth-1"><a href="#任务-2设备状态异常检测" data-for="任务-2设备状态异常检测">任务 2：设备状态异常检测</a></li><li class="depth-1"><a href="#任务-3recipe-漂移检测" data-for="任务-3recipe-漂移检测">任务 3：recipe 漂移检测</a></li><li class="depth-1"><a href="#任务-4检测指标异常检测" data-for="任务-4检测指标异常检测">任务 4：检测指标异常检测</a></li><li class="depth-0"><a href="#6-异常有几种类型" data-for="6-异常有几种类型">6. 异常有几种类型？</a></li><li class="depth-1"><a href="#61-单点异常" data-for="61-单点异常">6.1 单点异常</a></li><li class="depth-1"><a href="#62-上下文异常" data-for="62-上下文异常">6.2 上下文异常</a></li><li class="depth-1"><a href="#63-组合异常" data-for="63-组合异常">6.3 组合异常</a></li><li class="depth-1"><a href="#64-漂移异常" data-for="64-漂移异常">6.4 漂移异常</a></li><li class="depth-0"><a href="#7-最简单的异常检测z-score" data-for="7-最简单的异常检测z-score">7. 最简单的异常检测：Z-score</a></li><li class="depth-1"><a href="#用外延片例子解释" data-for="用外延片例子解释">用外延片例子解释</a></li><li class="depth-0"><a href="#8-z-score-的局限" data-for="8-z-score-的局限">8. Z-score 的局限</a></li><li class="depth-1"><a href="#问题-1假设数据大致稳定" data-for="问题-1假设数据大致稳定">问题 1：假设数据大致稳定</a></li><li class="depth-1"><a href="#问题-2容易受极端值影响" data-for="问题-2容易受极端值影响">问题 2：容易受极端值影响</a></li><li class="depth-1"><a href="#问题-3只能看单个变量" data-for="问题-3只能看单个变量">问题 3：只能看单个变量</a></li><li class="depth-0"><a href="#9-iqr更稳健的单变量异常检测" data-for="9-iqr更稳健的单变量异常检测">9. IQR：更稳健的单变量异常检测</a></li><li class="depth-0"><a href="#10-control-chart工业现场很常用的思想" data-for="10-control-chart工业现场很常用的思想">10. Control Chart：工业现场很常用的思想</a></li><li class="depth-0"><a href="#11-isolation-forest第一版最推荐的机器学习异常检测模型" data-for="11-isolation-forest第一版最推荐的机器学习异常检测模型">11. Isolation Forest：第一版最推荐的机器学习异常检测模型</a></li><li class="depth-0"><a href="#12-one-class-svm可以用但第一版不一定优先" data-for="12-one-class-svm可以用但第一版不一定优先">12. One-Class SVM：可以用，但第一版不一定优先</a></li><li class="depth-0"><a href="#13-autoencoder适合更复杂的异常检测" data-for="13-autoencoder适合更复杂的异常检测">13. AutoEncoder：适合更复杂的异常检测</a></li><li class="depth-0"><a href="#14-不同数据形态对应的方法" data-for="14-不同数据形态对应的方法">14. 不同数据形态对应的方法</a></li><li class="depth-0"><a href="#15-外延片异常检测第一版怎么做" data-for="15-外延片异常检测第一版怎么做">15. 外延片异常检测第一版怎么做？</a></li><li class="depth-0"><a href="#16-但这里有一个大坑不能把不同-recipe-混在一起直接比" data-for="16-但这里有一个大坑不能把不同-recipe-混在一起直接比">16. 但这里有一个大坑：不能把不同 recipe 混在一起直接比</a></li><li class="depth-1"><a href="#方法-1分组建模" data-for="方法-1分组建模">方法 1：分组建模</a></li><li class="depth-1"><a href="#方法-2做相对偏差特征" data-for="方法-2做相对偏差特征">方法 2：做相对偏差特征</a></li><li class="depth-0"><a href="#17-异常检测特征怎么设计" data-for="17-异常检测特征怎么设计">17. 异常检测特征怎么设计？</a></li><li class="depth-1"><a href="#171-基础统计特征" data-for="171-基础统计特征">17.1 基础统计特征</a></li><li class="depth-1"><a href="#172-相对-recipe-偏差特征" data-for="172-相对-recipe-偏差特征">17.2 相对 recipe 偏差特征</a></li><li class="depth-1"><a href="#173-稳定性特征" data-for="173-稳定性特征">17.3 稳定性特征</a></li><li class="depth-1"><a href="#174-设备状态特征" data-for="174-设备状态特征">17.4 设备状态特征</a></li><li class="depth-1"><a href="#175-历史窗口特征" data-for="175-历史窗口特征">17.5 历史窗口特征</a></li><li class="depth-0"><a href="#18-异常检测代码示例-1z-score" data-for="18-异常检测代码示例-1z-score">18. 异常检测代码示例 1：Z-score</a></li><li class="depth-0"><a href="#19-异常检测代码示例-2按-recipe-做-z-score" data-for="19-异常检测代码示例-2按-recipe-做-z-score">19. 异常检测代码示例 2：按 recipe 做 Z-score</a></li><li class="depth-0"><a href="#20-异常检测代码示例-3isolation-forest" data-for="20-异常检测代码示例-3isolation-forest">20. 异常检测代码示例 3：Isolation Forest</a></li><li class="depth-0"><a href="#21-contamination-参数怎么设" data-for="21-contamination-参数怎么设">21. contamination 参数怎么设？</a></li><li class="depth-0"><a href="#22-异常检测怎么解释" data-for="22-异常检测怎么解释">22. 异常检测怎么解释？</a></li><li class="depth-1"><a href="#方法-1看异常样本的字段偏离" data-for="方法-1看异常样本的字段偏离">方法 1：看异常样本的字段偏离</a></li><li class="depth-1"><a href="#方法-2用规则--模型混合解释" data-for="方法-2用规则--模型混合解释">方法 2：用“规则 + 模型”混合解释</a></li><li class="depth-0"><a href="#23-异常检测输出示例" data-for="23-异常检测输出示例">23. 异常检测输出示例</a></li><li class="depth-0"><a href="#24-异常检测和分类回归怎么组合" data-for="24-异常检测和分类回归怎么组合">24. 异常检测和分类/回归怎么组合？</a></li><li class="depth-0"><a href="#25-异常检测最适合项目早期" data-for="25-异常检测最适合项目早期">25. 异常检测最适合项目早期</a></li><li class="depth-0"><a href="#26-day-5-课堂练习" data-for="26-day-5-课堂练习">26. Day 5 课堂练习</a></li><li class="depth-1"><a href="#练习-1判断适合分类还是异常检测" data-for="练习-1判断适合分类还是异常检测">练习 1：判断适合分类还是异常检测</a></li><li class="depth-2"><a href="#问题-a" data-for="问题-a">问题 A</a></li><li class="depth-2"><a href="#问题-b" data-for="问题-b">问题 B</a></li><li class="depth-2"><a href="#问题-c" data-for="问题-c">问题 C</a></li><li class="depth-2"><a href="#问题-d" data-for="问题-d">问题 D</a></li><li class="depth-0"><a href="#27-练习-2判断哪个字段异常" data-for="27-练习-2判断哪个字段异常">27. 练习 2：判断哪个字段异常</a></li><li class="depth-0"><a href="#28-day-5-作业" data-for="28-day-5-作业">28. Day 5 作业</a></li><li class="depth-1"><a href="#作业-1定义一个异常检测任务" data-for="作业-1定义一个异常检测任务">作业 1：定义一个异常检测任务</a></li><li class="depth-1"><a href="#作业-2列出-15-个异常检测特征" data-for="作业-2列出-15-个异常检测特征">作业 2：列出 15 个异常检测特征</a></li><li class="depth-1"><a href="#作业-3设计异常分数业务动作" data-for="作业-3设计异常分数业务动作">作业 3：设计异常分数业务动作</a></li><li class="depth-0"><a href="#29-day-5-验收标准" data-for="29-day-5-验收标准">29. Day 5 验收标准</a></li><li class="depth-0"><a href="#30-day-5-最核心总结" data-for="30-day-5-最核心总结">30. Day 5 最核心总结</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>

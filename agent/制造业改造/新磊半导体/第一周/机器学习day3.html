@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>机器学习day3</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="机器学习day3"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="机器学习day3"/><meta name="twitter:description" content="Day 3：分类问题 —— 外延片 Pass / Fail 质量预测 今天开始进入真正的机器学习任务。 Day 1 讲： 业务场景 → AI 任务类型 Day 2 讲： X 是什么，y 是什么，训练集/测试集是什么，什么是数据泄露 Day 3 专门讲： 分类问题 Classification 也就是： 给模型一批历史样本，让它学习什么样的外延片更容易 Pass，什么样的外延片更容易 Fail。 1."/><meta property="og:description" content="Day 3：分类问题 —— 外延片 Pass / Fail 质量预测 今天开始进入真正的机器学习任务。 Day 1 讲： 业务场景 → AI 任务类型 Day 2 讲： X 是什么，y 是什么，训练集/测试集是什么，什么是数据泄露 Day 3 专门讲： 分类问题 Classification 也就是： 给模型一批历史样本，让它学习什么样的外延片更容易 Pass，什么样的外延片更容易 Fail。 1."/><meta property="og:image:alt" content="Day 3：分类问题 —— 外延片 Pass / Fail 质量预测 今天开始进入真正的机器学习任务。 Day 1 讲： 业务场景 → AI 任务类型 Day 2 讲： X 是什么，y 是什么，训练集/测试集是什么，什么是数据泄露 Day 3 专门讲： 分类问题 Classification 也就是： 给模型一批历史样本，让它学习什么样的外延片更容易 Pass，什么样的外延片更容易 Fail。 1."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/制造业改造/新磊半导体/第一周/机器学习day3"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/制造业改造/新磊半导体/第一周/机器学习day3"/><link rel="icon" href="../../../../static/icon.png"/><meta name="description" content="Day 3：分类问题 —— 外延片 Pass / Fail 质量预测 今天开始进入真正的机器学习任务。 Day 1 讲： 业务场景 → AI 任务类型 Day 2 讲： X 是什么，y 是什么，训练集/测试集是什么，什么是数据泄露 Day 3 专门讲： 分类问题 Classification 也就是： 给模型一批历史样本，让它学习什么样的外延片更容易 Pass，什么样的外延片更容易 Fail。 1."/><meta name="generator" content="Quartz"/><link href="../../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/制造业改造/新磊半导体/第一周/机器学习day3"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-105"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-105" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/">制造业改造</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/新磊半导体/">新磊半导体</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../../agent/制造业改造/新磊半导体/第一周/">第一周</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>机器学习day3</a></div></nav><h1 class="article-title">机器学习day3</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-27T09:55:11.143Z">2026年4月27日</time><span>21分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="day-3分类问题--外延片-pass--fail-质量预测">Day 3：分类问题 —— 外延片 Pass / Fail 质量预测<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#day-3分类问题--外延片-pass--fail-质量预测" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天开始进入真正的机器学习任务。</p>
+<p>Day 1 讲：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>业务场景 → AI 任务类型</span></span></code></pre></figure>
+<p>Day 2 讲：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>X 是什么，y 是什么，训练集/测试集是什么，什么是数据泄露</span></span></code></pre></figure>
+<p>Day 3 专门讲：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>分类问题 Classification</span></span></code></pre></figure>
+<p>也就是：</p>
+<blockquote>
+<p>给模型一批历史样本，让它学习什么样的外延片更容易 Pass，什么样的外延片更容易 Fail。</p>
+</blockquote>
+<hr/>
+<h1 id="1-什么是分类问题">1. 什么是分类问题？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#1-什么是分类问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>分类问题就是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>输入一组特征 X</span></span>
+<span data-line><span>输出一个类别 y</span></span></code></pre></figure>
+<p>在外延片场景里，最典型的是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>输入：</span></span>
+<span data-line><span>MBE 生长参数、设备状态、recipe、衬底批次、源材料状态</span></span>
+<span data-line> </span>
+<span data-line><span>输出：</span></span>
+<span data-line><span>Pass / Fail</span></span></code></pre></figure>
+<p>也可以是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>低风险 / 中风险 / 高风险</span></span></code></pre></figure>
+<p>或者：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL 异常 / XRD 异常 / 厚度异常 / 表面缺陷异常</span></span></code></pre></figure>
+<hr/>
+<h1 id="2-外延片质量预测里的分类任务">2. 外延片质量预测里的分类任务<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2-外延片质量预测里的分类任务" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="任务-1综合-pass--fail-分类">任务 1：综合 Pass / Fail 分类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-1综合-pass--fail-分类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是第一版最推荐做的。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>y = Pass / Fail</span></span></code></pre></figure>
+<p>例子：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>wafer_id</th><th style="text-align:right;">temp_std</th><th style="text-align:right;">pressure_std</th><th style="text-align:right;">alarm_count</th><th>qc_result</th></tr></thead><tbody><tr><td>W001</td><td style="text-align:right;">1.2</td><td style="text-align:right;">0.03</td><td style="text-align:right;">0</td><td>Pass</td></tr><tr><td>W002</td><td style="text-align:right;">3.8</td><td style="text-align:right;">0.12</td><td style="text-align:right;">2</td><td>Fail</td></tr><tr><td>W003</td><td style="text-align:right;">1.5</td><td style="text-align:right;">0.04</td><td style="text-align:right;">0</td><td>Pass</td></tr><tr><td>W004</td><td style="text-align:right;">4.1</td><td style="text-align:right;">0.15</td><td style="text-align:right;">3</td><td>Fail</td></tr></tbody></table></div>
+<p>模型学到的可能是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>温度波动越大</span></span>
+<span data-line><span>压力波动越大</span></span>
+<span data-line><span>报警次数越多</span></span>
+<span data-line><span>Fail 风险越高</span></span></code></pre></figure>
+<hr/>
+<h2 id="任务-2单项异常分类">任务 2：单项异常分类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-2单项异常分类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>综合 Pass/Fail 太粗，可以拆细。</p>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>pl_fail：PL 是否异常</span></span>
+<span data-line><span>xrd_fail：XRD 是否异常</span></span>
+<span data-line><span>thickness_fail：厚度是否异常</span></span>
+<span data-line><span>surface_fail：表面缺陷是否异常</span></span></code></pre></figure>
+<p>这比单纯 <code>qc_result</code> 更有业务价值。</p>
+<p>因为工程师不只想知道：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>这批片有风险</span></span></code></pre></figure>
+<p>他还想知道：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>风险主要来自 PL？</span></span>
+<span data-line><span>还是 XRD？</span></span>
+<span data-line><span>还是厚度？</span></span>
+<span data-line><span>还是表面缺陷？</span></span></code></pre></figure>
+<hr/>
+<h2 id="任务-3风险等级分类">任务 3：风险等级分类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务-3风险等级分类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>有时候不要直接做 Pass / Fail，而是做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>低风险 / 中风险 / 高风险</span></span></code></pre></figure>
+<p>比如：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th style="text-align:right;">fail_probability</th><th>risk_level</th></tr></thead><tbody><tr><td style="text-align:right;">0.05</td><td>低风险</td></tr><tr><td style="text-align:right;">0.28</td><td>中风险</td></tr><tr><td style="text-align:right;">0.72</td><td>高风险</td></tr></tbody></table></div>
+<p>这个更适合生产现场。</p>
+<p>因为第一版模型不应该直接替工程师判废，而应该做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>风险提醒系统</span></span></code></pre></figure>
+<p>不是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>自动判废系统</span></span></code></pre></figure>
+<hr/>
+<h1 id="3-二分类多分类多标签要分清楚">3. 二分类、多分类、多标签，要分清楚<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3-二分类多分类多标签要分清楚" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="31-二分类-binary-classification">3.1 二分类 Binary Classification<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-二分类-binary-classification" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>只有两个类别：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Pass / Fail</span></span></code></pre></figure>
+<p>这是最简单的分类问题。</p>
+<p>外延片质量预测第一版就用它。</p>
+<hr/>
+<h2 id="32-多分类-multi-class-classification">3.2 多分类 Multi-class Classification<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-多分类-multi-class-classification" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>多个类别，但每个样本只属于其中一个。</p>
+<p>比如 wafer map 缺陷分类：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>center defect</span></span>
+<span data-line><span>edge defect</span></span>
+<span data-line><span>ring defect</span></span>
+<span data-line><span>scratch defect</span></span>
+<span data-line><span>random defect</span></span>
+<span data-line><span>no defect</span></span></code></pre></figure>
+<p>每张图只能分到一个主要类别。</p>
+<hr/>
+<h2 id="33-多标签-multi-label-classification">3.3 多标签 Multi-label Classification<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#33-多标签-multi-label-classification" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>一个样本可以同时属于多个类别。</p>
+<p>比如一片外延片可能同时存在：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>PL 异常</span></span>
+<span data-line><span>XRD 异常</span></span>
+<span data-line><span>表面缺陷偏多</span></span></code></pre></figure>
+<p>这就是多标签。</p>
+<p>对应标签可以长这样：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>wafer_id</th><th style="text-align:right;">pl_fail</th><th style="text-align:right;">xrd_fail</th><th style="text-align:right;">surface_fail</th></tr></thead><tbody><tr><td>W001</td><td style="text-align:right;">0</td><td style="text-align:right;">0</td><td style="text-align:right;">0</td></tr><tr><td>W002</td><td style="text-align:right;">1</td><td style="text-align:right;">0</td><td style="text-align:right;">1</td></tr><tr><td>W003</td><td style="text-align:right;">0</td><td style="text-align:right;">1</td><td style="text-align:right;">0</td></tr></tbody></table></div>
+<p>外延片质量问题里，多标签其实很常见。</p>
+<p>但第一阶段不要太复杂，先做二分类：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Pass / Fail</span></span></code></pre></figure>
+<hr/>
+<h1 id="4-分类模型输出的不是真相而是概率">4. 分类模型输出的不是“真相”，而是概率<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#4-分类模型输出的不是真相而是概率" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这一点非常重要。</p>
+<p>模型通常不是直接说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail</span></span></code></pre></figure>
+<p>而是输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 = 0.72</span></span></code></pre></figure>
+<p>也就是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>在历史数据规律下，这批片看起来像 Fail 的概率是 72%</span></span></code></pre></figure>
+<p>所以模型结果应该这样用：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 0.00 ~ 0.20：低风险</span></span>
+<span data-line><span>Fail 概率 0.20 ~ 0.50：中风险，建议复核</span></span>
+<span data-line><span>Fail 概率 0.50 ~ 1.00：高风险，重点检查</span></span></code></pre></figure>
+<p>注意：<br/>
+<code>0.72</code> 不是说它一定坏，而是说它<strong>值得工程师重点关注</strong>。</p>
+<hr/>
+<h1 id="5-分类模型怎么学">5. 分类模型怎么学？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#5-分类模型怎么学" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你可以把模型理解成：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>它在历史数据里找规律：</span></span>
+<span data-line><span>哪些特征组合更像 Pass？</span></span>
+<span data-line><span>哪些特征组合更像 Fail？</span></span></code></pre></figure>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Pass 样本常见特征：</span></span>
+<span data-line><span>temp_std 小</span></span>
+<span data-line><span>pressure_std 小</span></span>
+<span data-line><span>alarm_count 少</span></span>
+<span data-line><span>days_since_maintenance 短</span></span>
+<span data-line> </span>
+<span data-line><span>Fail 样本常见特征：</span></span>
+<span data-line><span>temp_std 大</span></span>
+<span data-line><span>pressure_std 大</span></span>
+<span data-line><span>alarm_count 多</span></span>
+<span data-line><span>source_usage_hours 长</span></span></code></pre></figure>
+<p>模型学到这些关系后，未来来一条新数据：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>temp_std = 4.2</span></span>
+<span data-line><span>pressure_std = 0.15</span></span>
+<span data-line><span>alarm_count = 3</span></span>
+<span data-line><span>source_usage_hours = 850</span></span></code></pre></figure>
+<p>模型可能输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 = 0.76</span></span></code></pre></figure>
+<hr/>
+<h1 id="6-第一版应该用什么分类模型">6. 第一版应该用什么分类模型？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#6-第一版应该用什么分类模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>外延片质量预测第一版，我建议按这个顺序学。</p>
+<h2 id="61-logistic-regression线性基线">6.1 Logistic Regression：线性基线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-logistic-regression线性基线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>它适合做第一个 baseline。</p>
+<p>优点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>简单</span></span>
+<span data-line><span>快</span></span>
+<span data-line><span>容易解释</span></span>
+<span data-line><span>能看出是否有基本信号</span></span></code></pre></figure>
+<p>缺点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>表达能力有限</span></span>
+<span data-line><span>不适合复杂非线性关系</span></span></code></pre></figure>
+<p>半导体制造数据一般不是简单线性，所以它通常不是最终模型。</p>
+<p>但它适合回答：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>最简单模型能不能看到一点规律？</span></span></code></pre></figure>
+<hr/>
+<h2 id="62-random-forest非线性基线">6.2 Random Forest：非线性基线<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-random-forest非线性基线" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>随机森林比逻辑回归强一些。</p>
+<p>优点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>能处理非线性</span></span>
+<span data-line><span>不太需要特征缩放</span></span>
+<span data-line><span>比较稳</span></span></code></pre></figure>
+<p>缺点：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>在高维、复杂表格数据上不一定最强</span></span>
+<span data-line><span>解释性一般</span></span></code></pre></figure>
+<p>它适合做第二个基线。</p>
+<hr/>
+<h2 id="63-lightgbm--xgboost--catboost主力模型">6.3 LightGBM / XGBoost / CatBoost：主力模型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-lightgbm--xgboost--catboost主力模型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>这是第一版真正推荐的主力。</p>
+<p>外延片数据通常是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>表格数据</span></span>
+<span data-line><span>数值特征多</span></span>
+<span data-line><span>类别字段多</span></span>
+<span data-line><span>非线性关系多</span></span>
+<span data-line><span>样本量可能不算特别大</span></span></code></pre></figure>
+<p>所以第一版最合适的是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>CatBoost</span></span>
+<span data-line><span>LightGBM</span></span>
+<span data-line><span>XGBoost</span></span></code></pre></figure>
+<p>我的建议：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>类别字段很多：CatBoost 优先</span></span>
+<span data-line><span>数值字段很多：LightGBM 优先</span></span>
+<span data-line><span>想做稳健对比：三个都跑一遍</span></span></code></pre></figure>
+<p>第一版不要急着上深度学习。</p>
+<p>因为：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>如果只是表格数据，深度学习未必更强；</span></span>
+<span data-line><span>而且更难解释、更难上线、更吃数据量。</span></span></code></pre></figure>
+<hr/>
+<h1 id="7-分类问题最重要的不是-accuracy">7. 分类问题最重要的不是 Accuracy<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#7-分类问题最重要的不是-accuracy" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这是今天最重要的内容。</p>
+<p>很多人一开始只看：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>accuracy = 准确率</span></span></code></pre></figure>
+<p>但在半导体质量预测里，accuracy 很容易骗人。</p>
+<hr/>
+<h2 id="举个例子">举个例子<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#举个例子" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>假设 1000 批外延片里：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>950 批 Pass</span></span>
+<span data-line><span>50 批 Fail</span></span></code></pre></figure>
+<p>一个很蠢的模型永远预测：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>全部 Pass</span></span></code></pre></figure>
+<p>它的 accuracy 是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>950 / 1000 = 95%</span></span></code></pre></figure>
+<p>看起来很高。</p>
+<p>但它一个坏片都没抓出来。</p>
+<p>所以这个模型在业务上是废的。</p>
+<hr/>
+<h1 id="8-混淆矩阵分类问题必须看懂">8. 混淆矩阵：分类问题必须看懂<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#8-混淆矩阵分类问题必须看懂" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>我们把 <strong>Fail 当成正类 Positive</strong>。</p>
+<p>因为我们真正关心的是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>能不能抓出 Fail</span></span></code></pre></figure>
+<p>混淆矩阵如下：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th></th><th style="text-align:right;">实际 Fail</th><th style="text-align:right;">实际 Pass</th></tr></thead><tbody><tr><td>预测 Fail</td><td style="text-align:right;">TP</td><td style="text-align:right;">FP</td></tr><tr><td>预测 Pass</td><td style="text-align:right;">FN</td><td style="text-align:right;">TN</td></tr></tbody></table></div>
+<p>解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>TP：真实 Fail，模型也预测 Fail，抓对了坏片</span></span>
+<span data-line><span>FP：真实 Pass，模型预测 Fail，误报</span></span>
+<span data-line><span>FN：真实 Fail，模型预测 Pass，漏掉坏片</span></span>
+<span data-line><span>TN：真实 Pass，模型也预测 Pass，正常放行</span></span></code></pre></figure>
+<p>在半导体场景里，最危险的是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>FN = 漏报坏片</span></span></code></pre></figure>
+<p>因为坏片流出去，可能导致：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>客户投诉</span></span>
+<span data-line><span>退货</span></span>
+<span data-line><span>失去信任</span></span>
+<span data-line><span>后续芯片加工浪费</span></span></code></pre></figure>
+<hr/>
+<h1 id="9-precisionrecallf1-怎么理解">9. Precision、Recall、F1 怎么理解？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-precisionrecallf1-怎么理解" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="91-recall坏片抓出来多少">9.1 Recall：坏片抓出来多少？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#91-recall坏片抓出来多少" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Recall = TP / (TP + FN)</span></span></code></pre></figure>
+<p>意思是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>所有真实 Fail 里面，模型抓出来多少？</span></span></code></pre></figure>
+<p>比如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>真实 Fail 有 50 批</span></span>
+<span data-line><span>模型抓出来 40 批</span></span>
+<span data-line><span>Recall = 40 / 50 = 80%</span></span></code></pre></figure>
+<p>在质量预警里，Recall 很重要。</p>
+<p>因为你希望尽量不要漏掉坏片。</p>
+<hr/>
+<h2 id="92-precision报警里面有多少是真的">9.2 Precision：报警里面有多少是真的？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#92-precision报警里面有多少是真的" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Precision = TP / (TP + FP)</span></span></code></pre></figure>
+<p>意思是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型报警的批次里面，有多少真的 Fail？</span></span></code></pre></figure>
+<p>比如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型报警 100 批</span></span>
+<span data-line><span>其中真实 Fail 40 批</span></span>
+<span data-line><span>Precision = 40 / 100 = 40%</span></span></code></pre></figure>
+<p>Precision 太低，工程师会被大量误报烦死。</p>
+<hr/>
+<h2 id="93-f1precision-和-recall-的折中">9.3 F1：Precision 和 Recall 的折中<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#93-f1precision-和-recall-的折中" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>F1 = 2 * Precision * Recall / (Precision + Recall)</span></span></code></pre></figure>
+<p>它综合考虑：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>抓得多不多</span></span>
+<span data-line><span>报警准不准</span></span></code></pre></figure>
+<hr/>
+<h1 id="10-半导体里应该优先看哪个指标">10. 半导体里应该优先看哪个指标？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#10-半导体里应该优先看哪个指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>我的建议：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>第一优先级：Fail Recall</span></span>
+<span data-line><span>第二优先级：Top-K Recall</span></span>
+<span data-line><span>第三优先级：Precision</span></span>
+<span data-line><span>第四优先级：PR-AUC</span></span>
+<span data-line><span>第五优先级：Accuracy</span></span></code></pre></figure>
+<p>为什么？</p>
+<p>因为第一版模型的目标不是自动判废，而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>把最值得复核的高风险批次挑出来</span></span></code></pre></figure>
+<p>所以你更应该看：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>风险最高的前 10% 批次里，覆盖了多少真实 Fail？</span></span></code></pre></figure>
+<p>这就是 Top-K Recall。</p>
+<hr/>
+<h1 id="11-top-k-recall-是什么">11. Top-K Recall 是什么？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-top-k-recall-是什么" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>假设有 1000 批外延片，其中 50 批真实 Fail。</p>
+<p>模型给每批片一个 Fail 风险分。</p>
+<p>我们按风险从高到低排序，取前 10%，也就是 100 批。</p>
+<p>如果这 100 批里包含了 35 批真实 Fail，那么：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Top 10% Recall = 35 / 50 = 70%</span></span></code></pre></figure>
+<p>这很有业务意义。</p>
+<p>它等价于对老板说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>只让工程师重点复核风险最高的 10% 批次，</span></span>
+<span data-line><span>就能提前覆盖 70% 的异常批次。</span></span></code></pre></figure>
+<p>这句话比：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型 accuracy 是 95%</span></span></code></pre></figure>
+<p>专业得多，也更有商业价值。</p>
+<hr/>
+<h1 id="12-阈值为什么很重要">12. 阈值为什么很重要？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-阈值为什么很重要" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>模型输出概率：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 = 0.31</span></span>
+<span data-line><span>Fail 概率 = 0.52</span></span>
+<span data-line><span>Fail 概率 = 0.78</span></span></code></pre></figure>
+<p>你要决定：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>超过多少算高风险？</span></span></code></pre></figure>
+<p>很多默认分类阈值是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>0.5</span></span></code></pre></figure>
+<p>但在质量预警里，不一定用 0.5。</p>
+<p>比如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 > 0.2：进入关注列表</span></span>
+<span data-line><span>Fail 概率 > 0.5：进入重点复核</span></span>
+<span data-line><span>Fail 概率 > 0.8：暂停出货，工程师强制复查</span></span></code></pre></figure>
+<p>所以分类模型不是简单输出 Pass/Fail，而是配合业务动作做分层。</p>
+<hr/>
+<h1 id="13-阈值和业务动作要绑定">13. 阈值和业务动作要绑定<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#13-阈值和业务动作要绑定" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你可以这样设计：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th style="text-align:right;">Fail 概率</th><th>风险等级</th><th>业务动作</th></tr></thead><tbody><tr><td style="text-align:right;">0.00 ~ 0.20</td><td>低风险</td><td>正常流程</td></tr><tr><td style="text-align:right;">0.20 ~ 0.50</td><td>中风险</td><td>增加一项检测或工程师抽查</td></tr><tr><td style="text-align:right;">0.50 ~ 0.80</td><td>高风险</td><td>优先复核 PL / XRD / 表面检测</td></tr><tr><td style="text-align:right;">0.80 ~ 1.00</td><td>极高风险</td><td>暂缓出货，工程师强制复查</td></tr></tbody></table></div>
+<p>这样模型就不是一个孤立算法，而是嵌入业务流程。</p>
+<hr/>
+<h1 id="14-一个完整的小例子">14. 一个完整的小例子<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#14-一个完整的小例子" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>假设测试集有 100 批外延片：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>真实 Fail：20 批</span></span>
+<span data-line><span>真实 Pass：80 批</span></span></code></pre></figure>
+<p>模型预测结果：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>预测 Fail：30 批</span></span>
+<span data-line><span>其中真实 Fail：15 批</span></span>
+<span data-line><span>其中真实 Pass：15 批</span></span>
+<span data-line> </span>
+<span data-line><span>预测 Pass：70 批</span></span>
+<span data-line><span>其中真实 Fail：5 批</span></span>
+<span data-line><span>其中真实 Pass：65 批</span></span></code></pre></figure>
+<p>那么：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>TP = 15</span></span>
+<span data-line><span>FP = 15</span></span>
+<span data-line><span>FN = 5</span></span>
+<span data-line><span>TN = 65</span></span></code></pre></figure>
+<p>Recall：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>15 / (15 + 5) = 75%</span></span></code></pre></figure>
+<p>Precision：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>15 / (15 + 15) = 50%</span></span></code></pre></figure>
+<p>Accuracy：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>(15 + 65) / 100 = 80%</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型抓出了 75% 的异常批次。</span></span>
+<span data-line><span>但报警的 30 批里，只有一半是真的异常。</span></span></code></pre></figure>
+<p>工程上这可能是可以接受的。</p>
+<p>因为第一版是风险提醒系统，不是自动判废系统。</p>
+<hr/>
+<h1 id="15-分类建模最小代码">15. 分类建模最小代码<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#15-分类建模最小代码" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天你不需要背代码，但要看懂流程。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pandas </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">as</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">from</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> sklearn.metrics </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    classification_report,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    confusion_matrix,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    average_precision_score,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    precision_recall_curve</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">from</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> catboost </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> CatBoostClassifier</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 1. 读取数据</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">df </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> pd.read_csv(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;epi_quality.csv&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 2. 定义标签</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">target </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;qc_result&quot;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df[target].map({</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;Pass&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;Fail&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">: </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">})</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 3. 根据预测时间点删除不能用的字段</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">drop_cols </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;qc_result&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;pl_intensity&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;xrd_fwhm&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;surface_defect_count&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;engineer_final_comment&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;customer_feedback&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;shipment_decision&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> df.drop(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">columns</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">drop_cols)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 4. 删除纯 ID 字段</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">id_cols </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;lot_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;wafer_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;run_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> X.drop(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">columns</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">id_cols)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 5. 类别特征</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">cat_features </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;product_type&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;recipe_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;equipment_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;chamber_id&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;substrate_batch&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;source_material_batch&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 6. 按时间切分</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">split_idx </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">len</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(df) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0.8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X_train </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> X.iloc[:split_idx]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">X_test </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> X.iloc[split_idx:]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y_train </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y.iloc[:split_idx]</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y_test </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y.iloc[split_idx:]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 7. 训练分类模型</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> CatBoostClassifier(</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    iterations</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    depth</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">6</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    learning_rate</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.03</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    loss_function</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Logloss&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    eval_metric</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;AUC&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    verbose</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">100</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model.fit(</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    X_train,</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    y_train,</span></span>
+<span data-line><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">    cat_features</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">cat_features</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 8. 输出 Fail 概率</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">fail_proba </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> model.predict_proba(X_test)[:, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 9. 设置风险阈值</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">threshold </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0.3</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y_pred </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (fail_proba </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">>=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> threshold).astype(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 10. 评估</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(confusion_matrix(y_test, y_pred))</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(classification_report(y_test, y_pred))</span></span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;PR-AUC:&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, average_precision_score(y_test, fail_proba))</span></span></code></pre></figure>
+<p>这段代码里你重点看 4 个东西：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>y = Pass/Fail 标签</span></span>
+<span data-line><span>drop_cols = 防止数据泄露</span></span>
+<span data-line><span>fail_proba = Fail 风险概率</span></span>
+<span data-line><span>threshold = 风险阈值</span></span></code></pre></figure>
+<hr/>
+<h1 id="16-top-k-recall-代码">16. Top-K Recall 代码<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#16-top-k-recall-代码" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>这个指标很适合工业质量预警。</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="python" data-theme="github-light github-dark"><code data-language="python" data-theme="github-light github-dark" style="display:grid;"><span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">import</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> numpy </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">as</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> np</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">def</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> top_k_recall</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_true, y_score, k_ratio</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">):</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;&quot;&quot;</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    y_true: 真实标签，Fail=1，Pass=0</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    y_score: 模型输出的 Fail 概率</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    k_ratio: 取风险最高的前多少比例</span></span>
+<span data-line><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">    &quot;&quot;&quot;</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    n </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> len</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_true)</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    k </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(n </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> k_ratio)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # 按风险分从高到低排序</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    order </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> np.argsort(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y_score)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # 取风险最高的前 k 个</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    top_k_idx </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> order[:k]</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # 总 Fail 数</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    total_fail </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> np.sum(y_true </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Top-K 里面命中的 Fail 数</span></span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    hit_fail </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> np.sum(y_true.iloc[top_k_idx] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> hit_fail </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> total_fail</span></span>
+<span data-line> </span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">recall_top_10 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> top_k_recall(y_test, fail_proba, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70;">k_ratio</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span data-line> </span>
+<span data-line><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">print</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;Top 10% Recall:&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, recall_top_10)</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>风险最高的前 10% 批次，覆盖了多少真实 Fail。</span></span></code></pre></figure>
+<p>这非常适合跟老板讲。</p>
+<hr/>
+<h1 id="17-分类模型最终输出不应该只是-01">17. 分类模型最终输出不应该只是 0/1<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#17-分类模型最终输出不应该只是-01" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>不要让系统只输出：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Pass</span></span>
+<span data-line><span>Fail</span></span></code></pre></figure>
+<p>更好的输出是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>批次：L2026-001</span></span>
+<span data-line><span>Fail 概率：0.68</span></span>
+<span data-line><span>风险等级：高</span></span>
+<span data-line><span>建议动作：优先复核</span></span></code></pre></figure>
+<p>再加上解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>主要风险因子：</span></span>
+<span data-line><span>1. temp_std 高于同 recipe 历史 95 分位</span></span>
+<span data-line><span>2. pressure_std 明显偏高</span></span>
+<span data-line><span>3. alarm_count 高于近期正常水平</span></span>
+<span data-line><span>4. source_usage_hours 偏长</span></span>
+<span data-line><span>5. days_since_maintenance 偏长</span></span></code></pre></figure>
+<p>这样工程师才会觉得模型有用。</p>
+<hr/>
+<h1 id="18-分类问题最常见的-5-个坑">18. 分类问题最常见的 5 个坑<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#18-分类问题最常见的-5-个坑" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="坑-1只看-accuracy">坑 1：只看 Accuracy<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#坑-1只看-accuracy" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>制造业数据通常类别不平衡，只看 Accuracy 很危险。</p>
+<hr/>
+<h2 id="坑-2fail-样本太少还硬做分类">坑 2：Fail 样本太少还硬做分类<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#坑-2fail-样本太少还硬做分类" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>如果 Fail 样本只有十几个，模型很难学到稳定规律。</p>
+<p>这时可以先做：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>异常检测</span></span>
+<span data-line><span>质量分预测</span></span>
+<span data-line><span>单项指标回归</span></span>
+<span data-line><span>工程师风险等级标注</span></span></code></pre></figure>
+<hr/>
+<h2 id="坑-3预测时间点不清楚">坑 3：预测时间点不清楚<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#坑-3预测时间点不清楚" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>不知道模型在什么时候预测，就不知道哪些字段能用。</p>
+<p>这会直接导致数据泄露。</p>
+<hr/>
+<h2 id="坑-4把检测后字段放进输入">坑 4：把检测后字段放进输入<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#坑-4把检测后字段放进输入" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>例如：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>pl_intensity</span></span>
+<span data-line><span>xrd_fwhm</span></span>
+<span data-line><span>final_qc_result</span></span>
+<span data-line><span>shipment_decision</span></span></code></pre></figure>
+<p>如果预测时间点是检测前，这些都不能用。</p>
+<hr/>
+<h2 id="坑-5模型没有业务动作">坑 5：模型没有业务动作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#坑-5模型没有业务动作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>模型说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 0.63</span></span></code></pre></figure>
+<p>但没有告诉工程师该做什么。</p>
+<p>这种模型很难落地。</p>
+<p>必须配合：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>风险等级</span></span>
+<span data-line><span>复核建议</span></span>
+<span data-line><span>优先检测项</span></span>
+<span data-line><span>相似历史案例</span></span></code></pre></figure>
+<hr/>
+<h1 id="19-你今天要形成的专业表达">19. 你今天要形成的专业表达<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#19-你今天要形成的专业表达" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>以后你跟客户讲分类模型，不要说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我们可以训练一个模型判断好坏。</span></span></code></pre></figure>
+<p>你要说：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>我们会先把质量预测定义成一个二分类风险评分问题。</span></span>
+<span data-line><span>模型不是直接替代工程师判废，而是输出每批外延片的 Fail 概率。</span></span>
+<span data-line><span>然后按照风险分层，把高风险批次推送给工程师优先复核。</span></span>
+<span data-line><span>评估上我们不会只看准确率，而会重点看 Fail Recall、Top-K Recall 和误报成本。</span></span></code></pre></figure>
+<p>这段话就是专业咨询表达。</p>
+<hr/>
+<h1 id="20-day-3-课堂练习">20. Day 3 课堂练习<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#20-day-3-课堂练习" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="练习-1判断分类类型">练习 1：判断分类类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#练习-1判断分类类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="问题-a">问题 A<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-a" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>预测外延片 Pass / Fail</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>二分类</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-b">问题 B<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-b" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>判断 wafer map 是中心缺陷、边缘缺陷、环形缺陷还是划痕缺陷</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>多分类</span></span></code></pre></figure>
+<hr/>
+<h3 id="问题-c">问题 C<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#问题-c" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>判断一片外延片是否同时存在 PL 异常、XRD 异常、表面缺陷异常</span></span></code></pre></figure>
+<p>答案：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>多标签分类</span></span></code></pre></figure>
+<hr/>
+<h2 id="练习-2手算混淆矩阵指标">练习 2：手算混淆矩阵指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#练习-2手算混淆矩阵指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>假设：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>TP = 30</span></span>
+<span data-line><span>FP = 20</span></span>
+<span data-line><span>FN = 10</span></span>
+<span data-line><span>TN = 140</span></span></code></pre></figure>
+<p>那么：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Recall = TP / (TP + FN) = 30 / 40 = 75%</span></span>
+<span data-line><span>Precision = TP / (TP + FP) = 30 / 50 = 60%</span></span>
+<span data-line><span>Accuracy = (TP + TN) / 总数 = 170 / 200 = 85%</span></span></code></pre></figure>
+<p>业务解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型抓出了 75% 的真实异常批次。</span></span>
+<span data-line><span>报警的批次里，有 60% 真的异常。</span></span>
+<span data-line><span>整体准确率 85%，但不能只看这个指标。</span></span></code></pre></figure>
+<hr/>
+<h1 id="21-day-3-作业">21. Day 3 作业<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-day-3-作业" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天作业有 3 个。</p>
+<hr/>
+<h2 id="作业-1定义一个分类任务">作业 1：定义一个分类任务<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-1定义一个分类任务" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>按照这个格式写：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>任务名称：</span></span>
+<span data-line><span>分类类型：二分类 / 多分类 / 多标签</span></span>
+<span data-line><span>正类是什么：</span></span>
+<span data-line><span>输入 X：</span></span>
+<span data-line><span>输出 y：</span></span>
+<span data-line><span>预测时间点：</span></span>
+<span data-line><span>业务动作：</span></span></code></pre></figure>
+<p>示例：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>任务名称：</span></span>
+<span data-line><span>MBE 生长后外延片 Fail 风险预测</span></span>
+<span data-line> </span>
+<span data-line><span>分类类型：</span></span>
+<span data-line><span>二分类</span></span>
+<span data-line> </span>
+<span data-line><span>正类：</span></span>
+<span data-line><span>Fail</span></span>
+<span data-line> </span>
+<span data-line><span>输入 X：</span></span>
+<span data-line><span>recipe_id</span></span>
+<span data-line><span>equipment_id</span></span>
+<span data-line><span>chamber_id</span></span>
+<span data-line><span>substrate_batch</span></span>
+<span data-line><span>source_material_batch</span></span>
+<span data-line><span>growth_temp_mean</span></span>
+<span data-line><span>growth_temp_std</span></span>
+<span data-line><span>pressure_mean</span></span>
+<span data-line><span>pressure_std</span></span>
+<span data-line><span>alarm_count</span></span>
+<span data-line><span>days_since_maintenance</span></span>
+<span data-line> </span>
+<span data-line><span>输出 y：</span></span>
+<span data-line><span>qc_result = Pass / Fail</span></span>
+<span data-line> </span>
+<span data-line><span>预测时间点：</span></span>
+<span data-line><span>MBE 生长完成后，检测前</span></span>
+<span data-line> </span>
+<span data-line><span>业务动作：</span></span>
+<span data-line><span>Fail 概率超过 0.3 的 run 进入工程师复核列表</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-2设计风险阈值">作业 2：设计风险阈值<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-2设计风险阈值" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>你自己设计一套阈值。</p>
+<p>格式：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Fail 概率 0.00 ~ ?</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span>
+<span data-line> </span>
+<span data-line><span>Fail 概率 ? ~ ?</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span>
+<span data-line> </span>
+<span data-line><span>Fail 概率 ? ~ ?</span></span>
+<span data-line><span>风险等级：</span></span>
+<span data-line><span>业务动作：</span></span></code></pre></figure>
+<p>参考：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>0.00 ~ 0.20：低风险，正常流程</span></span>
+<span data-line><span>0.20 ~ 0.50：中风险，增加抽检</span></span>
+<span data-line><span>0.50 ~ 0.80：高风险，工程师优先复核</span></span>
+<span data-line><span>0.80 ~ 1.00：极高风险，暂缓出货</span></span></code></pre></figure>
+<hr/>
+<h2 id="作业-3解释分类指标">作业 3：解释分类指标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#作业-3解释分类指标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>用自己的话解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>Accuracy：</span></span>
+<span data-line><span>Precision：</span></span>
+<span data-line><span>Recall：</span></span>
+<span data-line><span>F1：</span></span>
+<span data-line><span>Top-K Recall：</span></span></code></pre></figure>
+<p>重点解释：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>为什么外延片质量预测不能只看 Accuracy？</span></span>
+<span data-line><span>为什么 Fail Recall 很重要？</span></span>
+<span data-line><span>为什么 Top-K Recall 适合老板听？</span></span></code></pre></figure>
+<hr/>
+<h1 id="22-day-3-验收标准">22. Day 3 验收标准<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-day-3-验收标准" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>你今天合格的标准是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>1. 能解释什么是分类问题</span></span>
+<span data-line><span>2. 能区分二分类、多分类、多标签</span></span>
+<span data-line><span>3. 能说清楚为什么 Fail 是正类</span></span>
+<span data-line><span>4. 能看懂 TP / FP / FN / TN</span></span>
+<span data-line><span>5. 能解释 Precision 和 Recall</span></span>
+<span data-line><span>6. 能说明为什么 Accuracy 不够</span></span>
+<span data-line><span>7. 能理解阈值不是固定 0.5</span></span>
+<span data-line><span>8. 能把模型输出变成业务动作</span></span></code></pre></figure>
+<hr/>
+<h1 id="23-day-3-最核心总结">23. Day 3 最核心总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#23-day-3-最核心总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p>今天只记住这句话：</p>
+<blockquote>
+<p><strong>外延片 Pass / Fail 预测不是为了让模型替工程师判废，而是让模型给每批片打一个 Fail 风险分，再把高风险批次优先交给工程师复核。</strong></p>
+</blockquote>
+<p>所以分类问题的核心不是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>模型准确率多高</span></span></code></pre></figure>
+<p>而是：</p>
+<figure data-rehype-pretty-code-figure><pre tabindex="0" data-language="text" data-theme="github-light github-dark"><code data-language="text" data-theme="github-light github-dark" style="display:grid;"><span data-line><span>坏片抓出来多少</span></span>
+<span data-line><span>误报成本能不能接受</span></span>
+<span data-line><span>风险最高的批次是否值得复核</span></span>
+<span data-line><span>模型结果能不能变成业务动作</span></span></code></pre></figure></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-42" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#day-3分类问题--外延片-pass--fail-质量预测" data-for="day-3分类问题--外延片-pass--fail-质量预测">Day 3：分类问题 —— 外延片 Pass / Fail 质量预测</a></li><li class="depth-0"><a href="#1-什么是分类问题" data-for="1-什么是分类问题">1. 什么是分类问题？</a></li><li class="depth-0"><a href="#2-外延片质量预测里的分类任务" data-for="2-外延片质量预测里的分类任务">2. 外延片质量预测里的分类任务</a></li><li class="depth-1"><a href="#任务-1综合-pass--fail-分类" data-for="任务-1综合-pass--fail-分类">任务 1：综合 Pass / Fail 分类</a></li><li class="depth-1"><a href="#任务-2单项异常分类" data-for="任务-2单项异常分类">任务 2：单项异常分类</a></li><li class="depth-1"><a href="#任务-3风险等级分类" data-for="任务-3风险等级分类">任务 3：风险等级分类</a></li><li class="depth-0"><a href="#3-二分类多分类多标签要分清楚" data-for="3-二分类多分类多标签要分清楚">3. 二分类、多分类、多标签，要分清楚</a></li><li class="depth-1"><a href="#31-二分类-binary-classification" data-for="31-二分类-binary-classification">3.1 二分类 Binary Classification</a></li><li class="depth-1"><a href="#32-多分类-multi-class-classification" data-for="32-多分类-multi-class-classification">3.2 多分类 Multi-class Classification</a></li><li class="depth-1"><a href="#33-多标签-multi-label-classification" data-for="33-多标签-multi-label-classification">3.3 多标签 Multi-label Classification</a></li><li class="depth-0"><a href="#4-分类模型输出的不是真相而是概率" data-for="4-分类模型输出的不是真相而是概率">4. 分类模型输出的不是“真相”，而是概率</a></li><li class="depth-0"><a href="#5-分类模型怎么学" data-for="5-分类模型怎么学">5. 分类模型怎么学？</a></li><li class="depth-0"><a href="#6-第一版应该用什么分类模型" data-for="6-第一版应该用什么分类模型">6. 第一版应该用什么分类模型？</a></li><li class="depth-1"><a href="#61-logistic-regression线性基线" data-for="61-logistic-regression线性基线">6.1 Logistic Regression：线性基线</a></li><li class="depth-1"><a href="#62-random-forest非线性基线" data-for="62-random-forest非线性基线">6.2 Random Forest：非线性基线</a></li><li class="depth-1"><a href="#63-lightgbm--xgboost--catboost主力模型" data-for="63-lightgbm--xgboost--catboost主力模型">6.3 LightGBM / XGBoost / CatBoost：主力模型</a></li><li class="depth-0"><a href="#7-分类问题最重要的不是-accuracy" data-for="7-分类问题最重要的不是-accuracy">7. 分类问题最重要的不是 Accuracy</a></li><li class="depth-1"><a href="#举个例子" data-for="举个例子">举个例子</a></li><li class="depth-0"><a href="#8-混淆矩阵分类问题必须看懂" data-for="8-混淆矩阵分类问题必须看懂">8. 混淆矩阵：分类问题必须看懂</a></li><li class="depth-0"><a href="#9-precisionrecallf1-怎么理解" data-for="9-precisionrecallf1-怎么理解">9. Precision、Recall、F1 怎么理解？</a></li><li class="depth-1"><a href="#91-recall坏片抓出来多少" data-for="91-recall坏片抓出来多少">9.1 Recall：坏片抓出来多少？</a></li><li class="depth-1"><a href="#92-precision报警里面有多少是真的" data-for="92-precision报警里面有多少是真的">9.2 Precision：报警里面有多少是真的？</a></li><li class="depth-1"><a href="#93-f1precision-和-recall-的折中" data-for="93-f1precision-和-recall-的折中">9.3 F1：Precision 和 Recall 的折中</a></li><li class="depth-0"><a href="#10-半导体里应该优先看哪个指标" data-for="10-半导体里应该优先看哪个指标">10. 半导体里应该优先看哪个指标？</a></li><li class="depth-0"><a href="#11-top-k-recall-是什么" data-for="11-top-k-recall-是什么">11. Top-K Recall 是什么？</a></li><li class="depth-0"><a href="#12-阈值为什么很重要" data-for="12-阈值为什么很重要">12. 阈值为什么很重要？</a></li><li class="depth-0"><a href="#13-阈值和业务动作要绑定" data-for="13-阈值和业务动作要绑定">13. 阈值和业务动作要绑定</a></li><li class="depth-0"><a href="#14-一个完整的小例子" data-for="14-一个完整的小例子">14. 一个完整的小例子</a></li><li class="depth-0"><a href="#15-分类建模最小代码" data-for="15-分类建模最小代码">15. 分类建模最小代码</a></li><li class="depth-0"><a href="#16-top-k-recall-代码" data-for="16-top-k-recall-代码">16. Top-K Recall 代码</a></li><li class="depth-0"><a href="#17-分类模型最终输出不应该只是-01" data-for="17-分类模型最终输出不应该只是-01">17. 分类模型最终输出不应该只是 0/1</a></li><li class="depth-0"><a href="#18-分类问题最常见的-5-个坑" data-for="18-分类问题最常见的-5-个坑">18. 分类问题最常见的 5 个坑</a></li><li class="depth-1"><a href="#坑-1只看-accuracy" data-for="坑-1只看-accuracy">坑 1：只看 Accuracy</a></li><li class="depth-1"><a href="#坑-2fail-样本太少还硬做分类" data-for="坑-2fail-样本太少还硬做分类">坑 2：Fail 样本太少还硬做分类</a></li><li class="depth-1"><a href="#坑-3预测时间点不清楚" data-for="坑-3预测时间点不清楚">坑 3：预测时间点不清楚</a></li><li class="depth-1"><a href="#坑-4把检测后字段放进输入" data-for="坑-4把检测后字段放进输入">坑 4：把检测后字段放进输入</a></li><li class="depth-1"><a href="#坑-5模型没有业务动作" data-for="坑-5模型没有业务动作">坑 5：模型没有业务动作</a></li><li class="depth-0"><a href="#19-你今天要形成的专业表达" data-for="19-你今天要形成的专业表达">19. 你今天要形成的专业表达</a></li><li class="depth-0"><a href="#20-day-3-课堂练习" data-for="20-day-3-课堂练习">20. Day 3 课堂练习</a></li><li class="depth-1"><a href="#练习-1判断分类类型" data-for="练习-1判断分类类型">练习 1：判断分类类型</a></li><li class="depth-2"><a href="#问题-a" data-for="问题-a">问题 A</a></li><li class="depth-2"><a href="#问题-b" data-for="问题-b">问题 B</a></li><li class="depth-2"><a href="#问题-c" data-for="问题-c">问题 C</a></li><li class="depth-1"><a href="#练习-2手算混淆矩阵指标" data-for="练习-2手算混淆矩阵指标">练习 2：手算混淆矩阵指标</a></li><li class="depth-0"><a href="#21-day-3-作业" data-for="21-day-3-作业">21. Day 3 作业</a></li><li class="depth-1"><a href="#作业-1定义一个分类任务" data-for="作业-1定义一个分类任务">作业 1：定义一个分类任务</a></li><li class="depth-1"><a href="#作业-2设计风险阈值" data-for="作业-2设计风险阈值">作业 2：设计风险阈值</a></li><li class="depth-1"><a href="#作业-3解释分类指标" data-for="作业-3解释分类指标">作业 3：解释分类指标</a></li><li class="depth-0"><a href="#22-day-3-验收标准" data-for="22-day-3-验收标准">22. Day 3 验收标准</a></li><li class="depth-0"><a href="#23-day-3-最核心总结" data-for="23-day-3-最核心总结">23. Day 3 最核心总结</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../../postscript.js" type="module" data-persist="true"></script></html>
