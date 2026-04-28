@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>Day18-Embedding与向量数据库</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="Day18-Embedding与向量数据库"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Day18-Embedding与向量数据库"/><meta name="twitter:description" content="Day 18：Embedding 与向量数据库 学习目标 前两天我们把文档解析干净、切成了合适的 Chunk。这些 Chunk 现在还是普通的文本字符串。今天要把它们变成可以计算相似度的数学表示——向量。这就是 Embedding（嵌入）做的事情。 然后这些向量需要一个”家”来存储和检索，这就是向量数据库。 今天是 RAG 系统中最”数学”的一天，但不要被数学吓到。我们的目标是理解 Embedding 的工程意义、知道怎么选择模型和数据库、能完成从文本到向量到检索的完整闭环。底层的数学原理知道概念就够了，不需要推导公式。 学完今天的内容，你应该能够解释”为什么两段文本语义相似，它们的向量就接近..."/><meta property="og:description" content="Day 18：Embedding 与向量数据库 学习目标 前两天我们把文档解析干净、切成了合适的 Chunk。这些 Chunk 现在还是普通的文本字符串。今天要把它们变成可以计算相似度的数学表示——向量。这就是 Embedding（嵌入）做的事情。 然后这些向量需要一个”家”来存储和检索，这就是向量数据库。 今天是 RAG 系统中最”数学”的一天，但不要被数学吓到。我们的目标是理解 Embedding 的工程意义、知道怎么选择模型和数据库、能完成从文本到向量到检索的完整闭环。底层的数学原理知道概念就够了，不需要推导公式。 学完今天的内容，你应该能够解释”为什么两段文本语义相似，它们的向量就接近..."/><meta property="og:image:alt" content="Day 18：Embedding 与向量数据库 学习目标 前两天我们把文档解析干净、切成了合适的 Chunk。这些 Chunk 现在还是普通的文本字符串。今天要把它们变成可以计算相似度的数学表示——向量。这就是 Embedding（嵌入）做的事情。 然后这些向量需要一个”家”来存储和检索，这就是向量数据库。 今天是 RAG 系统中最”数学”的一天，但不要被数学吓到。我们的目标是理解 Embedding 的工程意义、知道怎么选择模型和数据库、能完成从文本到向量到检索的完整闭环。底层的数学原理知道概念就够了，不需要推导公式。 学完今天的内容，你应该能够解释”为什么两段文本语义相似，它们的向量就接近..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/ai两月计划/week3/Day18-Embedding与向量数据库"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/ai两月计划/week3/Day18-Embedding与向量数据库"/><link rel="icon" href="../../../static/icon.png"/><meta name="description" content="Day 18：Embedding 与向量数据库 学习目标 前两天我们把文档解析干净、切成了合适的 Chunk。这些 Chunk 现在还是普通的文本字符串。今天要把它们变成可以计算相似度的数学表示——向量。这就是 Embedding（嵌入）做的事情。 然后这些向量需要一个”家”来存储和检索，这就是向量数据库。 今天是 RAG 系统中最”数学”的一天，但不要被数学吓到。我们的目标是理解 Embedding 的工程意义、知道怎么选择模型和数据库、能完成从文本到向量到检索的完整闭环。底层的数学原理知道概念就够了，不需要推导公式。 学完今天的内容，你应该能够解释”为什么两段文本语义相似，它们的向量就接近..."/><meta name="generator" content="Quartz"/><link href="../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/ai两月计划/week3/Day18-Embedding与向量数据库"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-57"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-57" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/ai两月计划/">ai两月计划</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/ai两月计划/week3/">week3</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>Day18 Embedding与向量数据库</a></div></nav><h1 class="article-title">Day18-Embedding与向量数据库</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-28T06:25:01.275Z">2026年4月28日</time><span>37分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="day-18embedding-与向量数据库">Day 18：Embedding 与向量数据库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#day-18embedding-与向量数据库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="学习目标">学习目标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#学习目标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>前两天我们把文档解析干净、切成了合适的 Chunk。这些 Chunk 现在还是普通的文本字符串。今天要把它们变成可以计算相似度的数学表示——向量。这就是 Embedding（嵌入）做的事情。</p>
+<p>然后这些向量需要一个”家”来存储和检索，这就是向量数据库。</p>
+<p>今天是 RAG 系统中最”数学”的一天，但不要被数学吓到。我们的目标是理解 Embedding 的工程意义、知道怎么选择模型和数据库、能完成从文本到向量到检索的完整闭环。底层的数学原理知道概念就够了，不需要推导公式。</p>
+<p>学完今天的内容，你应该能够解释”为什么两段文本语义相似，它们的向量就接近”，能够在几个主流向量数据库中做出选型决策，并且完成 Chunk 向量化和语义检索的完整流程。</p>
+<hr/>
+<h2 id="核心概念">核心概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="一embedding-工作原理">一、Embedding 工作原理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一embedding-工作原理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Embedding 的核心任务是把文本映射成数值向量。一段文本（一个词、一句话、一个 Chunk）经过 Embedding 模型处理后，输出一个固定长度的浮点数数组，比如 [0.023, -0.157, 0.891, …]。这个数组就是这段文本的向量表示。</p>
+<p><strong>向量的维度。</strong> 常见的 Embedding 模型输出的向量维度从 384 到 3072 不等。维度越高，理论上能表达越多的语义信息，但计算和存储成本也越高。大多数实用场景中，768 到 1536 维是一个合理的范围。</p>
+<p><strong>语义空间的直觉。</strong> Embedding 把文本映射到一个高维空间中，这个空间中语义相似的文本距离近，语义不同的文本距离远。你可以把它想象成一张地图：北京和天津在地图上离得很近（地理上相似），北京和纽约离得很远（地理上不同）。同理，“退款流程”和”退货步骤”在语义空间中离得近（意思相近），“退款流程”和”天气预报”离得远（意思不相关）。</p>
+<p><strong>这是怎么做到的？</strong> Embedding 模型在海量文本上训练，学习到了词语和句子之间的语义关系。训练过程中，经常一起出现的词（比如”退款”和”退货”）被映射到相近的位置，而不相关的词（比如”退款”和”天气”）被映射到较远的位置。经过大量训练后，整个语义空间形成了一种”结构”，使得语义关系可以用几何距离来衡量。</p>
+<p><strong>关键洞察：Embedding 是一种压缩表示。</strong> 一段 500 字符的文本，包含的信息量远超 768 个数字能精确表达的。Embedding 做的是一种有损压缩——保留了最核心的语义信息，丢弃了细节。这就是为什么两段文本的向量相似并不等于两段文本完全一样，它们只是在核心语义上接近。</p>
+<h3 id="二向量生成">二、向量生成<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二向量生成" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在 RAG 系统中，向量生成有两个场景：离线生成和在线生成。</p>
+<p><strong>离线生成。</strong> 这是在文档入库阶段，把所有 Chunk 都转换成向量。通常是一个批处理任务：把所有 Chunk 文本收集起来，批量调用 Embedding API，把返回的向量和原始文本一起存入向量数据库。</p>
+<p>离线生成需要考虑的工程问题：</p>
+<ul>
+<li><strong>批处理效率。</strong> Embedding API 通常支持批量请求（一次发送多条文本），比逐条请求效率高得多。但批量大小有上限（比如一次最多 2048 条），需要分批处理。</li>
+<li><strong>成本控制。</strong> Embedding API 按输入 Token 数计费。百万级 Chunk 的向量化是一笔不小的费用。需要估算总成本，可能的话在测试阶段先用小数据集验证效果。</li>
+<li><strong>缓存策略。</strong> 同一个 Chunk 的 Embedding 结果是确定性的（给定同一个模型）。如果 Chunk 没有变化，不需要重新生成向量。可以通过 Chunk 的哈希值来判断是否需要重新生成。</li>
+<li><strong>错误处理。</strong> API 调用可能失败（网络错误、速率限制、服务不可用）。需要实现重试机制和断点续处理。</li>
+</ul>
+<p><strong>在线生成。</strong> 这是在用户提问时，把用户的问题转换成向量，用于检索。这是一个实时操作，对延迟敏感。</p>
+<p>在线生成的工程要求：</p>
+<ul>
+<li><strong>低延迟。</strong> 用户等不了太久。Embedding API 的调用时间通常在几十到几百毫秒，需要选择响应快的 API 端点。</li>
+<li><strong>一致性。</strong> 离线和在线必须使用同一个 Embedding 模型。如果文档用模型 A 生成向量，用户问题用模型 B 生成向量，两个模型生成的向量空间不同，相似度计算就没有意义。</li>
+</ul>
+<h3 id="三向量存储">三、向量存储<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三向量存储" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>向量存储需要解决两个问题：存储向量本身，以及存储对应的原始文本和元数据。</p>
+<p><strong>向量本身。</strong> 一个 1536 维的向量，每个维度是一个 32 位浮点数（float32），占 4 字节。一个向量占 6144 字节（约 6KB）。一百万个 Chunk 的向量约 6GB。这个规模用内存完全可以承受。</p>
+<p><strong>原始文本和元数据。</strong> 除了向量，还需要存储每个 Chunk 的原始文本（用于检索后拼接到 Prompt 中）和元数据（来源、章节、页码等，用于引用标注和过滤）。这些数据通常以 JSON 格式存储。</p>
+<p><strong>存储格式的选择。</strong> 向量数据库通常使用优化的二进制格式存储向量（比如使用 float16 而不是 float32 减半存储空间，或者使用量化技术进一步压缩）。元数据则用 JSON 或结构化存储。</p>
+<h3 id="四向量数据库">四、向量数据库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四向量数据库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>向量数据库是专门为向量检索设计的存储系统。它和传统数据库的区别在于：传统数据库通过精确匹配（“名字等于’张三’“）或范围查询（“年龄大于 30”）来检索数据，而向量数据库通过相似度计算（“和这段文本语义最接近的 5 条记录”）来检索数据。</p>
+<p><strong>向量数据库的核心能力：</strong></p>
+<ul>
+<li><strong>向量索引。</strong> 为向量建立索引结构，使得检索时不需要和数据库中的每一条记录逐一计算相似度（那太慢了），而是通过索引快速定位到最可能相似的候选集。常见的索引算法有 HNSW（分层可导航小世界图）、IVF（倒排文件索引）、PQ（乘积量化）等。</li>
+<li><strong>相似度计算。</strong> 支持不同的相似度度量方式。最常用的是余弦相似度（衡量两个向量方向的接近程度）和欧氏距离（衡量两个向量端点之间的直线距离）。</li>
+<li><strong>元数据过滤。</strong> 在向量检索的基础上，支持按元数据条件过滤结果。比如”只在’产品 A 手册’这篇文档中搜索”，或者”只搜索 2024 年更新的文档”。</li>
+<li><strong>CRUD 操作。</strong> 支持向量的增删改查，可以动态更新知识库。</li>
+</ul>
+<p><strong>主流向量数据库对比：</strong></p>
+<p><strong>Chroma。</strong> 开源、轻量、上手极快。适合原型验证和小规模项目。不需要独立部署服务器，嵌入到应用进程中即可使用。缺点是生产环境下的性能和可靠性未经大规模验证。</p>
+<p><strong>FAISS。</strong> Meta 开源的向量检索库。严格来说不是数据库，而是一个向量索引库。需要自己实现存储和管理逻辑。性能极强，适合对延迟有极高要求的场景。缺点是不支持元数据过滤（需要自己实现），不支持网络服务（需要自己封装 API）。</p>
+<p><strong>Milvus。</strong> 开源分布式向量数据库，支持大规模部署。功能齐全，支持多种索引类型、元数据过滤、分布式部署。适合企业级生产环境。缺点是架构复杂，部署和维护门槛较高。</p>
+<p><strong>Pinecone。</strong> 全托管的向量数据库服务（SaaS）。不需要自己部署和维护，开箱即用。性能稳定，支持元数据过滤。缺点是数据存在第三方服务器上（可能不符合某些企业的合规要求），且按使用量计费，大规模使用成本较高。</p>
+<p><strong>Weaviate。</strong> 开源向量数据库，支持混合检索（向量 + 关键词）。内置了一些 AI 能力（如自动向量化）。适合需要混合检索的场景。</p>
+<p><strong>Qdrant。</strong> 用 Rust 编写的开源向量数据库，性能优异。支持丰富的过滤条件和负载管理。近两年发展迅速，社区活跃。</p>
+<p><strong>选型建议：</strong></p>
+<ul>
+<li>学习和原型阶段：Chroma，零配置上手</li>
+<li>需要高性能但不想自己搭集群：Qdrant 或 Weaviate</li>
+<li>大规模生产环境：Milvus</li>
+<li>不想自己运维：Pinecone</li>
+<li>已有 PostgreSQL 基础设施：pgvector（PostgreSQL 的向量扩展）</li>
+</ul>
+<h3 id="五相似度检索">五、相似度检索<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五相似度检索" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>相似度检索是向量数据库的核心操作：给定一个查询向量，找到数据库中和它最相似的 k 个向量。</p>
+<p><strong>余弦相似度。</strong> 最常用的相似度度量方式。它计算两个向量之间夹角的余弦值，结果在 -1 到 1 之间。值越接近 1 表示方向越一致（语义越相似），接近 0 表示无关，接近 -1 表示相反。</p>
+<p>为什么用余弦相似度而不是欧氏距离？因为 Embedding 向量的”方向”比”长度”更重要。两段语义相似的文本，它们的向量方向应该接近，但长度可能不同（因为文本长度不同）。余弦相似度只关注方向，忽略了长度的影响，所以更适合衡量语义相似性。</p>
+<p><strong>检索过程。</strong></p>
+<ol>
+<li>用户的查询文本通过 Embedding 模型转换为查询向量</li>
+<li>查询向量发送给向量数据库</li>
+<li>向量数据库通过索引快速定位候选集</li>
+<li>在候选集中逐一计算与查询向量的相似度</li>
+<li>按相似度从高到低排序，返回前 k 个结果</li>
+<li>每个结果包含向量对应的原始文本和元数据</li>
+</ol>
+<p><strong>精确检索 vs 近似检索。</strong> 精确检索会计算查询向量与数据库中所有向量的相似度，确保返回的确实是 top-k。但数据库中有百万甚至千万级向量时，逐一计算太慢了。</p>
+<p>近似最近邻（ANN，Approximate Nearest Neighbor）检索通过索引结构（如 HNSW、IVF）来加速，牺牲少量精度换取数量级的速度提升。在大多数 RAG 场景中，近似检索的精度损失可以忽略不计，但速度提升非常显著。</p>
+<h3 id="六top-k">六、Top-k<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六top-k" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Top-k 指的是检索返回的 Chunk 数量。k 的选择直接影响 RAG 系统的效果。</p>
+<p><strong>k 太小（比如 k=1）。</strong> 只返回 1 个最相似的 Chunk。如果检索结果恰好包含了答案，很好。但如果答案分布在多个 Chunk 中，或者最相似的 Chunk 不是包含答案的那个（检索有偏差），就没救了。风险太高。</p>
+<p><strong>k 太大（比如 k=20）。</strong> 返回 20 个 Chunk。覆盖面广了，但引入了大量噪声。模型需要从 20 个 Chunk 中筛选有用信息，注意力被稀释。同时，20 个 Chunk 的文本量可能超过 Prompt 的合理长度。</p>
+<p><strong>k 的推荐值。</strong> 通常 k=3 到 k=5 是一个不错的起点。这个范围既能覆盖多个相关 Chunk，又不会引入太多噪声。具体值需要根据实际场景调优：</p>
+<ul>
+<li>简单事实型问答（答案集中在一段文本中）：k=3</li>
+<li>复杂流程型问答（答案可能分散在多个段落中）：k=5-10</li>
+<li>开放式总结型问答（需要综合多个来源）：k=10+</li>
+</ul>
+<p>k 的值也可以动态调整：先用 k=3 检索，如果检索结果的相似度都很低（说明没找到特别相关的），再扩大 k 值做二次检索。</p>
+<h3 id="七metadata-filtering">七、Metadata Filtering<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七metadata-filtering" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>元数据过滤是在向量检索的基础上，增加额外的筛选条件。</p>
+<p><strong>为什么需要元数据过滤。</strong> 想象一个企业知识库，里面有产品文档、人事制度、财务报告、技术规范等不同类型的文档。用户问”产品的保修期是多久”，如果不过滤，检索可能会在所有文档中搜索，可能返回一条人事制度中提到”保修”的无关 Chunk。通过元数据过滤，可以限制只在”产品文档”类型中搜索，提高检索精准度。</p>
+<p><strong>常见的过滤条件：</strong></p>
+<ul>
+<li>按文档类型过滤：只在产品文档中搜索</li>
+<li>按部门过滤：只在法务部门的文档中搜索</li>
+<li>按时间过滤：只搜索最近一年更新的文档</li>
+<li>按关键词过滤：只搜索标题中包含”退货”的章节</li>
+</ul>
+<p><strong>过滤的实现方式。</strong> 大多数向量数据库支持在检索请求中附加过滤条件。过滤可以发生在检索之前（先缩小搜索范围再做向量匹配）或检索之后（先做向量匹配再过滤结果）。前者效率更高，但不是所有数据库都支持。</p>
+<p><strong>过滤的注意事项。</strong> 过滤条件太严格可能导致检索不到任何结果。比如用户限定”只在 2024 年 1 月更新的文档中搜索”，但相关内容其实在 2023 年 12 月的文档中。过滤条件应该有合理的默认值，并且在结果为空时给出有用的反馈（比如”在指定范围内未找到相关内容，已扩大搜索范围”）。</p>
+<h3 id="八向量库选型">八、向量库选型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八向量库选型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>向量数据库的选型不只是技术决策，还涉及团队、成本、运维等多个维度。</p>
+<p><strong>选型决策维度：</strong></p>
+<p><strong>数据规模。</strong> 几千到几万条 Chunk，任何数据库都能轻松应对。百万级需要考虑索引算法的选择和内存配置。千万级以上需要考虑分布式方案。</p>
+<p><strong>查询频率。</strong> 每秒几十次查询，单节点就够。每秒几百次需要考虑缓存和读写分离。每秒上千次需要分布式部署。</p>
+<p><strong>功能需求。</strong> 需不需要元数据过滤？需不需要混合检索（向量 + 关键词）？需不需要实时更新？需不需要多租户隔离？</p>
+<p><strong>运维能力。</strong> 团队有没有数据库运维经验？有没有 Kubernetes 集群？如果团队小、运维能力有限，全托管服务（Pinecone）或者轻量方案（Chroma、pgvector）更合适。</p>
+<p><strong>成本预算。</strong> 自建开源方案的成本主要在人力（部署和维护），托管方案的成本主要在服务费。小规模时托管方案通常更便宜，大规模时自建方案更经济。</p>
+<p><strong>合规要求。</strong> 数据能不能存在第三方服务器上？有些行业（金融、医疗、政府）要求数据必须本地存储。这种情况下只能选择自建的开源方案。</p>
+<hr/>
+<h2 id="概念关系图">概念关系图<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#概念关系图" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<pre><code>Embedding 工作原理
+=========================================================
+
+[文本: &quot;退款流程是什么&quot;]
+        |
+        v
+[Embedding 模型]
+        |
+        v
+[向量: [0.023, -0.157, 0.891, ..., 0.042]]  (1536 维)
+        |
+        v
+[语义空间中的位置]
+
+语义空间（简化为 2D 示意）
+=========================================================
+
+                    * &quot;退货条件&quot;
+                   /
+    * &quot;退款步骤&quot;  /
+       |        /
+       |      /   * &quot;退货流程&quot;
+       |    /    (和&quot;退款步骤&quot;距离近)
+       |  /
+       |/
+       |
+-------+-----------------* &quot;天气预报&quot;
+       |
+       |
+       |            * &quot;篮球比赛&quot;
+       |
+
+距离近 = 语义相似    距离远 = 语义不同
+
+
+RAG 向量检索流程
+=========================================================
+
+[离线入库]
+[Chunk 文本] --> [Embedding API] --> [向量] --> [向量数据库]
+                                           + [原始文本]
+                                           + [元数据]
+
+[在线检索]
+[用户问题] --> [Embedding API] --> [问题向量]
+                                       |
+                                       v
+                              [向量数据库检索]
+                                       |
+                                       v
+                              [Top-k 相似 Chunk]
+                                       |
+                                       v
+                              [元数据过滤（可选）]
+                                       |
+                                       v
+                              [检索结果: 文本 + 元数据]
+
+
+向量数据库选型矩阵
+=========================================================
+
+方案        数据规模     运维复杂度    混合检索    适用阶段
+-----------------------------------------------------------------
+Chroma     万级以内     低            不支持      学习/原型
+FAISS      百万级       中            不支持      高性能场景
+Qdrant     百万级       中            支持        中等项目
+Weaviate   百万级       中            支持        混合检索
+Milvus     千万级       高            支持        大型生产
+Pinecone   百万级       低(托管)      支持        快速上线
+pgvector   百万级       低            有限        已有PG基建
+</code></pre>
+<hr/>
+<h2 id="实战分析">实战分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实战分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="任务一对-chunks-生成-embedding">任务一：对 Chunks 生成 Embedding<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务一对-chunks-生成-embedding" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>将 Day 17 产出的 Chunks 批量向量化。</p>
+<p><strong>选择 Embedding 模型。</strong> 对于中文场景，需要选择对中文支持好的模型。主流选择包括 OpenAI 的 text-embedding-3-small/large、Cohere 的 embed-multilingual、以及 BGE（BAAI General Embedding）等开源模型。</p>
+<p>选择时考虑三个因素：</p>
+<ul>
+<li>中文效果（在中文文本的语义相似度任务上的表现）</li>
+<li>维度（影响存储和计算成本）</li>
+<li>价格（按 Token 计费，不同模型差异很大）</li>
+</ul>
+<p><strong>批量处理策略。</strong> 将所有 Chunk 文本收集成一个列表，按 Embedding API 的批量上限分批调用。每批调用后检查结果是否完整（有没有遗漏或错误的向量）。记录每批处理的时间和 Token 消耗，用于成本估算。</p>
+<p><strong>一致性保证。</strong> 记录使用的 Embedding 模型名称和版本。后续的在线查询必须使用同一个模型。模型更换意味着需要重新向量化所有 Chunk。</p>
+<h3 id="任务二存入向量数据库">任务二：存入向量数据库<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务二存入向量数据库" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>选择一个向量数据库，将向量和对应的文本、元数据存入。</p>
+<p><strong>初始选型建议。</strong> 学习阶段建议用 Chroma。它零配置、Python 原生、文档丰富。等系统需要上线时再考虑迁移到生产级数据库。</p>
+<p><strong>存储时的注意事项：</strong></p>
+<ul>
+<li>为每个向量关联完整的元数据（来源、章节、页码等）</li>
+<li>设计合理的 Collection 命名（按文档类型或项目分组）</li>
+<li>测试写入性能，记录索引构建时间</li>
+<li>验证写入后能否正确检索到</li>
+</ul>
+<p><strong>测试数据。</strong> 写入后，用几个已知答案的问题测试检索效果。比如你知道某个 Chunk 包含”退款 SLA 是 3 个工作日”，就用”退款需要多久”来检索，看这个 Chunk 是否出现在 top-k 结果中。</p>
+<h3 id="任务三实现语义检索">任务三：实现语义检索<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务三实现语义检索" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>实现从问题到检索结果的完整流程。</p>
+<p><strong>步骤：</strong></p>
+<ol>
+<li>接收用户问题文本</li>
+<li>用同一个 Embedding 模型将问题转换为向量</li>
+<li>在向量数据库中检索 top-k</li>
+<li>返回检索结果（每个结果包含文本、元数据、相似度分数）</li>
+</ol>
+<p><strong>检索结果的质量评估。</strong> 对每个检索结果，关注两个指标：</p>
+<ul>
+<li><strong>相似度分数。</strong> 余弦相似度在 0.8 以上通常表示高度相关，0.5-0.8 表示部分相关，0.5 以下可能不相关。具体阈值需要根据实际数据校准。</li>
+<li><strong>人工判断。</strong> 抽样检查检索结果是否真的和问题相关。分数高但内容不相关，说明 Embedding 模型在这个场景下的效果不好。</li>
+</ul>
+<h3 id="任务四支持按-metadata-过滤">任务四：支持按 Metadata 过滤<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务四支持按-metadata-过滤" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在检索接口中增加元数据过滤功能。</p>
+<p><strong>实现几个典型过滤场景：</strong></p>
+<ul>
+<li>按文档名过滤：“只在《产品手册 v2》中搜索”</li>
+<li>按章节过滤：“只在’退货政策’章节中搜索”</li>
+<li>按内容类型过滤：“只搜索表格类型的 Chunk”</li>
+<li>组合过滤：“在产品文档中，只搜索最近更新的内容”</li>
+</ul>
+<p><strong>过滤效果测试。</strong> 对同一个问题，分别做有过滤和无过滤的检索，对比结果差异。过滤应该能去除不相关的结果，但不应该把正确结果也过滤掉。</p>
+<hr/>
+<h2 id="当日产物说明">当日产物说明<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#当日产物说明" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="产物一embedding-入库脚本">产物一：《Embedding 入库脚本》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产物一embedding-入库脚本" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一个完整的向量化入库方案。</p>
+<p><strong>应该包含：</strong></p>
+<ul>
+<li>Embedding 模型的选择说明（为什么选这个模型、参数是什么）</li>
+<li>批量向量化的流程（怎么分批、怎么处理错误、怎么记录进度）</li>
+<li>向量数据库的连接和写入方式</li>
+<li>元数据的存储格式</li>
+<li>入库后的验证方法（怎么确认入库成功）</li>
+</ul>
+<p><strong>质量标准：</strong> 按照这个方案，能把一批 Chunk 成功向量化并存入数据库。成本估算和时间估算要合理。</p>
+<h3 id="产物二向量检索-demo">产物二：《向量检索 Demo》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产物二向量检索-demo" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一个端到端的检索演示。</p>
+<p><strong>应该包含：</strong></p>
+<ul>
+<li>10 个测试问题和预期的正确答案</li>
+<li>每个测试问题的 top-3 检索结果</li>
+<li>每个检索结果的相似度分数</li>
+<li>检索结果是否包含正确答案的判断</li>
+<li>检索成功的案例和失败的案例分析</li>
+</ul>
+<p><strong>质量标准：</strong> 10 个测试问题中，至少 7 个的正确答案出现在 top-3 检索结果中。如果低于这个水平，需要分析原因（是切分问题还是 Embedding 模型问题还是问题表述问题）。</p>
+<h3 id="产物三向量库选型记录">产物三：《向量库选型记录》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产物三向量库选型记录" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一份选型决策文档。</p>
+<p><strong>应该包含：</strong></p>
+<ul>
+<li>候选方案列表（至少 3 个）</li>
+<li>每个方案的评估维度（功能、性能、成本、运维）</li>
+<li>最终选择和理由</li>
+<li>备选方案（如果首选方案遇到问题，切换到哪个）</li>
+</ul>
+<p><strong>质量标准：</strong> 决策有理有据，不是”听别人说这个好”。每个方案的优势和局限都说清楚了。</p>
+<hr/>
+<h2 id="常见误区与避坑">常见误区与避坑<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见误区与避坑" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="误区一embedding-模型随便选一个就行">误区一：Embedding 模型随便选一个就行<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区一embedding-模型随便选一个就行" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>不同 Embedding 模型的效果差异很大，尤其是在中文场景下。有些模型是主要针对英文训练的，中文语义理解能力弱。比如”苹果公司”和”苹果手机”在好的中文模型里应该距离很近（都是苹果公司相关），但在英文为主的模型里可能距离较远（“apple company” vs “apple phone”的语义差异在英文中更大）。</p>
+<p>选模型之前，用你自己的数据做一个小规模测试：准备 20 组文本对，人工标注每组是否语义相似，然后用候选模型计算相似度，看哪个模型和人工标注最一致。</p>
+<h3 id="误区二向量维度越高越好">误区二：向量维度越高越好<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区二向量维度越高越好" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>高维向量理论上能编码更多信息，但实际效果不一定更好。维度高意味着计算量增大、存储空间增大、检索延迟增大。如果模型的训练数据不够支撑高维表示，高维向量中可能包含大量噪声维度，反而影响效果。</p>
+<p>对于大多数企业知识库场景，768-1536 维已经足够。不要为了”可能更好”而盲目追求高维。</p>
+<h3 id="误区三向量数据库等同于搜索引擎">误区三：向量数据库等同于搜索引擎<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区三向量数据库等同于搜索引擎" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>向量数据库做的是语义相似度检索，不是关键词精确匹配。“语义相似”和”内容匹配”不是一回事。</p>
+<p>一个例子：用户问”退货的电话号码是多少”，文档中写的是”如需退货，请拨打客服热线 400-xxx-xxxx”。向量检索可能找到这个 Chunk（因为”退货”语义相关），但如果你问的是”400-xxx-xxxx 这个号码归属哪里”，纯语义检索很难回答，因为模型可能不认为”电话号码归属”和”退货电话”语义相近。</p>
+<p>对于需要精确匹配的场景（搜索特定编号、特定日期、特定人名），关键词检索比向量检索更靠谱。这就是为什么 Day 20 要学混合检索。</p>
+<h3 id="误区四忽略了-embedding-模型的版本一致性">误区四：忽略了 Embedding 模型的版本一致性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区四忽略了-embedding-模型的版本一致性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一个非常容易犯的错误：开发时用 v1 版本的模型生成文档向量，上线后 API 升级到 v2 版本，用户问题的向量是用 v2 生成的。v1 和 v2 的向量空间不同，相似度计算完全失准。</p>
+<p>解决方案：在数据库中记录每个向量使用的模型名称和版本号。在线查询时校验模型版本。模型升级时，需要重新向量化所有 Chunk。</p>
+<h3 id="误区五向量数据库不需要维护">误区五：向量数据库不需要维护<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区五向量数据库不需要维护" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>向量数据库不是”建好就不管了”。以下情况需要维护：</p>
+<ul>
+<li>数据更新：文档增删改后，对应的向量需要同步更新</li>
+<li>索引优化：随着数据增长，索引可能需要重建或优化参数</li>
+<li>监控：检索延迟、命中率、错误率需要持续监控</li>
+<li>备份：和任何数据库一样，需要定期备份</li>
+</ul>
+<p>把向量数据库当作一个需要持续维护的基础设施组件，而不是一个黑盒。</p>
+<hr/>
+<h2 id="延伸思考">延伸思考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#延伸思考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="embedding-与-day-17-chunking-的协同">Embedding 与 Day 17 Chunking 的协同<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#embedding-与-day-17-chunking-的协同" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Embedding 的效果受 Chunk 质量的直接影响。如果 Chunk 太大，向量是对大量信息的平均表示，会模糊具体细节。如果 Chunk 太小，向量缺乏足够的上下文信息来生成有意义的表示。</p>
+<p>一个好的经验法则是：Chunk 的大小应该和 Embedding 模型”擅长处理”的文本长度大致匹配。大多数 Embedding 模型在 100-1000 Token 的文本上效果最好。如果你的 Chunk 远小于 100 Token 或远大于 1000 Token，可能需要重新考虑切分策略。</p>
+<h3 id="向量检索之外混合检索的必要性">向量检索之外：混合检索的必要性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#向量检索之外混合检索的必要性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>纯向量检索在很多场景下效果不错，但有一个结构性弱点：它擅长捕捉语义相似性，但不擅长精确匹配。当用户的查询包含专有名词、产品型号、日期、人名时，关键词检索更准确。</p>
+<p>明天的 RAG 问答链路 v1 会先用纯向量检索搭建最小闭环。Day 20 的优化环节会引入混合检索，把向量检索和关键词检索结合起来。但在引入混合检索之前，先把纯向量检索的基线效果测清楚，这样优化后才能量化改进幅度。</p>
+<h3 id="embedding-模型的领域适配">Embedding 模型的领域适配<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#embedding-模型的领域适配" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>通用 Embedding 模型在特定领域（半导体、法律、医疗）的效果可能不理想，因为这些领域的专有术语、缩写、概念关系在通用训练数据中出现频率低。</p>
+<p>解决方案是对 Embedding 模型做领域微调：用领域内的文本对（比如”半导体良率”和”wafer yield”应该语义相近）来训练模型，使其在特定领域的语义空间更准确。这是一个进阶话题，在 MVP 阶段不需要考虑，但在做生产级系统时可能是必要的。</p>
+<hr/>
+<h2 id="自测问题">自测问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#自测问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ol>
+<li>
+<p>用自己的话解释 Embedding 是什么，以及它为什么能让计算机理解”语义相似”。</p>
+</li>
+<li>
+<p>向量检索中，余弦相似度和欧氏距离的区别是什么？为什么 RAG 场景通常用余弦相似度？</p>
+</li>
+<li>
+<p>离线向量生成和在线向量生成分别发生在什么阶段？为什么必须使用同一个 Embedding 模型？</p>
+</li>
+<li>
+<p>列举至少 4 种主流向量数据库，说明各自的适用场景。</p>
+</li>
+<li>
+<p>Top-k 中的 k 值怎么选择？k 太大和 k 太小分别有什么问题？</p>
+</li>
+<li>
+<p>元数据过滤的作用是什么？举一个具体例子说明过滤如何提升检索质量。</p>
+</li>
+<li>
+<p>为什么说”向量数据库不等同于搜索引擎”？纯向量检索有什么结构性弱点？</p>
+</li>
+<li>
+<p>如果你的知识库包含中文和英文混合的文档，选择 Embedding 模型时需要注意什么？</p>
+</li>
+<li>
+<p>解释 Embedding 模型版本不一致会导致什么问题。怎么避免？</p>
+</li>
+<li>
+<p>一个 RAG 系统的检索效果不好，可能的原因有哪些？怎么区分是 Embedding 的问题还是切分的问题？</p>
+</li>
+</ol>
+<hr/>
+<h2 id="关键词">关键词<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#关键词" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><strong>Embedding（嵌入）</strong>：将文本转换为固定长度的数值向量，使文本的语义关系可以用向量距离来衡量</li>
+<li><strong>向量（Vector）</strong>：一组有序的浮点数，是文本在高维语义空间中的坐标表示</li>
+<li><strong>向量数据库（Vector Database）</strong>：专门存储和检索向量的数据库系统，支持相似度检索和元数据过滤</li>
+<li><strong>余弦相似度</strong>：衡量两个向量方向接近程度的指标，是 RAG 中最常用的相似度计算方式</li>
+<li><strong>Top-k 检索</strong>：返回与查询向量最相似的前 k 个结果</li>
+<li><strong>近似最近邻（ANN）</strong>：通过索引结构加速向量检索，以少量精度损失换取数量级的速度提升</li>
+<li><strong>HNSW</strong>：分层可导航小世界图，一种高效的向量索引算法，大多数向量数据库的默认索引</li>
+<li><strong>Metadata Filtering</strong>：在向量检索基础上按元数据条件过滤结果，如按文档类型、时间范围过滤</li>
+<li><strong>语义空间</strong>：Embedding 模型将文本映射到的高维空间，语义相似的文本在此空间中距离近</li>
+<li><strong>批量向量化</strong>：将大量文本一次性或分批发送给 Embedding API 生成向量的过程</li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-19" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#day-18embedding-与向量数据库" data-for="day-18embedding-与向量数据库">Day 18：Embedding 与向量数据库</a></li><li class="depth-1"><a href="#学习目标" data-for="学习目标">学习目标</a></li><li class="depth-1"><a href="#核心概念" data-for="核心概念">核心概念</a></li><li class="depth-2"><a href="#一embedding-工作原理" data-for="一embedding-工作原理">一、Embedding 工作原理</a></li><li class="depth-2"><a href="#二向量生成" data-for="二向量生成">二、向量生成</a></li><li class="depth-2"><a href="#三向量存储" data-for="三向量存储">三、向量存储</a></li><li class="depth-2"><a href="#四向量数据库" data-for="四向量数据库">四、向量数据库</a></li><li class="depth-2"><a href="#五相似度检索" data-for="五相似度检索">五、相似度检索</a></li><li class="depth-2"><a href="#六top-k" data-for="六top-k">六、Top-k</a></li><li class="depth-2"><a href="#七metadata-filtering" data-for="七metadata-filtering">七、Metadata Filtering</a></li><li class="depth-2"><a href="#八向量库选型" data-for="八向量库选型">八、向量库选型</a></li><li class="depth-1"><a href="#概念关系图" data-for="概念关系图">概念关系图</a></li><li class="depth-1"><a href="#实战分析" data-for="实战分析">实战分析</a></li><li class="depth-2"><a href="#任务一对-chunks-生成-embedding" data-for="任务一对-chunks-生成-embedding">任务一：对 Chunks 生成 Embedding</a></li><li class="depth-2"><a href="#任务二存入向量数据库" data-for="任务二存入向量数据库">任务二：存入向量数据库</a></li><li class="depth-2"><a href="#任务三实现语义检索" data-for="任务三实现语义检索">任务三：实现语义检索</a></li><li class="depth-2"><a href="#任务四支持按-metadata-过滤" data-for="任务四支持按-metadata-过滤">任务四：支持按 Metadata 过滤</a></li><li class="depth-1"><a href="#当日产物说明" data-for="当日产物说明">当日产物说明</a></li><li class="depth-2"><a href="#产物一embedding-入库脚本" data-for="产物一embedding-入库脚本">产物一：《Embedding 入库脚本》</a></li><li class="depth-2"><a href="#产物二向量检索-demo" data-for="产物二向量检索-demo">产物二：《向量检索 Demo》</a></li><li class="depth-2"><a href="#产物三向量库选型记录" data-for="产物三向量库选型记录">产物三：《向量库选型记录》</a></li><li class="depth-1"><a href="#常见误区与避坑" data-for="常见误区与避坑">常见误区与避坑</a></li><li class="depth-2"><a href="#误区一embedding-模型随便选一个就行" data-for="误区一embedding-模型随便选一个就行">误区一：Embedding 模型随便选一个就行</a></li><li class="depth-2"><a href="#误区二向量维度越高越好" data-for="误区二向量维度越高越好">误区二：向量维度越高越好</a></li><li class="depth-2"><a href="#误区三向量数据库等同于搜索引擎" data-for="误区三向量数据库等同于搜索引擎">误区三：向量数据库等同于搜索引擎</a></li><li class="depth-2"><a href="#误区四忽略了-embedding-模型的版本一致性" data-for="误区四忽略了-embedding-模型的版本一致性">误区四：忽略了 Embedding 模型的版本一致性</a></li><li class="depth-2"><a href="#误区五向量数据库不需要维护" data-for="误区五向量数据库不需要维护">误区五：向量数据库不需要维护</a></li><li class="depth-1"><a href="#延伸思考" data-for="延伸思考">延伸思考</a></li><li class="depth-2"><a href="#embedding-与-day-17-chunking-的协同" data-for="embedding-与-day-17-chunking-的协同">Embedding 与 Day 17 Chunking 的协同</a></li><li class="depth-2"><a href="#向量检索之外混合检索的必要性" data-for="向量检索之外混合检索的必要性">向量检索之外：混合检索的必要性</a></li><li class="depth-2"><a href="#embedding-模型的领域适配" data-for="embedding-模型的领域适配">Embedding 模型的领域适配</a></li><li class="depth-1"><a href="#自测问题" data-for="自测问题">自测问题</a></li><li class="depth-1"><a href="#关键词" data-for="关键词">关键词</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../postscript.js" type="module" data-persist="true"></script></html>

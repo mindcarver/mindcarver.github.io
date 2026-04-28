@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>Day24-Tool-Calling深入</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="Day24-Tool-Calling深入"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Day24-Tool-Calling深入"/><meta name="twitter:description" content="Day 24：Tool Calling 深入 学习目标 昨天建立了 Agent 的基础认知，今天要深入 Agent 的”手和脚”：Tool Calling。 Tool Calling 是让大模型从”只会说话”进化到”能做事”的关键技术。没有 Tool Calling，大模型只能生成文本；有了 Tool Calling，大模型能调用外部工具、查询数据库、执行计算、发送消息，真正参与到业务流程中去。 今天的目标是深入理解 Tool Calling 的每个环节：工具怎么定义、模型怎么选择工具、参数怎么传递、结果怎么返回、失败了怎么办、权限怎么控制、怎么审计。学完这一天，你应该能为一个行业研究 Age..."/><meta property="og:description" content="Day 24：Tool Calling 深入 学习目标 昨天建立了 Agent 的基础认知，今天要深入 Agent 的”手和脚”：Tool Calling。 Tool Calling 是让大模型从”只会说话”进化到”能做事”的关键技术。没有 Tool Calling，大模型只能生成文本；有了 Tool Calling，大模型能调用外部工具、查询数据库、执行计算、发送消息，真正参与到业务流程中去。 今天的目标是深入理解 Tool Calling 的每个环节：工具怎么定义、模型怎么选择工具、参数怎么传递、结果怎么返回、失败了怎么办、权限怎么控制、怎么审计。学完这一天，你应该能为一个行业研究 Age..."/><meta property="og:image:alt" content="Day 24：Tool Calling 深入 学习目标 昨天建立了 Agent 的基础认知，今天要深入 Agent 的”手和脚”：Tool Calling。 Tool Calling 是让大模型从”只会说话”进化到”能做事”的关键技术。没有 Tool Calling，大模型只能生成文本；有了 Tool Calling，大模型能调用外部工具、查询数据库、执行计算、发送消息，真正参与到业务流程中去。 今天的目标是深入理解 Tool Calling 的每个环节：工具怎么定义、模型怎么选择工具、参数怎么传递、结果怎么返回、失败了怎么办、权限怎么控制、怎么审计。学完这一天，你应该能为一个行业研究 Age..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/ai两月计划/week4/Day24-Tool-Calling深入"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/ai两月计划/week4/Day24-Tool-Calling深入"/><link rel="icon" href="../../../static/icon.png"/><meta name="description" content="Day 24：Tool Calling 深入 学习目标 昨天建立了 Agent 的基础认知，今天要深入 Agent 的”手和脚”：Tool Calling。 Tool Calling 是让大模型从”只会说话”进化到”能做事”的关键技术。没有 Tool Calling，大模型只能生成文本；有了 Tool Calling，大模型能调用外部工具、查询数据库、执行计算、发送消息，真正参与到业务流程中去。 今天的目标是深入理解 Tool Calling 的每个环节：工具怎么定义、模型怎么选择工具、参数怎么传递、结果怎么返回、失败了怎么办、权限怎么控制、怎么审计。学完这一天，你应该能为一个行业研究 Age..."/><meta name="generator" content="Quartz"/><link href="../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/ai两月计划/week4/Day24-Tool-Calling深入"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-68"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-68" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/ai两月计划/">ai两月计划</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/ai两月计划/week4/">week4</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>Day24 Tool Calling深入</a></div></nav><h1 class="article-title">Day24-Tool-Calling深入</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-28T06:25:01.276Z">2026年4月28日</time><span>36分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="day-24tool-calling-深入">Day 24：Tool Calling 深入<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#day-24tool-calling-深入" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="学习目标">学习目标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#学习目标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>昨天建立了 Agent 的基础认知，今天要深入 Agent 的”手和脚”：Tool Calling。</p>
+<p>Tool Calling 是让大模型从”只会说话”进化到”能做事”的关键技术。没有 Tool Calling，大模型只能生成文本；有了 Tool Calling，大模型能调用外部工具、查询数据库、执行计算、发送消息，真正参与到业务流程中去。</p>
+<p>今天的目标是深入理解 Tool Calling 的每个环节：工具怎么定义、模型怎么选择工具、参数怎么传递、结果怎么返回、失败了怎么办、权限怎么控制、怎么审计。学完这一天，你应该能为一个行业研究 Agent 设计出完整的工具集，并定义每个工具的 Schema、权限级别和调用规范。</p>
+<hr/>
+<h2 id="核心概念">核心概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="tool-schema">Tool Schema<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#tool-schema" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Tool Schema 是工具的”身份证”。它告诉模型：这个工具叫什么、能做什么、需要什么参数、返回什么格式。</p>
+<p>一个完整的 Tool Schema 包含四个部分。</p>
+<p>第一部分是工具名称（name）。名称要简洁、有意义、符合命名规范。好的命名让模型一看就知道这个工具做什么。比如 search_web 比 tool_1 好，calculate_roi 比 compute 好。命名建议用”动词_名词”格式，全小写，下划线分隔。</p>
+<p>第二部分是工具描述（description）。描述要准确、具体、无歧义。这是模型选择工具的主要依据。差的描述：“搜索信息”。好的描述：“根据关键词搜索互联网上的公开信息，返回搜索结果的标题、摘要和链接。适用于需要获取最新资讯、查找公开数据、了解行业动态的场景。不适用于查询内部数据库或私有知识库。”</p>
+<p>描述中建议包含三块内容：这个工具做什么、适用什么场景、不适用什么场景。特别是”不适用场景”的说明，能有效减少模型误选工具的情况。</p>
+<p>第三部分是输入参数（parameters）。用 JSON Schema 格式定义，包含每个参数的名称、类型、描述、是否必填。参数设计的原则是”最少必要参数”——不要让模型传它不需要的参数，也不要遗漏关键参数。</p>
+<p>第四部分是输出格式（returns）。定义工具返回数据的结构。输出格式要稳定、可预测，不要这次返回一个结构下次返回另一个结构。</p>
+<p>举个具体例子。search_web 工具的完整 Schema：</p>
+<p>名称：search_web
+描述：根据关键词搜索互联网上的公开信息，返回搜索结果的标题、摘要和链接
+参数：</p>
+<ul>
+<li>query（string，必填）：搜索关键词，建议用简短的名词短语</li>
+<li>max_results（integer，可选）：返回结果数量，默认 5，范围 1-10</li>
+<li>language（string，可选）：搜索语言，默认 zh-CN</li>
+</ul>
+<p>输出：</p>
+<ul>
+<li>results（array）：搜索结果列表
+<ul>
+<li>title（string）：结果标题</li>
+<li>snippet（string）：内容摘要</li>
+<li>url（string）：链接地址</li>
+<li>source（string）：来源网站</li>
+</ul>
+</li>
+</ul>
+<p>设计 Tool Schema 时最常犯的错误是描述太简略。很多人写一句”搜索工具”就完事了，结果模型不知道什么时候该用这个工具、什么时候不该用。花时间把描述写好，是 Tool Calling 成功的一半。</p>
+<h3 id="工具选择">工具选择<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具选择" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>工具选择是 Tool Calling 的核心决策环节。模型收到用户请求后，需要从可用工具列表中判断：这次应该调用哪个工具？还是不需要调用工具，直接生成文本回答？</p>
+<p>模型做工具选择的依据有三个。第一，用户请求的语义。用户说”查一下半导体行业的市场规模”，语义上需要外部信息，应该调搜索工具。用户说”帮我整理一下这些数据”，语义上需要结构化处理，可能用计算工具。第二，每个工具的描述。模型会对比用户请求和工具描述，计算语义相似度，选择最匹配的工具。第三，对话上下文。前面的对话可能已经暗示了需要什么工具。比如前面在讨论 ROI 计算，用户接着说”帮我算一下”，模型知道要调计算工具。</p>
+<p>工具选择的难点在于”选错”的情况很多。常见的选错模式有三种。</p>
+<p>第一种是选了不该选的工具。比如用户问”半导体是什么”，这是一个知识性问题，直接回答就行，但模型可能错误地调用了搜索工具。原因往往是工具描述太宽泛，模型觉得”好像也能用”。</p>
+<p>第二种是没选该选的工具。比如用户问”这个行业的最新政策变化”，这需要搜索工具获取最新信息，但模型可能凭自己的知识回答，给了过时的信息。原因是模型的”自信”——它觉得自己的知识足够，不需要外部工具。</p>
+<p>第三种是同时选了多个工具但顺序不对。某些情况下需要串行调用多个工具（先搜索再计算），模型可能错误地并行调用或者调换了顺序。</p>
+<p>减少选错的方法：一是优化工具描述，让每个工具的适用场景更加明确；二是控制工具数量，可用工具越少，选错概率越低；三是在系统提示中明确告知模型什么场景用什么工具。</p>
+<h3 id="工具参数">工具参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>工具参数是模型传给工具的具体数据。模型不仅要选对工具，还要构造正确的参数。</p>
+<p>参数构造的质量取决于两个因素。第一，模型对任务的理解深度。如果模型没有充分理解用户意图，构造的参数可能南辕北辙。比如用户说”查一下苹果”，模型需要判断这是指”苹果公司”还是”水果苹果”，才能构造正确的搜索关键词。第二，参数定义的清晰度。如果参数描述模糊，模型可能不知道该传什么值。</p>
+<p>参数设计有几个实用技巧。</p>
+<p>第一，给参数提供枚举值。如果一个参数只有几个合法值，就用枚举类型定义。比如 language 参数可以定义为 enum: [“zh-CN”, “en-US”, “ja-JP”]，这样模型不会传一个不合法的语言代码。</p>
+<p>第二，给参数设置默认值。可选参数应该有合理的默认值，这样模型不需要为不重要的参数费心思。比如 max_results 默认 5，大多数情况下够用。</p>
+<p>第三，参数描述中给出示例。比如 query 参数的描述可以是：“搜索关键词，建议用简短的名词短语，例如’半导体市场规模’或’AI Agent 框架’“。示例能帮模型理解参数的期望格式。</p>
+<p>第四，复杂参数拆成多个简单参数。不要设计一个巨型 JSON 参数，而是拆成多个独立字段。比如不要一个 filters 参数包含行业、地区、时间范围，而是拆成 industry、region、time_range 三个独立参数。</p>
+<h3 id="工具返回">工具返回<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具返回" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>工具返回是工具执行后给模型的结果。模型拿到这个结果后，会基于结果继续推理或生成回答。</p>
+<p>工具返回的设计原则有三个。</p>
+<p>第一，返回内容要精炼。不要把工具的所有原始输出都丢给模型，要做初步的筛选和摘要。比如搜索工具返回 10 条结果，但只需要给模型最相关的 3 条。过多的返回内容浪费 Token，还可能稀释关键信息。</p>
+<p>第二，返回格式要结构化。JSON 格式，字段固定，不要返回大段文本让模型自己解析。结构化的返回让模型能快速提取关键信息。</p>
+<p>第三，错误信息要明确。工具执行失败时，返回清晰的错误信息，包括错误类型和原因。不要返回一个空结果让模型猜发生了什么。比如”搜索失败：网络超时，请稍后重试”比返回空数组好。</p>
+<p>一个容易忽视的问题是返回数据的格式稳定性。同一个工具，同样的参数，每次调用的返回格式应该一致。如果第一次返回 {“title”: ”…”, “content”: ”…”}，第二次返回 {“name”: ”…”, “text”: ”…”}，模型就会困惑。格式一致性是可靠 Tool Calling 的基础。</p>
+<h3 id="工具失败">工具失败<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具失败" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>工具调用不可能每次都成功。网络超时、数据库故障、参数错误、权限不足，各种失败随时可能发生。</p>
+<p>工具失败的处理需要分三个层面。</p>
+<p>第一个层面是工具内部的容错。工具实现本身应该有重试机制。比如搜索工具遇到网络超时，应该自动重试 2-3 次。数据库查询遇到连接池满，应该等待后重试。工具内部的容错让大部分瞬态故障对 Agent 透明。</p>
+<p>第二个层面是返回给模型的错误信息。工具内部重试用完后仍然失败，需要向模型返回错误信息。错误信息要包含：错误类型（网络错误、参数错误、权限错误等）、错误描述（人类可读的说明）、建议操作（模型可以尝试的替代方案）。</p>
+<p>比如：{“error”: “network_timeout”, “message”: “搜索服务响应超时”, “suggestion”: “可以尝试减少 max_results 参数或更换搜索关键词”}</p>
+<p>第三个层面是 Agent 层面的应对策略。模型收到错误信息后，需要决定下一步怎么做。可选策略包括：换一个工具（搜索失败就用知识库查询）、换参数重试（减少结果数量、简化关键词）、跳过这个步骤（如果这个信息不是必需的）、报告失败（如果关键信息获取不到）。</p>
+<p>工具失败的日志记录非常重要。每次失败都要记录：时间、工具名称、参数、错误类型、错误信息、重试次数、最终处理结果。这些日志是后续优化工具和 Agent 的关键数据。</p>
+<h3 id="工具权限">工具权限<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具权限" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>不是所有工具都应该被无限制使用。权限控制是 Tool Calling 安全的基石。</p>
+<p>权限模型的设计从三个维度出发。</p>
+<p>第一个维度是工具级别的权限。哪些 Agent 可以使用哪些工具？比如”行业研究 Agent”可以使用搜索和查询工具，但不能使用”发送邮件”工具。这是最粗粒度的权限控制。</p>
+<p>第二个维度是参数级别的权限。同一个工具，不同 Agent 可用的参数范围不同。比如”查询数据库”工具，Agent A 只能查 public schema 的表，Agent B 可以查所有 schema。这是中等粒度的权限控制。</p>
+<p>第三个维度是数据级别的权限。同一个工具同一个参数，不同 Agent 能看到的数据范围不同。比如”搜索文档”工具，Agent A 只能搜索公开文档，Agent B 可以搜索内部文档。这是最细粒度的权限控制。</p>
+<p>实际项目中，至少要实现工具级别的权限控制。参数级别和数据级别的权限可以根据安全需求逐步加入。</p>
+<p>权限控制的核心原则是”最小权限”。只给 Agent 完成任务所必需的权限，不多给一个。这样即使 Agent 被恶意利用（比如被 Prompt Injection 攻击），它能造成的损害也是有限的。</p>
+<h3 id="工具白名单">工具白名单<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具白名单" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>工具白名单是权限控制的实现方式之一。它的思路很简单：为每个 Agent 维护一个工具白名单，只允许调用白名单内的工具。</p>
+<p>白名单设计有几个考虑。</p>
+<p>第一，白名单应该是配置化的，不是硬编码的。每个 Agent 的白名单存在配置文件或数据库中，需要调整时改配置就行，不用改代码。</p>
+<p>第二，白名单应该包含工具版本信息。工具升级后可能行为有变化，白名单要能区分不同版本。</p>
+<p>第三，白名单应该支持临时授权。某些特殊情况下，Agent 可能需要临时使用一个不在白名单中的工具。临时授权应该有审批流程和过期时间。</p>
+<p>白名单的维护是一个持续的工作。随着 Agent 能力的扩展，白名单需要定期审查和更新。审查的维度包括：白名单中的工具是否都在使用？有没有工具长时间没被调用过？是否需要添加新工具？现有权限是否过大？</p>
+<h3 id="工具调用审计">工具调用审计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具调用审计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>审计是对所有工具调用的完整记录。它回答的问题是：谁在什么时候调用了什么工具、传了什么参数、得到了什么结果。</p>
+<p>审计日志至少应该包含以下字段：时间戳、Agent 标识、工具名称、输入参数、输出结果、执行耗时、是否成功、错误信息（如果失败）、Token 消耗。</p>
+<p>审计日志有两个核心用途。第一是事后追溯。如果 Agent 产生了错误的输出，通过审计日志可以一步步回放它的工具调用链，找到出错环节。第二是优化分析。统计每个工具的调用频率、成功率、平均耗时，可以识别出哪些工具需要优化。</p>
+<p>审计日志的存储要注意隐私和安全。输入参数和输出结果可能包含敏感信息（比如用户数据、企业内部信息），需要做脱敏处理或者加密存储。日志的访问权限也要严格控制，不是所有人都能查看所有日志。</p>
+<p>审计还有一个容易被忽视的价值：它是构建 Agent 评估体系的数据基础。通过分析大量历史工具调用数据，可以评估 Agent 的工具选择准确率、参数构造质量、错误处理能力。这些指标是量化 Agent 质量的关键维度。</p>
+<hr/>
+<h2 id="概念关系图">概念关系图<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#概念关系图" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<pre><code>Tool Calling 完整流程
+
+1. 工具注册阶段
+   |
+   +-- 定义 Tool Schema
+   |   |-- name（工具名称）
+   |   |-- description（功能描述）
+   |   |-- parameters（输入参数 Schema）
+   |   |-- returns（输出格式 Schema）
+   |
+   +-- 加入工具白名单
+   +-- 设置权限级别
+
+2. 工具选择阶段
+   |
+   用户请求 + 对话上下文 + 工具列表
+   |
+   v
+   模型推理：需要调用工具吗？调哪个？
+   |
+   +-- 不需要工具 -> 直接生成文本
+   +-- 需要工具 -> 选择工具 + 构造参数
+
+3. 工具执行阶段
+   |
+   +-- 权限检查（工具是否在白名单中？）
+   |   |-- 不通过 -> 返回权限错误
+   |   |-- 通过 -> 继续
+   |
+   +-- 参数校验（参数格式是否合法？）
+   |   |-- 不合法 -> 返回参数错误
+   |   |-- 合法 -> 继续
+   |
+   +-- 执行工具调用
+   |   |-- 成功 -> 返回结果
+   |   |-- 失败 -> 重试 / 返回错误信息
+   |
+   +-- 记录审计日志
+
+4. 结果处理阶段
+   |
+   +-- 模型接收工具返回
+   +-- 基于结果继续推理
+   +-- 决定下一步动作
+</code></pre>
+<pre><code>8 个行业研究工具的架构
+
+Agent 工具集
+|
++-- 信息获取层
+|   |-- search_web：搜索互联网公开信息
+|   |-- read_document：读取上传的文档内容
+|   |-- query_database：查询行业数据库
+|
++-- 分析计算层
+|   |-- calculate_roi：计算 AI 方案的投资回报率
+|
++-- 内容生成层
+|   |-- generate_markdown：生成结构化 Markdown 内容
+|
++-- 输出动作层
+|   |-- save_report：保存分析报告
+|   |-- send_email_draft：生成邮件草稿
+|   |-- create_task：创建待办任务
+
+权限分级：
+  只读（search_web, read_document, query_database）
+  计算（calculate_roi）
+  写入（generate_markdown, save_report）
+  外部动作（send_email_draft, create_task）
+</code></pre>
+<hr/>
+<h2 id="实战分析">实战分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实战分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="实战任务为-agent-设计-8-个工具">实战任务：为 Agent 设计 8 个工具<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实战任务为-agent-设计-8-个工具" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>指南要求为行业研究 Agent 设计 8 个工具，并加入工具权限表。下面逐一展开。</p>
+<p><strong>search_web：搜索互联网公开信息</strong></p>
+<p>功能：根据关键词搜索互联网上的公开信息，返回搜索结果列表。
+输入参数：query（搜索关键词，必填）、max_results（结果数量，可选，默认 5）、language（语言，可选，默认 zh-CN）。
+输出：results 数组，每个元素包含 title、snippet、url、source。
+权限级别：只读。
+设计注意点：搜索结果要做初步过滤，去掉广告和低质量内容。对搜索关键词要做长度限制（不超过 100 字符），避免模型传一大段话当关键词。</p>
+<p><strong>read_document：读取上传的文档内容</strong></p>
+<p>功能：读取用户上传的文档，提取文本内容。支持 PDF、Word、Markdown、TXT 格式。
+输入参数：document_id（文档 ID，必填）、page_range（页码范围，可选）、sections（要提取的章节，可选）。
+输出：document_content（文档文本内容）、metadata（文档元数据：标题、作者、创建时间、页数）。
+权限级别：只读。
+设计注意点：大文档要做分段返回，不要一次返回全部内容。返回时附带元数据，让模型知道文档的来源和结构。</p>
+<p><strong>query_database：查询行业数据库</strong></p>
+<p>功能：查询预置的行业数据库，获取结构化的行业数据。
+输入参数：table_name（表名，必填）、filters（过滤条件对象，可选）、fields（要查询的字段，可选）。
+输出：data（查询结果数组）、total_count（总记录数）、query_time（查询耗时）。
+权限级别：只读，且有表级别限制（只能查行业相关表）。
+设计注意点：这是一个高风险工具，需要严格的 SQL 注入防护。filters 参数不直接拼 SQL，而是用参数化查询。同时要设置查询超时和返回行数上限。</p>
+<p><strong>calculate_roi：计算 AI 方案的投资回报率</strong></p>
+<p>功能：根据 AI 方案的预估成本和收益，计算 ROI 和回本周期。
+输入参数：implementation_cost（实施成本，必填）、annual_savings（年化节省金额，必填）、time_to_implement（实施周期月数，必填）、risk_factor（风险系数，可选，默认 1.0）。
+输出：total_cost（总成本）、annual_roi（年化 ROI）、payback_months（回本月数）、three_year_return（三年总回报）、risk_adjusted_roi（风险调整后 ROI）。
+权限级别：计算（无副作用，但依赖输入准确性）。
+设计注意点：这个工具的计算逻辑应该公开透明，让使用者能验证。输入参数应该有合理的范围检查（比如实施成本不能为负）。</p>
+<p><strong>generate_markdown：生成结构化 Markdown 内容</strong></p>
+<p>功能：根据结构化数据生成 Markdown 格式的文档章节。
+输入参数：section_type（章节类型，必填，枚举值：overview/roles/processes/opportunities/report）、data（结构化数据，必填）、template_id（模板 ID，可选）。
+输出：markdown_content（生成的 Markdown 文本）、word_count（字数统计）。
+权限级别：写入（生成内容但不修改外部系统）。
+设计注意点：章节类型用枚举值而不是自由文本，避免模型传入不支持的类型。生成的内容要做字数限制，防止生成过长内容。</p>
+<p><strong>save_report：保存分析报告</strong></p>
+<p>功能：将生成的分析报告保存到文件系统或对象存储。
+输入参数：report_content（报告内容，必填）、filename（文件名，必填）、format（保存格式，可选，默认 md）。
+输出：file_path（文件保存路径）、file_size（文件大小）、saved_at（保存时间）。
+权限级别：写入（有副作用，写入文件系统）。
+设计注意点：文件名要做安全检查，禁止路径穿越（不能包含 ../ 等）。保存路径要用白名单目录，不允许保存到任意位置。</p>
+<p><strong>send_email_draft：生成邮件草稿</strong></p>
+<p>功能：生成一封邮件草稿，不自动发送，保存到草稿箱等待人工确认。
+输入参数：to（收件人，必填）、subject（主题，必填）、body（正文，必填）、priority（优先级，可选）。
+输出：draft_id（草稿 ID）、preview（邮件预览）、status（状态：draft）。
+权限级别：外部动作（高风险，需要人工确认后才能真正发送）。
+设计注意点：这个工具只生成草稿不发送，发送动作需要另一个更高权限的工具。to 参数要做邮箱格式校验。邮件内容要做敏感信息检查。</p>
+<p><strong>create_task：创建待办任务</strong></p>
+<p>功能：在任务管理系统中创建一个待办事项。
+输入参数：title（任务标题，必填）、description（任务描述，必填）、assignee（负责人，可选）、due_date（截止日期，可选）、priority（优先级，可选）。
+输出：task_id（任务 ID）、created_at（创建时间）、status（状态：pending）。
+权限级别：外部动作（有副作用，创建外部系统记录）。
+设计注意点：负责人和截止日期要有合理范围。任务创建后应该通知相关人员。</p>
+<p><strong>工具权限表汇总</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>工具名称</th><th>权限级别</th><th>高风险操作</th><th>需要人工确认</th><th>白名单</th></tr></thead><tbody><tr><td>search_web</td><td>只读</td><td>否</td><td>否</td><td>是</td></tr><tr><td>read_document</td><td>只读</td><td>否</td><td>否</td><td>是</td></tr><tr><td>query_database</td><td>只读</td><td>否</td><td>否</td><td>是（限定表范围）</td></tr><tr><td>calculate_roi</td><td>计算</td><td>否</td><td>否</td><td>是</td></tr><tr><td>generate_markdown</td><td>写入</td><td>否</td><td>否</td><td>是</td></tr><tr><td>save_report</td><td>写入</td><td>是（写文件）</td><td>可选</td><td>是（限定目录）</td></tr><tr><td>send_email_draft</td><td>外部动作</td><td>是（生成外部内容）</td><td>是</td><td>是</td></tr><tr><td>create_task</td><td>外部动作</td><td>是（创建外部记录）</td><td>是</td><td>是</td></tr></tbody></table></div>
+<hr/>
+<h2 id="当日产物说明">当日产物说明<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#当日产物说明" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="agent-工具清单">《Agent 工具清单》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#agent-工具清单" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这个文档列出 8 个工具的完整定义，每个工具一页。包含：名称、功能描述、输入参数（含类型和说明）、输出格式、权限级别、使用注意事项、常见错误和应对策略。</p>
+<p>质量标准：一个不了解项目的开发者拿到这个文档，能独立实现每个工具。参数定义无歧义，输出格式完全确定。</p>
+<h3 id="tool-schema-文件">《Tool Schema 文件》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#tool-schema-文件" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是所有工具的 JSON Schema 定义文件。每个工具的 Schema 包含 name、description、parameters、returns 四个部分。参数类型使用 JSON Schema 标准类型。</p>
+<p>质量标准：Schema 文件可以通过 JSON Schema 校验器验证通过。每个参数都有 description 字段，枚举值类型的参数都有 enum 定义。</p>
+<h3 id="工具权限表">《工具权限表》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具权限表" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是所有工具的权限汇总表，包含工具名称、权限级别、是否高风险、是否需要人工确认、白名单范围、审批要求。</p>
+<p>质量标准：每个工具的权限级别合理（高风险操作有确认机制），白名单范围明确（不是”全部允许”）。</p>
+<h3 id="工具调用日志">《工具调用日志》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工具调用日志" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是工具调用日志的格式定义，包含：日志字段列表、字段类型、示例数据、存储策略、保留期限、访问权限。</p>
+<p>质量标准：日志格式能完整回放任何一次工具调用的全过程。敏感字段已标注脱敏要求。</p>
+<hr/>
+<h2 id="常见误区与避坑">常见误区与避坑<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见误区与避坑" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="误区一工具描述随便写写就行">误区一：工具描述随便写写就行<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区一工具描述随便写写就行" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>工具描述是模型选择工具的唯一依据。描述写得不好，模型就选不准工具。花 30 分钟把每个工具的描述写好，能省下后面无数调试时间。描述中特别要写清楚”不适用场景”，这比”适用场景”更能帮模型做出正确选择。</p>
+<h3 id="误区二一个工具做很多事">误区二：一个工具做很多事<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区二一个工具做很多事" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>把搜索、过滤、排序、格式化全塞在一个工具里，参数一大堆，逻辑一团乱。正确做法是一个工具只做一件事。搜索归搜索，过滤归过滤。工具粒度越细，Agent 的组合灵活性越高。就像乐高积木，单个积木越简单，拼出来的造型越丰富。</p>
+<h3 id="误区三不处理工具失败">误区三：不处理工具失败<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区三不处理工具失败" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>很多初学者假设工具调用一定成功，不做任何错误处理。结果工具一失败，Agent 就卡住了。每个工具都要定义失败行为：超时怎么办、参数错误怎么办、权限不足怎么办、返回格式异常怎么办。工具失败的处理策略要写入工具描述，让模型知道失败后可以怎么办。</p>
+<h3 id="误区四所有工具都设为无条件可用">误区四：所有工具都设为无条件可用<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区四所有工具都设为无条件可用" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是安全问题的根源。“发送邮件”这种工具如果无条件可用，Agent 就可能在被攻击时向任何人发送邮件。给工具分级、设白名单、加确认机制，虽然增加了设计复杂度，但这是必须付出的代价。</p>
+<h3 id="误区五忽视工具调用的成本">误区五：忽视工具调用的成本<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区五忽视工具调用的成本" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>每次工具调用都可能触发 API 调用、数据库查询、文件读写，这些都是有成本的。如果 Agent 在一个任务中调用了 50 次搜索工具，成本可能远超预期。设计时要考虑工具的调用频率上限，对高频调用的工具做缓存。</p>
+<hr/>
+<h2 id="延伸思考">延伸思考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#延伸思考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>今天的 Tool Calling 知识是明天 Multi-Agent 架构的基础。在多 Agent 系统中，每个 Agent 有自己的工具集，不同 Agent 的工具可能重叠也可能互补。工具的权限管理在多 Agent 场景下更加复杂，因为要考虑 Agent 之间的协作关系。</p>
+<p>Day 26 的 Human-in-the-loop 专题会讨论如何在高风险工具调用前加入人工确认机制。今天提到的 send_email_draft 和 create_task 就是典型的高风险工具，它们的”确认机制”在 Day 26 会详细展开。</p>
+<p>Day 27 的安全专题会从工具权限出发，讨论 Prompt Injection 攻击如何诱导 Agent 调用不应该调用的工具，以及怎么设计防护策略。</p>
+<p>从与 Week 2 的衔接来看，Day 10 已经学过 Function Calling 的基础概念（工具定义、参数、执行、返回）。今天的深入在于：增加了权限控制、白名单、审计三个安全维度；增加了工具选择策略的分析；增加了失败处理的分层设计。这是从”能调用工具”到”可靠地调用工具”的进化。</p>
+<p>从与 Week 3 的衔接来看，RAG 系统中的”检索”操作可以封装成一个工具（query_knowledge_base），让 Agent 在需要时自主检索知识库。这样 RAG 就从”预先检索再生成”变成了”按需检索”，更适合 Agent 场景。</p>
+<hr/>
+<h2 id="自测问题">自测问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#自测问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ol>
+<li>
+<p>Tool Schema 包含哪四个部分？每个部分的作用是什么？</p>
+</li>
+<li>
+<p>为什么工具描述中要写”不适用场景”？举例说明缺少这部分描述会导致什么问题。</p>
+</li>
+<li>
+<p>工具参数设计的”最少必要参数”原则是什么意思？为什么不要设计多余参数？</p>
+</li>
+<li>
+<p>工具返回内容为什么要精炼？返回太多内容会有什么问题？</p>
+</li>
+<li>
+<p>工具失败在哪三个层面处理？每个层面举一个具体例子。</p>
+</li>
+<li>
+<p>权限控制的三个维度分别是什么？哪个粒度最粗、哪个最细？</p>
+</li>
+<li>
+<p>工具白名单的设计要考虑哪些因素？</p>
+</li>
+<li>
+<p>审计日志至少应该包含哪些字段？它有什么两个核心用途？</p>
+</li>
+<li>
+<p>为什么 send_email_draft 只生成草稿不直接发送？这个设计背后的安全考虑是什么？</p>
+</li>
+<li>
+<p>设计一个”查询天气”工具的完整 Schema，包含名称、描述、参数和输出格式。</p>
+</li>
+</ol>
+<hr/>
+<h2 id="关键词">关键词<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#关键词" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><strong>Tool Schema</strong>：工具的完整定义，包含名称、描述、参数和输出格式</li>
+<li><strong>工具选择</strong>：模型根据用户请求和工具描述判断应该调用哪个工具的决策过程</li>
+<li><strong>工具参数</strong>：模型传给工具的具体输入数据，用 JSON Schema 定义格式</li>
+<li><strong>工具返回</strong>：工具执行后返回给模型的结果，需要精炼和结构化</li>
+<li><strong>工具失败</strong>：工具调用过程中的错误，包括网络超时、参数错误、权限不足等</li>
+<li><strong>工具权限</strong>：控制 Agent 能使用哪些工具、以什么方式使用的安全机制</li>
+<li><strong>工具白名单</strong>：限制 Agent 只能调用指定工具列表的安全策略</li>
+<li><strong>工具审计</strong>：记录所有工具调用的完整日志，用于追溯和分析</li>
+<li><strong>最小权限原则</strong>：只给 Agent 完成任务所必需的权限，不多给一个</li>
+<li><strong>参数校验</strong>：在工具执行前检查参数格式和范围是否合法</li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-25" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#day-24tool-calling-深入" data-for="day-24tool-calling-深入">Day 24：Tool Calling 深入</a></li><li class="depth-1"><a href="#学习目标" data-for="学习目标">学习目标</a></li><li class="depth-1"><a href="#核心概念" data-for="核心概念">核心概念</a></li><li class="depth-2"><a href="#tool-schema" data-for="tool-schema">Tool Schema</a></li><li class="depth-2"><a href="#工具选择" data-for="工具选择">工具选择</a></li><li class="depth-2"><a href="#工具参数" data-for="工具参数">工具参数</a></li><li class="depth-2"><a href="#工具返回" data-for="工具返回">工具返回</a></li><li class="depth-2"><a href="#工具失败" data-for="工具失败">工具失败</a></li><li class="depth-2"><a href="#工具权限" data-for="工具权限">工具权限</a></li><li class="depth-2"><a href="#工具白名单" data-for="工具白名单">工具白名单</a></li><li class="depth-2"><a href="#工具调用审计" data-for="工具调用审计">工具调用审计</a></li><li class="depth-1"><a href="#概念关系图" data-for="概念关系图">概念关系图</a></li><li class="depth-1"><a href="#实战分析" data-for="实战分析">实战分析</a></li><li class="depth-2"><a href="#实战任务为-agent-设计-8-个工具" data-for="实战任务为-agent-设计-8-个工具">实战任务：为 Agent 设计 8 个工具</a></li><li class="depth-1"><a href="#当日产物说明" data-for="当日产物说明">当日产物说明</a></li><li class="depth-2"><a href="#agent-工具清单" data-for="agent-工具清单">《Agent 工具清单》</a></li><li class="depth-2"><a href="#tool-schema-文件" data-for="tool-schema-文件">《Tool Schema 文件》</a></li><li class="depth-2"><a href="#工具权限表" data-for="工具权限表">《工具权限表》</a></li><li class="depth-2"><a href="#工具调用日志" data-for="工具调用日志">《工具调用日志》</a></li><li class="depth-1"><a href="#常见误区与避坑" data-for="常见误区与避坑">常见误区与避坑</a></li><li class="depth-2"><a href="#误区一工具描述随便写写就行" data-for="误区一工具描述随便写写就行">误区一：工具描述随便写写就行</a></li><li class="depth-2"><a href="#误区二一个工具做很多事" data-for="误区二一个工具做很多事">误区二：一个工具做很多事</a></li><li class="depth-2"><a href="#误区三不处理工具失败" data-for="误区三不处理工具失败">误区三：不处理工具失败</a></li><li class="depth-2"><a href="#误区四所有工具都设为无条件可用" data-for="误区四所有工具都设为无条件可用">误区四：所有工具都设为无条件可用</a></li><li class="depth-2"><a href="#误区五忽视工具调用的成本" data-for="误区五忽视工具调用的成本">误区五：忽视工具调用的成本</a></li><li class="depth-1"><a href="#延伸思考" data-for="延伸思考">延伸思考</a></li><li class="depth-1"><a href="#自测问题" data-for="自测问题">自测问题</a></li><li class="depth-1"><a href="#关键词" data-for="关键词">关键词</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../postscript.js" type="module" data-persist="true"></script></html>

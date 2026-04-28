@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>Day19-RAG问答链路v1</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="Day19-RAG问答链路v1"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Day19-RAG问答链路v1"/><meta name="twitter:description" content="Day 19：RAG 问答链路 v1 学习目标 经过前三天的学习，我们已经掌握了 RAG 系统的各个组件：文档解析与清洗、文本切分、Embedding 和向量数据库。今天是把这些组件串起来的一天——构建一个端到端的 RAG 问答链路。 这个 v1 版本不追求完美，追求的是”跑通”。从用户提问到获得答案，整个链路能走通、能回答基本问题、能显示引用来源。有了这个基线版本，明天才能在上面做优化。 学完今天，你将拥有一个可以演示的 RAG Demo。它可能还不够好，可能有些问题回答不了，但它是一个真实的、可运行的系统。拿这个 Demo 给别人看，别人能理解 RAG 是什么、能做什么。 核心概念 一、用..."/><meta property="og:description" content="Day 19：RAG 问答链路 v1 学习目标 经过前三天的学习，我们已经掌握了 RAG 系统的各个组件：文档解析与清洗、文本切分、Embedding 和向量数据库。今天是把这些组件串起来的一天——构建一个端到端的 RAG 问答链路。 这个 v1 版本不追求完美，追求的是”跑通”。从用户提问到获得答案，整个链路能走通、能回答基本问题、能显示引用来源。有了这个基线版本，明天才能在上面做优化。 学完今天，你将拥有一个可以演示的 RAG Demo。它可能还不够好，可能有些问题回答不了，但它是一个真实的、可运行的系统。拿这个 Demo 给别人看，别人能理解 RAG 是什么、能做什么。 核心概念 一、用..."/><meta property="og:image:alt" content="Day 19：RAG 问答链路 v1 学习目标 经过前三天的学习，我们已经掌握了 RAG 系统的各个组件：文档解析与清洗、文本切分、Embedding 和向量数据库。今天是把这些组件串起来的一天——构建一个端到端的 RAG 问答链路。 这个 v1 版本不追求完美，追求的是”跑通”。从用户提问到获得答案，整个链路能走通、能回答基本问题、能显示引用来源。有了这个基线版本，明天才能在上面做优化。 学完今天，你将拥有一个可以演示的 RAG Demo。它可能还不够好，可能有些问题回答不了，但它是一个真实的、可运行的系统。拿这个 Demo 给别人看，别人能理解 RAG 是什么、能做什么。 核心概念 一、用..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/ai两月计划/week3/Day19-RAG问答链路v1"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/ai两月计划/week3/Day19-RAG问答链路v1"/><link rel="icon" href="../../../static/icon.png"/><meta name="description" content="Day 19：RAG 问答链路 v1 学习目标 经过前三天的学习，我们已经掌握了 RAG 系统的各个组件：文档解析与清洗、文本切分、Embedding 和向量数据库。今天是把这些组件串起来的一天——构建一个端到端的 RAG 问答链路。 这个 v1 版本不追求完美，追求的是”跑通”。从用户提问到获得答案，整个链路能走通、能回答基本问题、能显示引用来源。有了这个基线版本，明天才能在上面做优化。 学完今天，你将拥有一个可以演示的 RAG Demo。它可能还不够好，可能有些问题回答不了，但它是一个真实的、可运行的系统。拿这个 Demo 给别人看，别人能理解 RAG 是什么、能做什么。 核心概念 一、用..."/><meta name="generator" content="Quartz"/><link href="../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/ai两月计划/week3/Day19-RAG问答链路v1"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-59"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-59" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/ai两月计划/">ai两月计划</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/ai两月计划/week3/">week3</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>Day19 RAG问答链路v1</a></div></nav><h1 class="article-title">Day19-RAG问答链路v1</h1><p show-comma="true" class="content-meta"><time datetime="2026-04-28T06:25:01.275Z">2026年4月28日</time><span>33分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="day-19rag-问答链路-v1">Day 19：RAG 问答链路 v1<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#day-19rag-问答链路-v1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="学习目标">学习目标<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#学习目标" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>经过前三天的学习，我们已经掌握了 RAG 系统的各个组件：文档解析与清洗、文本切分、Embedding 和向量数据库。今天是把这些组件串起来的一天——构建一个端到端的 RAG 问答链路。</p>
+<p>这个 v1 版本不追求完美，追求的是”跑通”。从用户提问到获得答案，整个链路能走通、能回答基本问题、能显示引用来源。有了这个基线版本，明天才能在上面做优化。</p>
+<p>学完今天，你将拥有一个可以演示的 RAG Demo。它可能还不够好，可能有些问题回答不了，但它是一个真实的、可运行的系统。拿这个 Demo 给别人看，别人能理解 RAG 是什么、能做什么。</p>
+<hr/>
+<h2 id="核心概念">核心概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="一用户问题处理">一、用户问题处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一用户问题处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用户问题处理是 RAG 在线管线的第一个环节。它的任务不只是”拿到问题文本”，还包括一些必要的预处理。</p>
+<p><strong>问题清洗。</strong> 用户的输入可能包含多余的空格、特殊字符、表情符号等。虽然这些问题不影响 Embedding 的效果（模型本身有一定的鲁棒性），但在展示和日志记录时，干净的问题文本更易读。</p>
+<p><strong>问题分类。</strong> 不是所有用户输入都是适合 RAG 回答的问题。有些是闲聊（“你好”），有些是命令（“帮我生成一份报告”），有些是超出知识库范围的提问（“今天天气怎么样”）。在 MVP 阶段可以不做分类，但在生产系统中，需要判断用户输入是否是”知识库问答”类型的请求。如果不是，直接走其他处理路径。</p>
+<p><strong>问题补全。</strong> 在对话场景中，用户的提问可能包含代词或省略。比如用户先问了”退货政策是什么”，接着问”那换货呢？“。第二个问题的”换货”需要结合上下文理解。在 v1 版本中可以不处理多轮对话，但至少要意识到这个问题的存在。</p>
+<p><strong>工程建议。</strong> v1 阶段保持简单：接收问题文本，做基本清洗（去除首尾空白、合并多余空格），然后直接进入向量化环节。对话上下文补全、问题分类等高级功能留到 v2。</p>
+<h3 id="二问题向量化">二、问题向量化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二问题向量化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>把用户的问题通过 Embedding 模型转换为向量。这和 Day 18 离线阶段对 Chunk 做的向量化是同一个操作，使用同一个模型。</p>
+<p><strong>需要注意的点：</strong></p>
+<ul>
+<li><strong>模型一致性。</strong> 必须使用和文档入库时相同的 Embedding 模型。这个在 Day 18 已经强调过了，但它是如此重要，值得再提醒一次。</li>
+<li><strong>单条 vs 批量。</strong> 在线查询通常一次只处理一个问题，不需要批量。但如果你要支持高并发（多个用户同时提问），需要考虑 Embedding API 的并发能力和速率限制。</li>
+<li><strong>缓存优化。</strong> 如果多个用户问了相同或非常相似的问题，可以缓存问题的向量，避免重复调用 Embedding API。这是一个可选优化，v1 可以不做。</li>
+<li><strong>延迟记录。</strong> 记录问题向量化的耗时，作为系统性能监控的基础数据。通常 Embedding API 的响应时间在 50-200ms。</li>
+</ul>
+<h3 id="三检索-top-k">三、检索 top-k<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三检索-top-k" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用问题向量在向量数据库中检索最相似的 k 个 Chunk。</p>
+<p><strong>参数选择。</strong> v1 阶段建议 k=3 或 k=5。这个值不需要过度优化，先用一个中间值，后面根据测试效果调整。</p>
+<p><strong>相似度阈值。</strong> top-k 检索总是会返回 k 个结果，即使这些结果和问题一点也不相关。你需要设定一个相似度阈值（比如余弦相似度 0.5），低于阈值的结果视为”未检索到相关内容”。这样当知识库中确实没有答案时，系统可以诚实地回答”未找到相关信息”，而不是硬凑一个不相关的答案。</p>
+<p><strong>检索结果的格式。</strong> 每个检索结果应该包含：</p>
+<ul>
+<li>Chunk 的原始文本</li>
+<li>相似度分数</li>
+<li>元数据（来源文档、章节、页码等）</li>
+</ul>
+<p>这些信息在后续环节都会用到。</p>
+<p><strong>检索失败的判断。</strong> 什么情况算”检索失败”？</p>
+<ul>
+<li>所有 top-k 结果的相似度分数都低于阈值</li>
+<li>检索到的 Chunk 和问题明显不相关（可以通过人工抽样判断）</li>
+<li>向量数据库返回错误（技术故障）</li>
+</ul>
+<p>v1 阶段对检索失败的处理可以简单一些：告诉用户”未找到相关信息”。后续版本可以更智能地处理，比如扩大搜索范围、换一种检索方式等。</p>
+<h3 id="四上下文拼接">四、上下文拼接<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四上下文拼接" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>把检索到的 k 个 Chunk 的文本拼接起来，作为 Prompt 的上下文部分。</p>
+<p><strong>拼接格式。</strong> 常见的做法是给每个 Chunk 加上序号和来源标注，然后用分隔符隔开。比如：</p>
+<pre><code>[参考资料 1]（来源：《产品手册》第 3 章&quot;退货政策&quot;）
+退货申请提交后，客服团队将在 1 个工作日内审核...
+
+[参考资料 2]（来源：《售后服务指南》第 2 章&quot;退款流程&quot;）
+审核通过后，退款将在 3 个工作日内原路退回...
+
+[参考资料 3]（来源：《产品手册》第 3 章&quot;退货政策&quot;）
+特殊情况下，退款可能延长至 7 个工作日...
+</code></pre>
+<p>这样拼接的好处是：模型知道每段内容的来源（有助于引用标注），用户也能看到答案参考了哪些资料。</p>
+<p><strong>上下文长度控制。</strong> 检索到的 k 个 Chunk 的总字符数可能很长。如果超过模型上下文窗口的一半，需要截断。为什么是一半而不是全部？因为 Prompt 中还需要留空间给问题和生成指令，以及模型的回答本身。</p>
+<p>截断策略：按相似度分数排序，从最相似的开始保留，直到总字符数达到上限。低相似度的 Chunk 被优先截断。</p>
+<p><strong>去重。</strong> 有时检索到的多个 Chunk 来自同一篇文档的相邻段落，内容高度重复（因为有 Overlap）。在拼接前可以做一次简单的去重：如果两个 Chunk 的文本重复率超过某个阈值（比如 80%），只保留相似度更高的那个。</p>
+<h3 id="五prompt-组装">五、Prompt 组装<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五prompt-组装" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>把拼接好的上下文和用户问题组装成完整的 Prompt。</p>
+<p><strong>Prompt 的结构设计。</strong> 一个标准的 RAG Prompt 通常包含以下部分：</p>
+<p><strong>系统指令。</strong> 告诉模型它的角色和回答规则。比如：</p>
+<p>“你是一个知识库问答助手。你的任务是基于提供的参考资料回答用户的问题。请遵循以下规则：1. 只基于参考资料中的信息回答，不要使用你自己的知识。2. 如果参考资料中没有相关信息，请明确说明。3. 在回答中标注信息来源。”</p>
+<p><strong>参考资料。</strong> 上一环节拼接好的上下文文本。</p>
+<p><strong>用户问题。</strong> 用户提出的问题。</p>
+<p><strong>回答指令。</strong> 引导模型按特定格式回答。</p>
+<p><strong>Prompt 设计的原则：</strong></p>
+<ul>
+<li><strong>明确约束。</strong> 告诉模型”只基于参考资料回答”，这是减少幻觉的关键指令。虽然模型不一定 100% 遵守，但明确约束比不约束效果好很多。</li>
+<li><strong>明确失败处理。</strong> 告诉模型”如果没有相关信息，说’未找到相关信息’“。这比让模型自由发挥要好。</li>
+<li><strong>格式指引。</strong> 如果需要特定格式（比如分点回答、标注引用编号），在 Prompt 中给出格式模板和示例。</li>
+</ul>
+<p><strong>和 Week 2 的衔接。</strong> Week 2 我们学了 Prompt Contract 和结构化输出。这些能力在 RAG Prompt 中同样适用。你可以要求模型以 JSON 格式输出，包含 answer（答案正文）和 citations（引用列表）两个字段。这样下游系统可以程序化地处理答案。</p>
+<h3 id="六答案生成">六、答案生成<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六答案生成" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>调用大模型，传入组装好的 Prompt，获取答案。</p>
+<p><strong>模型选择。</strong> RAG 答案生成对模型的要求：</p>
+<ul>
+<li>需要好的中文理解能力</li>
+<li>需要能严格遵循指令（“只基于参考资料回答”）</li>
+<li>不需要特别强的推理能力（因为推理主要基于提供的上下文）</li>
+</ul>
+<p>通常中等能力的模型就够用了（比如 GPT-4o-mini、Claude Haiku 级别）。用最强的模型当然更好，但成本也更高。在 v1 阶段先用性价比高的模型，后续根据效果决定是否升级。</p>
+<p><strong>Temperature 设置。</strong> RAG 问答的答案应该基于事实，不需要创意发挥。建议 Temperature 设为 0 或很低（0.1-0.3）。低 Temperature 让模型的输出更确定、更稳定、更贴近参考资料。</p>
+<p><strong>流式输出。</strong> 如果前端支持，建议使用流式输出（Streaming）。RAG 的答案通常比较长，用户等待完整答案生成可能需要几秒。流式输出让用户可以逐步看到答案，体验更好。</p>
+<h3 id="七引用来源">七、引用来源<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七引用来源" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在每个答案中标注信息来源，是 RAG 系统区别于普通问答的重要特征。</p>
+<p><strong>引用的两种形式：</strong></p>
+<p><strong>内联引用。</strong> 在答案正文中直接标注。比如：“退货申请提交后，客服团队将在 1 个工作日内审核[参考资料 1]。审核通过后，退款将在 3 个工作日内原路退回[参考资料 2]。”</p>
+<p><strong>引用列表。</strong> 在答案末尾列出所有引用的资料。比如：“参考来源：[1]《产品手册》第 3 章；[2]《售后服务指南》第 2 章。”</p>
+<p>两种形式可以结合使用：答案正文中用编号引用，末尾附完整的来源列表。</p>
+<p><strong>引用的实现方式。</strong></p>
+<p>如果 Prompt 要求模型标注引用，大多数模型能在答案中加入引用标记。但引用的准确性不是 100%，模型可能标注了不相关的来源，或者遗漏了实际使用的来源。</p>
+<p>对于 v1 版本，接受引用可能不完全准确的现实。后续可以通过后处理来校验引用的准确性。</p>
+<h3 id="八答案保存">八、答案保存<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八答案保存" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>答案生成后需要保存，用于日志记录、效果评估和后续优化。</p>
+<p><strong>应该保存的内容：</strong></p>
+<ul>
+<li>用户问题</li>
+<li>检索到的 top-k Chunk（文本、分数、元数据）</li>
+<li>完整的 Prompt（包含上下文和指令）</li>
+<li>模型生成的答案</li>
+<li>引用来源</li>
+<li>时间戳</li>
+<li>处理耗时（每个环节的耗时）</li>
+</ul>
+<p><strong>保存的用途：</strong></p>
+<ul>
+<li><strong>效果评估。</strong> 通过历史记录分析系统的回答质量，发现检索不准或生成不佳的案例。</li>
+<li><strong>问题诊断。</strong> 当用户反馈”回答不对”时，可以回溯查看是检索的问题还是生成的问题。</li>
+<li><strong>Prompt 优化。</strong> 分析 Prompt 和答案的对应关系，找到 Prompt 可以改进的地方。</li>
+<li><strong>成本统计。</strong> 通过保存的 Token 使用记录，统计系统的运行成本。</li>
+</ul>
+<p><strong>存储方式。</strong> v1 阶段可以用 JSON 文件或 SQLite 数据库。生产环境建议用正式的数据库（PostgreSQL 等）。</p>
+<hr/>
+<h2 id="概念关系图">概念关系图<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#概念关系图" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<pre><code>RAG 问答链路 v1 完整流程
+=========================================================
+
+[用户提问]
+    |
+    v
+[问题预处理] -- 清洗、补全（v1 可选）
+    |
+    v
+[问题向量化] -- Embedding API 调用
+    |
+    v
+[向量检索] --- 向量数据库 top-k 查询
+    |               |
+    |               +-- 相似度分数
+    |               +-- Chunk 文本
+    |               +-- Chunk 元数据
+    v
+[检索结果评估]
+    |
+    +-- 分数低于阈值？ --> [返回：未找到相关信息]
+    |
+    +-- 分数合格？ -------> 继续
+    |
+    v
+[上下文拼接] -- Chunk 文本 + 来源标注
+    |
+    v
+[Prompt 组装] -- 系统指令 + 上下文 + 问题 + 格式要求
+    |
+    v
+[LLM 调用] ---- 模型生成答案
+    |
+    v
+[后处理] ------ 引用标注 + 格式化
+    |
+    v
+[返回答案] ---- 答案正文 + 引用来源
+    |
+    v
+[保存记录] ---- 问答日志 + 检索记录 + 耗时统计
+
+
+Prompt 组装结构
+=========================================================
+
++-----------------------------------------------+
+| System: 你是知识库问答助手                      |
+| 规则：只基于参考资料回答，标注来源              |
+|                                               |
+| 参考资料：                                     |
+| [1] 来源：XX文档，第X章                        |
+|     退款流程如下...                            |
+| [2] 来源：XX文档，第X章                        |
+|     退货条件是...                              |
+| [3] 来源：XX文档，第X章                        |
+|     特殊情况...                                |
+|                                               |
+| 用户问题：退款需要多久？                        |
+|                                               |
+| 请基于以上参考资料回答，标注引用编号。          |
++-----------------------------------------------+
+        |
+        v
+[模型生成]
+        |
+        v
+&quot;退款将在 3 个工作日内完成[2]。特殊情况可能延长至
+ 7 个工作日[3]。
+
+ 参考来源：
+ [2]《售后服务指南》第 2 章&quot;退款流程&quot;
+ [3]《产品手册》第 3 章&quot;退货政策&quot;&quot;
+</code></pre>
+<hr/>
+<h2 id="实战分析">实战分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实战分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="任务一完成最小-rag-问答">任务一：完成最小 RAG 问答<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务一完成最小-rag-问答" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>把前三天的所有组件串起来，完成一个端到端的 RAG 问答。</p>
+<p><strong>需要的组件：</strong></p>
+<ul>
+<li>Day 16 产出的：清洗后的文档文本</li>
+<li>Day 17 产出的：切分好的 Chunk（带元数据）</li>
+<li>Day 18 产出的：Chunk 向量（存入向量数据库）</li>
+<li>今天新做的：检索 + Prompt + 生成的在线管线</li>
+</ul>
+<p><strong>端到端验证流程：</strong></p>
+<ol>
+<li>输入一个问题（比如”退货的流程是什么”）</li>
+<li>问题经过向量化</li>
+<li>在向量数据库中检索 top-3</li>
+<li>检查检索到的 Chunk 是否包含相关信息</li>
+<li>拼接上下文、组装 Prompt</li>
+<li>调用大模型生成答案</li>
+<li>检查答案是否正确、是否引用了正确的来源</li>
+</ol>
+<p>如果一切顺利，你应该能获得一个基于文档内容的准确回答。第一次跑通的时候，你会真切感受到 RAG 系统的价值。</p>
+<h3 id="任务二上传-3-篇文档">任务二：上传 3 篇文档<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务二上传-3-篇文档" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>选择 3 篇不同类型的文档，完成从上传到可检索的全流程。</p>
+<p><strong>文档选择建议：</strong></p>
+<ul>
+<li>一篇产品手册或技术文档（有明确标题结构，适合按标题切分）</li>
+<li>一份 FAQ 文档（问答对格式，天然适合 RAG）</li>
+<li>一份制度文件或规范（可能比较枯燥，但是企业知识库的典型内容）</li>
+</ul>
+<p><strong>对每篇文档完成：</strong></p>
+<ol>
+<li>解析和清洗（Day 16 的流程）</li>
+<li>切分（Day 17 的流程）</li>
+<li>向量化和入库（Day 18 的流程）</li>
+<li>验证检索效果（用 2-3 个问题测试）</li>
+</ol>
+<h3 id="任务三提问-20-个问题">任务三：提问 20 个问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务三提问-20-个问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>准备 20 个测试问题，覆盖不同的类型和难度。</p>
+<p><strong>问题类型分布建议：</strong></p>
+<ul>
+<li>5 个简单事实型问题（有明确答案，如”退款 SLA 是几天”）</li>
+<li>5 个流程型问题（需要描述步骤，如”退货流程是什么”）</li>
+<li>5 个条件判断型问题（需要结合多个信息判断，如”购买超过 30 天还能退货吗”）</li>
+<li>3 个跨文档问题（答案可能在不同文档中）</li>
+<li>2 个知识库范围外的问题（测试系统的失败处理能力）</li>
+</ul>
+<p><strong>记录每个问题的测试结果：</strong></p>
+<ul>
+<li>检索到了哪些 Chunk（文本摘要、相似度分数）</li>
+<li>模型生成的答案</li>
+<li>答案是否正确</li>
+<li>引用是否准确</li>
+<li>如果回答错了，分析是哪个环节出了问题</li>
+</ul>
+<h3 id="任务四输出带引用答案">任务四：输出带引用答案<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#任务四输出带引用答案" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>确保每个答案都包含引用来源。</p>
+<p><strong>检查引用的准确性。</strong> 对于每个答案中的引用，验证引用的 Chunk 确实包含了答案所表述的信息。如果答案说”退款需要 3 个工作日[2]“，检查参考资料 2 中是否确实说了 3 个工作日。</p>
+<p><strong>引用标注的完整性。</strong> 答案中的每个关键信息点都应该有引用。如果一个答案包含三个关键信息但只有两个有引用，说明有一个信息点可能是模型自行补充的（潜在的幻觉）。</p>
+<hr/>
+<h2 id="当日产物说明">当日产物说明<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#当日产物说明" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="产物一rag-demo-v1">产物一：《RAG Demo v1》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产物一rag-demo-v1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一个可运行的 RAG 问答系统。</p>
+<p><strong>应该包含：</strong></p>
+<ul>
+<li>文档上传和索引功能（把文档处理成可检索的状态）</li>
+<li>问答功能（输入问题，输出带引用的答案）</li>
+<li>3 篇已索引的测试文档</li>
+<li>20 个测试问题的完整记录</li>
+</ul>
+<p><strong>质量标准：</strong> Demo 可以演示给他人看。输入一个问题，能在 10 秒内返回带引用的答案。20 个测试问题中，简单事实型问题的正确率不低于 80%。</p>
+<h3 id="产物二20-个测试问题">产物二：《20 个测试问题》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产物二20-个测试问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一份测试问题集和对应的答案记录。</p>
+<p><strong>应该包含：</strong></p>
+<ul>
+<li>每个问题的类型标注（事实型/流程型/条件判断型/跨文档型/范围外型）</li>
+<li>每个问题的正确答案（人工标注，基于文档内容）</li>
+<li>每个问题的系统回答</li>
+<li>正确性判断（正确/部分正确/错误/无法回答）</li>
+<li>错误分析（如果是错误的，分析哪个环节出了问题）</li>
+</ul>
+<p><strong>质量标准：</strong> 问题覆盖多种类型，正确性判断客观，错误分析能定位到具体环节。</p>
+<h3 id="产物三答案引用记录">产物三：《答案引用记录》<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产物三答案引用记录" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>这是一份引用准确性的分析记录。</p>
+<p><strong>应该包含：</strong></p>
+<ul>
+<li>每个答案的引用列表</li>
+<li>每个引用的准确性判断（引用的 Chunk 是否确实包含对应信息）</li>
+<li>引用遗漏记录（答案中有信息点但没有引用的情况）</li>
+<li>引用错误记录（引用的 Chunk 不包含对应信息的情况）</li>
+</ul>
+<p><strong>质量标准：</strong> 20 个问题中，至少 15 个问题的引用是准确的。不准确的情况有明确的分析。</p>
+<hr/>
+<h2 id="常见误区与避坑">常见误区与避坑<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#常见误区与避坑" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="误区一直接让模型回答不管检索结果">误区一：直接让模型回答，不管检索结果<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区一直接让模型回答不管检索结果" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>有时候检索到的 Chunk 和问题关系不大，模型却还是会基于这些不相关的内容硬编一个答案。这就是”强行回答”的问题。</p>
+<p>解决方案在 Prompt 中明确告诉模型：“如果参考资料中没有相关信息，请回答’根据现有资料未能找到相关信息’“。这比硬编一个答案好得多。</p>
+<p>有些开发者不敢让系统回答”不知道”，怕影响用户体验。但实际上，一个诚实的”不知道”比一个自信的错误答案要好一万倍。用户可以换一种方式提问，但如果系统给出了错误答案，用户可能会基于错误信息做出决策。</p>
+<h3 id="误区二prompt-写一次就不管了">误区二：Prompt 写一次就不管了<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区二prompt-写一次就不管了" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>RAG Prompt 需要持续迭代。你写了第一版 Prompt，跑了几十个测试问题，会发现有些情况 Prompt 处理不好。比如模型没有严格基于参考资料回答、引用标注不准确、答案格式不统一等等。</p>
+<p>每发现一个问题，就调整 Prompt，重新测试。建立一个 Prompt 版本记录，记录每次修改的内容和原因。这和 Week 2 学的 Prompt 管理是一脉相承的。</p>
+<h3 id="误区三不记录中间过程">误区三：不记录中间过程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区三不记录中间过程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>很多开发者只保存最终的答案，不保存检索到的 Chunk、组装的 Prompt、模型的原始输出。当需要分析问题（“为什么这个问题回答错了”）时，发现没有足够的信息来定位原因。</p>
+<p>RAG 系统是一个多环节的管线，任何一个环节都可能是问题所在。只有记录了每个环节的输入和输出，才能有效地排查问题。</p>
+<h3 id="误区四用同一个问题反复测试">误区四：用同一个问题反复测试<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区四用同一个问题反复测试" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>用同一组问题反复测试 RAG 系统会让你产生”效果很好”的错觉，因为你可能会不自觉地针对这些问题优化 Prompt 和参数，导致系统在这些特定问题上表现很好，但在新问题上表现很差。</p>
+<p>定期更换测试问题集，引入新的、未见过的问题来评估系统的真实水平。最好是让其他人（不了解系统实现的人）来提问，他们的问题表述方式可能和你完全不同。</p>
+<h3 id="误区五忽略响应时间">误区五：忽略响应时间<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#误区五忽略响应时间" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>RAG 问答链路涉及多个 API 调用：Embedding API（问题向量化）、向量数据库查询、LLM API（答案生成）。每个调用都有延迟，叠加起来可能好几秒。</p>
+<p>用户对问答系统的响应时间有心理预期。通常 2-3 秒内是可以接受的，超过 5 秒就会觉得慢，超过 10 秒可能就不想等了。</p>
+<p>在开发过程中关注每个环节的耗时：</p>
+<ul>
+<li>问题向量化：通常 50-200ms</li>
+<li>向量检索：通常 10-100ms（取决于数据规模和索引质量）</li>
+<li>Prompt 组装：几乎为 0（本地字符串操作）</li>
+<li>答案生成：通常 2-10 秒（取决于答案长度和模型速度）</li>
+</ul>
+<p>答案生成通常是瓶颈。如果总时间太长，可以考虑：用更快的模型、用流式输出、减少输入上下文的长度。</p>
+<hr/>
+<h2 id="延伸思考">延伸思考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#延伸思考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="从-v1-到-v2-的优化方向">从 v1 到 v2 的优化方向<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#从-v1-到-v2-的优化方向" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>今天的 v1 版本是一个基线。跑通之后，你会清晰地看到它的不足：</p>
+<ul>
+<li>有些问题检索不到相关内容（检索质量需要优化）</li>
+<li>有些问题的答案不够准确（生成质量需要优化）</li>
+<li>有些问题的答案缺少上下文（切分策略需要调整）</li>
+<li>有些问题的检索结果包含太多噪声（需要 Rerank）</li>
+<li>有些问题的表述不够清晰（需要 Query Rewrite）</li>
+</ul>
+<p>明天的 Day 20 就是要解决这些问题。但优化之前，你需要有 v1 的基线数据：哪些问题回答对了、哪些回答错了、错在哪里。没有基线，就没有办法量化优化的效果。</p>
+<h3 id="rag-问答和-week-2-api-调用的关系">RAG 问答和 Week 2 API 调用的关系<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#rag-问答和-week-2-api-调用的关系" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>今天的 RAG 问答链路，本质上就是在 Week 2 学的 API 调用基础上，增加了一个”检索”环节。模型调用本身没有什么变化，变化的是 Prompt 的内容——不再是简单的”回答这个问题”，而是”基于这些参考资料回答这个问题”。</p>
+<p>所以 Week 2 的所有知识（API 调用、错误处理、重试机制、结构化输出、日志记录）在 RAG 系统中全部用得上。RAG 不是全新的东西，而是在已有能力上的系统级组装。</p>
+<h3 id="企业-demo-的演示策略">企业 Demo 的演示策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#企业-demo-的演示策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>当你拿着这个 RAG Demo 去给客户演示时，有几个策略：</p>
+<p><strong>选好演示文档。</strong> 用和客户行业相关的文档做演示。如果客户是制造业，就用制造业的文档；如果是金融，就用金融的文档。相关性越强，说服力越大。</p>
+<p><strong>准备好演示问题。</strong> 提前准备 5-10 个能完美回答的问题，用来展示系统的能力。但同时准备 2-3个”故意刁钻”的问题，用来展示系统在遇到无法回答的问题时能诚实地说”不知道”。这比只展示成功案例更有说服力，因为它展示了系统的可靠性。</p>
+<p><strong>展示引用来源。</strong> 引用来源是 RAG 相比普通问答的核心优势。演示时强调”每个答案都可以追溯到具体的文档位置”，这对企业客户非常有吸引力。</p>
+<hr/>
+<h2 id="自测问题">自测问题<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#自测问题" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ol>
+<li>
+<p>描述 RAG 问答链路 v1 的完整流程，从用户提问到返回答案，列出每个步骤的输入和输出。</p>
+</li>
+<li>
+<p>为什么 Prompt 中要明确告诉模型”只基于参考资料回答”？不写这条指令会怎样？</p>
+</li>
+<li>
+<p>上下文拼接时，如何处理检索到的 Chunk 总长度超过模型上下文窗口的情况？</p>
+</li>
+<li>
+<p>引用来源的两种形式是什么？为什么引用来源对 RAG 系统特别重要？</p>
+</li>
+<li>
+<p>答案保存应该包含哪些内容？这些内容分别用于什么目的？</p>
+</li>
+<li>
+<p>如果检索到的 top-3 Chunk 的相似度分数都很低（低于 0.3），系统应该怎么处理？为什么？</p>
+</li>
+<li>
+<p>RAG Prompt 的 Temperature 应该怎么设置？为什么和普通对话不同？</p>
+</li>
+<li>
+<p>你用 20 个问题测试了 RAG 系统，其中 8 个回答不正确。你怎么判断是检索的问题还是生成的问题？</p>
+</li>
+<li>
+<p>为什么说”一个诚实的’不知道’比一个自信的错误答案好一万倍”？</p>
+</li>
+<li>
+<p>RAG 问答链路的响应时间主要花在哪些环节？怎么优化？</p>
+</li>
+</ol>
+<hr/>
+<h2 id="关键词">关键词<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#关键词" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><strong>用户问题处理</strong>：对用户输入进行清洗、分类、补全的预处理环节</li>
+<li><strong>问题向量化</strong>：将用户问题通过 Embedding 模型转换为向量，用于检索</li>
+<li><strong>上下文拼接</strong>：将检索到的多个 Chunk 文本按格式组装成 Prompt 的上下文部分</li>
+<li><strong>Prompt 组装</strong>：将系统指令、上下文、问题和格式要求组装成完整的 Prompt</li>
+<li><strong>答案生成</strong>：大模型基于增强后的 Prompt 生成回答的过程</li>
+<li><strong>引用来源（Citation）</strong>：在答案中标注信息来自哪个文档的哪个部分</li>
+<li><strong>相似度阈值</strong>：用于判断检索结果是否足够相关的最低相似度分数</li>
+<li><strong>答案保存</strong>：记录问答过程的所有中间数据，用于评估和诊断</li>
+<li><strong>RAG Demo v1</strong>：第一个端到端可运行的 RAG 问答系统，作为后续优化的基线</li>
+<li><strong>检索失败处理</strong>：当检索不到相关内容时，系统选择诚实告知而非强行回答</li>
+</ul></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-20" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#day-19rag-问答链路-v1" data-for="day-19rag-问答链路-v1">Day 19：RAG 问答链路 v1</a></li><li class="depth-1"><a href="#学习目标" data-for="学习目标">学习目标</a></li><li class="depth-1"><a href="#核心概念" data-for="核心概念">核心概念</a></li><li class="depth-2"><a href="#一用户问题处理" data-for="一用户问题处理">一、用户问题处理</a></li><li class="depth-2"><a href="#二问题向量化" data-for="二问题向量化">二、问题向量化</a></li><li class="depth-2"><a href="#三检索-top-k" data-for="三检索-top-k">三、检索 top-k</a></li><li class="depth-2"><a href="#四上下文拼接" data-for="四上下文拼接">四、上下文拼接</a></li><li class="depth-2"><a href="#五prompt-组装" data-for="五prompt-组装">五、Prompt 组装</a></li><li class="depth-2"><a href="#六答案生成" data-for="六答案生成">六、答案生成</a></li><li class="depth-2"><a href="#七引用来源" data-for="七引用来源">七、引用来源</a></li><li class="depth-2"><a href="#八答案保存" data-for="八答案保存">八、答案保存</a></li><li class="depth-1"><a href="#概念关系图" data-for="概念关系图">概念关系图</a></li><li class="depth-1"><a href="#实战分析" data-for="实战分析">实战分析</a></li><li class="depth-2"><a href="#任务一完成最小-rag-问答" data-for="任务一完成最小-rag-问答">任务一：完成最小 RAG 问答</a></li><li class="depth-2"><a href="#任务二上传-3-篇文档" data-for="任务二上传-3-篇文档">任务二：上传 3 篇文档</a></li><li class="depth-2"><a href="#任务三提问-20-个问题" data-for="任务三提问-20-个问题">任务三：提问 20 个问题</a></li><li class="depth-2"><a href="#任务四输出带引用答案" data-for="任务四输出带引用答案">任务四：输出带引用答案</a></li><li class="depth-1"><a href="#当日产物说明" data-for="当日产物说明">当日产物说明</a></li><li class="depth-2"><a href="#产物一rag-demo-v1" data-for="产物一rag-demo-v1">产物一：《RAG Demo v1》</a></li><li class="depth-2"><a href="#产物二20-个测试问题" data-for="产物二20-个测试问题">产物二：《20 个测试问题》</a></li><li class="depth-2"><a href="#产物三答案引用记录" data-for="产物三答案引用记录">产物三：《答案引用记录》</a></li><li class="depth-1"><a href="#常见误区与避坑" data-for="常见误区与避坑">常见误区与避坑</a></li><li class="depth-2"><a href="#误区一直接让模型回答不管检索结果" data-for="误区一直接让模型回答不管检索结果">误区一：直接让模型回答，不管检索结果</a></li><li class="depth-2"><a href="#误区二prompt-写一次就不管了" data-for="误区二prompt-写一次就不管了">误区二：Prompt 写一次就不管了</a></li><li class="depth-2"><a href="#误区三不记录中间过程" data-for="误区三不记录中间过程">误区三：不记录中间过程</a></li><li class="depth-2"><a href="#误区四用同一个问题反复测试" data-for="误区四用同一个问题反复测试">误区四：用同一个问题反复测试</a></li><li class="depth-2"><a href="#误区五忽略响应时间" data-for="误区五忽略响应时间">误区五：忽略响应时间</a></li><li class="depth-1"><a href="#延伸思考" data-for="延伸思考">延伸思考</a></li><li class="depth-2"><a href="#从-v1-到-v2-的优化方向" data-for="从-v1-到-v2-的优化方向">从 v1 到 v2 的优化方向</a></li><li class="depth-2"><a href="#rag-问答和-week-2-api-调用的关系" data-for="rag-问答和-week-2-api-调用的关系">RAG 问答和 Week 2 API 调用的关系</a></li><li class="depth-2"><a href="#企业-demo-的演示策略" data-for="企业-demo-的演示策略">企业 Demo 的演示策略</a></li><li class="depth-1"><a href="#自测问题" data-for="自测问题">自测问题</a></li><li class="depth-1"><a href="#关键词" data-for="关键词">关键词</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../postscript.js" type="module" data-persist="true"></script></html>
