@@ -48,353 +48,84 @@ Orchestrator 不应该有自己的专业分析能力。它的角色是纯粹的"
 
 专家 Agent 的设计有三个关键要素。
 
-第一，职责边界要清晰。每个专家 Agent 只负责一个明确领域的工作，不做跨界的事。Industry Research Agent 只做行业分析，不碰岗位拆解和流程分析。边界清晰能避免 Agent 之间的职责重叠和冲突。
+第一，职责边界清晰。每个 Agent 只做一件事，而且这件事有明确的边界。Industry Research Agent 负责行业概览，不做岗位分析。Role Analyst Agent 负责岗位拆解，不做流程分析。边界清晰的好处是避免 Agent 间的职责重叠和冲突。
 
-第二，工具集要精准。每个专家 Agent 只配备完成自己职责所需的工具。Industry Research Agent 配备 search_web 和 read_document，不需要 calculate_roi 和 send_email_draft。工具少了，选择更准确，误用概率更低。
+第二，工具精简。每个 Agent 只配备 2-3 个核心工具。Industry Research Agent 配备 search_web 和 query_knowledge_base 就够了，不需要 send_email 或 calculate_metrics。工具精简能减少模型的选择压力，提高决策准确性。
 
-第三，Prompt 要专业。每个专家 Agent 的 System Prompt 应该包含：角色定义（你是行业研究专家）、专业背景（你熟悉产业链分析、市场研究方法论）、输出规范（输出格式、质量标准）、边界说明（你只负责行业概览，岗位和流程不是你的职责）。
+第三，Prompt 专注。每个 Agent 的系统 Prompt 只关注自己的领域。Industry Research Agent 的 Prompt 详细描述怎么分析行业、怎么看数据、怎么输出结构化概览。它不需要知道其他 Agent 的存在，也不需要理解全局任务。
 
-专家 Agent 的"专"体现在三个方面：专用的知识（通过 Prompt 注入领域知识）、专用的工具（只配备相关工具）、专用的输出格式（结构化的专业输出）。
+### Agent 间通信
 
-### Agent 分工
+Multi-Agent 系统中，Agent 之间需要通信。怎么通信是架构设计的关键问题。
 
-分工是 Multi-Agent 设计中最考验功底的环节。分得好，各 Agent 高效协作；分得不好，要么职责重叠导致冲突，要么职责遗漏导致结果不完整。
+通信方式有两种。一种是间接通信，所有信息通过 Orchestrator 中转。Agent A 的输出给 Orchestrator，Orchestrator 再转发给 Agent B。这种方式的好处是 Orchestrator 掌控全局信息流，容易调度和监控。坏处是信息传递路径长，可能丢失或延迟。
 
-分工的方法论可以总结为三步。
+另一种是直接通信，Agent 之间可以直接对话。Agent A 需要信息时直接问 Agent B，不需要通过 Orchestrator。这种方式的好处是通信高效。坏处是 Orchestrator 失去全局信息流视图，难以调度和监控。
 
-第一步，按知识领域分。分析任务涉及哪些不同的知识领域，每个领域分配一个 Agent。行业研究涉及"行业知识"、"岗位知识"、"流程知识"、"AI 方案知识"、"风险评估知识"五个领域，所以设计五个专家 Agent。这条原则叫"知识边界决定 Agent 边界"。
+实践中通常是混合模式。关键信息（如行业概览这种会被多个 Agent 使用的信息）通过 Orchestrator 分发。临时性的、局部的信息（如 Agent A 需要向 Agent B 确认一个具体数据）可以直接通信。
 
-第二步，按工作流程分。在知识领域的基础上，根据工作流程的先后顺序调整分工。如果两个领域的工作高度耦合（必须同步进行），可以考虑合并为一个 Agent。如果一个大领域可以拆成独立的工作流，可以考虑拆成两个 Agent。
+另一个关键问题是通信协议。Agent 之间用什么样的格式交换信息？建议用结构化的 JSON 格式，包含消息类型、发送者、接收者、内容、时间戳。结构化协议让消息可解析、可追踪、可审计。
 
-第三步，按工具集分。检查每个 Agent 的工具集是否有大量重叠。如果两个 Agent 的工具集 80% 以上重叠，说明它们的职责边界可能不够清晰，考虑合并。
+### 冲突解决
 
-以行业研究系统为例，最终的分工方案是：
+多个 Agent 可能产生冲突的输出。比如 Industry Research Agent 说市场规模是 5000 亿，Role Analyst Agent 引用的数据说是 8000 亿。AI Solution Agent 基于哪个数据来设计方案？
 
-Orchestrator Agent：总协调，不参与具体分析。负责分解任务、调度执行、整合结果。
-Industry Research Agent：负责行业概览，包括产业链、市场规模、趋势分析。
-Role Analyst Agent：负责岗位拆解，包括岗位识别、任务分析、痛点挖掘。
-Process Analyst Agent：负责流程拆解，包括流程识别、步骤分析、效率评估。
-AI Solution Agent：负责 AI 方案设计，包括场景识别、技术选型、ROI 估算。
-Risk Review Agent：负责风险审查，包括可行性评估、风险识别、合规检查。
+冲突解决策略有几种。
 
-这 6 个 Agent 的知识领域不重叠、工具集不重叠、工作流程有清晰的先后依赖关系，是一个合理的分工方案。
+第一种是优先级规则。某些 Agent 的输出优先级更高。比如 Risk Review Agent 的判断优先级最高，如果有冲突，其他 Agent 要调整。
 
-### Agent 通信
+第二种是人工仲裁。当 Agent 间出现无法自动解决的冲突时，暂停流程，提交人工审核。这会引入延迟，但能保证准确性。
 
-Agent 之间的通信是 Multi-Agent 系统的神经系统。通信设计的好坏直接影响系统的可靠性和效率。
+第三种是协商机制。让相关 Agent 之间协商，互相提供证据，达成一致。比如 Industry Research Agent 和 Role Analyst Agent 各自说明数据来源，比较数据的新旧和可靠性，达成共识。
 
-通信方式主要有三种。
+### 结果整合
 
-第一种是直接消息传递。Agent A 把结果直接发给 Agent B。像同事之间发微信，点对点。这种方式简单直接，但缺点是 Agent 之间产生了耦合——Agent B 需要知道 Agent A 的存在和接口。
+各个 Agent 完成任务后，需要把它们的输出整合成最终结果。这是 Orchestrator 的职责，也是整个 Multi-Agent 流程的最后一步。
 
-第二种是共享黑板模式。所有 Agent 把中间结果写入一个共享的存储空间（Blackboard），其他 Agent 从 Blackboard 读取需要的信息。像公司内部的共享文档，大家都能看到。这种方式解耦了 Agent 之间的关系，但 Blackboard 的数据管理变得复杂。
+结果整合不是简单拼接。要做三件事：检查完整性、解决冲突、生成连贯的输出。
 
-第三种是主控转发模式。所有 Agent 只和 Orchestrator 通信。Agent A 把结果发给 Orchestrator，Orchestrator 转发给 Agent B。像公司里的项目经理，所有信息都通过他中转。这种方式最可控，Orchestrator 掌握全局信息，但 Orchestrator 可能成为瓶颈。
+检查完整性。确认所有应该提交的 Agent 都已经提交，且输出格式符合要求。如果有 Agent 失败或超时，决定是等待重试还是继续处理。
 
-对于行业研究系统，我推荐主控转发模式。原因有三：Orchestrator 需要掌握全局进度来做调度决策；通过 Orchestrator 中转可以在传递过程中做数据清洗和格式转换；如果某个 Agent 的输出有问题，Orchestrator 可以在转发前拦截。
+解决冲突。如前所述，处理不同 Agent 间的输出冲突。
 
-通信数据格式需要标准化。不管用什么通信方式，Agent 之间传递的数据格式必须统一。建议定义一个通用的消息格式：
+生成连贯的输出。把各个 Agent 的输出整合成一份结构化的报告。报告要有清晰的章节结构、一致的术语和风格、逻辑连贯的内容。
 
-- sender：发送方 Agent 名称
-- receiver：接收方 Agent 名称
-- message_type：消息类型（task_assignment / result / error / query）
-- content：消息内容（JSON 格式）
-- timestamp：发送时间
-- task_id：关联的任务 ID
+### Multi-Agent 的典型架构
 
-这个格式既是通信协议，也是审计日志的数据来源。
+以行业研究为例，一个典型的 Multi-Agent 架构包含：
 
-### 中间结果整合
+**Orchestrator**（主控 Agent）：任务分解、执行调度、结果整合、异常处理
 
-每个专家 Agent 完成自己的任务后，Orchestrator 需要把所有中间结果整合成最终交付物。这不是简单的拼接，而是一个需要判断力的过程。
+**Industry Research Agent**（行业研究 Agent）：分析行业概览，输出产业链结构、市场规模、主要玩家、发展趋势
 
-整合工作包含三个步骤。
+**Role Analyst Agent**（岗位分析 Agent）：拆解关键岗位，输出岗位列表、职责描述、技能要求
 
-第一步，质量检查。逐个检查每个 Agent 的输出是否完整、格式是否正确、内容是否合理。如果 Industry Research Agent 返回的行业概览只有两行描述，明显不达标，需要让它补充。
+**Process Analyst Agent**（流程分析 Agent）：梳理业务流程，输出流程图、瓶颈分析、优化建议
 
-第二步，一致性校验。检查不同 Agent 的输出之间是否存在矛盾。比如 Industry Research Agent 说这个行业有 5 个核心环节，但 Role Analyst Agent 拆出了 8 个不同环节的岗位，两者对"核心环节"的理解不一致。Orchestrator 需要发现这种矛盾并协调解决。
+**AI Solution Agent**（AI 方案 Agent）：设计 AI 应用方案，输出场景列表、技术方案、优先级评分
 
-第三步，格式统一。不同 Agent 的输出格式可能有差异（字段命名不同、结构层级不同），需要统一成最终报告的格式。
+**Risk Review Agent**（风险审查 Agent）：评估方案风险，输出风险清单、应对建议
 
-整合过程中最常见的坑是"信息丢失"。Agent A 输出了很详细的分析，但在整合时被过度压缩，关键信息丢失了。建议在整合时保留每个 Agent 的原始输出作为附件，整合后的报告是"精炼版"，需要看细节时可以查阅原始输出。
+这个架构中，前三个 Agent（Industry Research、Role Analyst、Process Analyst）可以并行执行。AI Solution Agent 等前三个完成后执行。Risk Review Agent 等方案生成后执行。Orchestrator 在整个过程中调度和监控。
 
-### 冲突处理
+## 今日总结
 
-Agent 之间的冲突在 Multi-Agent 系统中难以避免。常见的冲突类型有三种。
+Multi-Agent 解决单 Agent 的三个痛点：任务太复杂、工具太多、上下文太长。
 
-第一种是结论冲突。两个 Agent 对同一件事给出了不同的判断。比如 AI Solution Agent 认为某个场景的 ROI 很高，但 Risk Review Agent 认为风险很大不建议做。这种冲突需要 Orchestrator 做仲裁。仲裁方法包括：综合两方意见给出折中方案、让两个 Agent 分别提供更详细的论据后再次评估、标记为争议点由人工决定。
+代价是系统复杂度增加、通信成为新故障点、Token 消耗更大。
 
-第二种是数据冲突。两个 Agent 使用了不同来源的数据，数据之间有出入。比如 Industry Research Agent 查到的市场规模是 500 亿，Role Analyst Agent 查到的是 380 亿。这种冲突需要回溯数据来源，判断哪个来源更可靠，然后统一数据口径。
+使用原则：能用单 Agent 解决的不要用 Multi-Agent。
 
-第三种是资源冲突。两个 Agent 同时需要调用同一个有并发限制的工具或 API。比如都调用搜索工具，但 API 有每分钟调用次数限制。这种冲突需要在调度层面解决，通过任务排队或错峰执行来避免。
+主控 Agent（Orchestrator）负责任务分解、执行调度、结果整合、异常处理。
 
-冲突处理的通用原则是"冲突不上交给用户"。Orchestrator 应该有能力解决大部分冲突，只在无法判断时才请求人工介入。用户看到的应该是整合后的统一结论，不是 Agent 之间的分歧。
+专家 Agent 职责边界清晰、工具精简、Prompt 专注。
 
-### 多 Agent 适用边界
+Agent 间通信有间接（通过 Orchestrator）和直接两种，实践中通常是混合模式。
 
-Multi-Agent 不是万能的。以下场景不适合用 Multi-Agent。
+冲突解决策略：优先级规则、人工仲裁、协商机制。
 
-第一，任务简单，单 Agent 就能搞定。比如"分析某个岗位的 AI 机会"，一个 Agent 就够了，不需要拆成多个。
+结果整合要做三件事：检查完整性、解决冲突、生成连贯输出。
 
-第二，子任务之间高度耦合，无法独立执行。如果 Agent A 的每一步都需要 Agent B 的实时反馈，那分开两个 Agent 反而增加了通信成本。
+## 明日预告
 
-第三，对延迟敏感的场景。Multi-Agent 的通信和协调需要额外时间。如果用户要求秒级响应，单 Agent 更合适。
-
-第四，资源受限的场景。Multi-Agent 的 Token 消耗和计算成本更高。如果预算有限，优先考虑单 Agent 方案。
-
-判断是否需要 Multi-Agent 的一个简单标准：画出任务的所有子步骤，如果每个子步骤都能独立完成、有明确的输入输出、不需要频繁回溯其他步骤的结果，就可以考虑 Multi-Agent。否则，单 Agent 更合适。
-
----
-
-## 概念关系图
-
-```
-Multi-Agent 行业研究系统架构
-
-用户输入："分析半导体行业的 AI 应用机会"
-  |
-  v
-Orchestrator Agent（主控）
-  |-- 任务分解
-  |-- 调度决策
-  |-- 结果整合
-  |-- 异常处理
-  |
-  +----> Industry Research Agent
-  |      |-- 工具：search_web, read_document
-  |      |-- 输入：行业名称
-  |      |-- 输出：行业概览 JSON
-  |
-  +----> Role Analyst Agent
-  |      |-- 工具：search_web, query_database
-  |      |-- 输入：行业概览
-  |      |-- 输出：岗位分析 JSON Array
-  |
-  +----> Process Analyst Agent
-  |      |-- 工具：search_web, read_document
-  |      |-- 输入：行业概览 + 岗位分析
-  |      |-- 输出：流程分析 JSON Array
-  |
-  +----> AI Solution Agent
-  |      |-- 工具：search_web, calculate_roi, generate_markdown
-  |      |-- 输入：行业概览 + 岗位分析 + 流程分析
-  |      |-- 输出：AI 方案 JSON Array
-  |
-  +----> Risk Review Agent
-         |-- 工具：read_document, generate_markdown
-         |-- 输入：以上所有分析结果
-         |-- 输出：风险审查 JSON
-
-执行顺序：
-  Phase 1（并行）：Industry Research Agent
-  Phase 2（并行）：Role Analyst Agent + Process Analyst Agent
-  Phase 3：AI Solution Agent
-  Phase 4：Risk Review Agent
-  Phase 5：Orchestrator 整合 -> 最终报告
-```
-
-```
-通信模式对比
-
-直接消息：      Agent A -----> Agent B
-                 （简单但耦合）
-
-共享黑板：      Agent A ---> [Blackboard] <--- Agent B
-                 （解耦但管理复杂）
-
-主控转发：      Agent A ---> Orchestrator ---> Agent B
-                 （可控但 Orchestrator 是瓶颈）
-```
-
----
-
-## 实战分析
-
-### 实战任务：设计 6 个 Agent
-
-指南要求设计 6 个 Agent，定义每个 Agent 的职责、输入和输出。下面逐一展开设计思路。
-
-**Orchestrator Agent**
-
-职责：接收用户请求，分解为子任务，调度专家 Agent 执行，收集和整合结果，输出最终报告。
-
-输入：用户请求（行业名称 + 可选的分析要求）。
-
-输出：完整的行业 AI 机会分析报告（Markdown 格式）。
-
-工具：不需要专业工具，但需要"调用其他 Agent"的能力。这个能力可以封装为一个特殊工具，比如 call_agent，参数是 Agent 名称和输入数据。
-
-设计要点：Orchestrator 的 System Prompt 需要包含完整的任务分解策略和调度逻辑。它要知道什么任务应该分给哪个 Agent、执行顺序怎么安排、结果怎么整合。
-
-**Industry Research Agent**
-
-职责：分析给定行业的产业链结构、市场规模、发展趋势、主要玩家、技术特征。
-
-输入：行业名称 + 分析范围（可选）。
-
-输出：结构化的行业概览对象，包含产业链（上中下游描述）、市场规模（数据和来源）、发展趋势（3-5 条趋势判断）、主要玩家（头部企业列表）、技术特征（核心技术栈）。
-
-工具：search_web（搜索行业信息）、read_document（阅读行业报告）。
-
-设计要点：这个 Agent 的 Prompt 需要注入行业分析的方法论知识，比如波特五力模型、价值链分析法。不要求它应用这些模型做正式分析，但要让它知道从哪些维度去收集和整理信息。
-
-**Role Analyst Agent**
-
-职责：基于行业概览，识别关键岗位，分析每个岗位的任务结构、痛点、AI 机会。
-
-输入：行业概览（来自 Industry Research Agent）。
-
-输出：岗位分析数组，每个岗位包含名称、所属环节、核心职责、高频任务、低价值高重复任务、使用工具和系统、痛点。
-
-工具：search_web（搜索岗位相关信息）、query_database（查询岗位数据库）。
-
-设计要点：这个 Agent 需要知道怎么从行业概览中推断关键岗位。它的推理逻辑是：行业的每个核心环节对应一批核心岗位。所以它首先从行业概览中提取核心环节，然后针对每个环节推断岗位。
-
-**Process Analyst Agent**
-
-职责：基于行业概览和岗位分析，识别核心业务流程，拆解每个流程的步骤和效率瓶颈。
-
-输入：行业概览（来自 Industry Research Agent）+ 岗位分析（来自 Role Analyst Agent）。
-
-输出：流程分析数组，每个流程包含名称、触发条件、参与角色、步骤列表（含耗时估算）、系统依赖、人工判断点、错误率、AI 优化点。
-
-工具：search_web（搜索流程相关信息）、read_document（阅读流程文档）。
-
-设计要点：流程拆解的粒度控制是这个 Agent 的难点。Prompt 中需要明确粒度要求：每个流程 5-10 步，太多太细就超出范围。
-
-**AI Solution Agent**
-
-职责：基于前面的分析结果，设计 AI 应用方案，估算 ROI，给出实施建议。
-
-输入：行业概览 + 岗位分析 + 流程分析。
-
-输出：AI 方案数组，每个方案包含场景名称、应用类型（Copilot/Agent/Workflow/RAG）、技术方案概述、预估 ROI、实施难度、实施周期、数据需求、风险提示。
-
-工具：search_web（搜索 AI 应用案例）、calculate_roi（计算 ROI）、generate_markdown（生成方案描述）。
-
-设计要点：这个 Agent 需要同时具备 AI 技术知识和行业理解。它的 Prompt 要包含常见 AI 应用类型的能力边界描述，让它不会推荐超出当前技术能力的方案。
-
-**Risk Review Agent**
-
-职责：审查所有 AI 方案的可行性、风险、合规性，给出审查意见。
-
-输入：所有分析结果（行业概览、岗位分析、流程分析、AI 方案）。
-
-输出：风险审查报告，包含每个方案的审查意见（通过/有条件通过/不通过）、风险列表（风险类型、严重程度、缓解措施）、合规性检查结果、综合建议。
-
-工具：read_document（阅读政策和规范文档）、generate_markdown（生成审查报告）。
-
-设计要点：这个 Agent 需要有"质疑"的思维模式。它的角色不是肯定前面的方案，而是挑毛病。Prompt 中要强调"审查者"的角色定位，让它保持独立判断，不要因为前面的分析看起来专业就默认认可。
-
-### 方法论总结
-
-设计 Multi-Agent 系统的方法论可以总结为五步。
-
-第一步，明确总任务。清楚定义系统要完成什么，输入是什么，输出是什么。
-
-第二步，分析知识领域。总任务涉及哪些不同的知识领域？这些领域之间边界是否清晰？
-
-第三步，划分 Agent。按知识领域划分 Agent，每个 Agent 一个领域。检查工具集是否重叠，检查工作流程是否有依赖。
-
-第四步，设计通信协议。Agent 之间怎么通信？数据格式是什么？通过 Orchestrator 中转还是直接通信？
-
-第五步，设计整合策略。Orchestrator 怎么整合各 Agent 的结果？质量标准是什么？冲突怎么处理？
-
----
-
-## 当日产物说明
-
-### 《Multi-Agent 架构图》
-
-这张图展示 6 个 Agent 的关系结构，包括 Orchestrator 和 5 个专家 Agent。标注每个 Agent 的职责、工具、输入来源和输出方向。标注执行阶段的先后顺序。
-
-质量标准：看图就能理解整个系统的运作方式。Agent 之间的数据流向清晰可追溯。
-
-### 《Agent 职责表》
-
-一张汇总表格，每个 Agent 一行，列包括：名称、职责描述、输入、输出、工具集、依赖（依赖哪些 Agent 的输出）、执行阶段。
-
-质量标准：任何一行拿出来都能独立理解该 Agent 的全貌。没有模糊描述。
-
-### 《Agent 输入输出协议》
-
-定义 Agent 之间通信的消息格式，包括字段名、类型、说明。同时定义每个 Agent 的输入 JSON Schema 和输出 JSON Schema。
-
-质量标准：协议定义足以让两个独立开发者分别实现 Orchestrator 和专家 Agent，且两者能正确通信。
-
----
-
-## 常见误区与避坑
-
-### 误区一：Agent 越多越好
-
-看到一个大任务，恨不得拆成 20 个 Agent。每个 Agent 做一小件事，看起来很精细。但 Agent 数量每增加一个，系统的通信复杂度、调试难度和 Token 消耗都大幅增加。6 个 Agent 是行业研究系统的一个合理上限。如果发现需要更多 Agent，先考虑是否有些职责可以合并。
-
-### 误区二：Orchestrator 也参与分析
-
-Orchestrator 的角色是协调者，不是分析者。如果 Orchestrator 同时做分析和协调，它会因为上下文太长而降低决策质量。让 Orchestrator 保持"管理者"的纯粹角色，分析工作交给专家 Agent。
-
-### 误区三：所有 Agent 并行执行
-
-并行执行确实能节省时间，但不是所有 Agent 都能并行。Role Analyst Agent 需要 Industry Research Agent 的行业概览作为输入，不能并行。正确的做法是分析依赖关系，把没有依赖关系的 Agent 并行执行，有依赖关系的串行执行。
-
-### 误区四：忽视 Agent 间的数据格式兼容性
-
-每个 Agent 独立设计输出格式时，可能出现字段名不一致、结构层级不匹配的问题。比如 Industry Research Agent 输出 industry_chain 字段，但 Role Analyst Agent 期望接收 value_chain 字段。这种不兼容会导致整合时出错。建议在设计阶段统一所有 Agent 的字段命名规范。
-
-### 误区五：不处理 Agent 执行失败
-
-Multi-Agent 系统中，一个 Agent 失败可能导致整个任务失败。如果 Role Analyst Agent 超时了，后面的 Agent 都拿不到岗位分析数据。Orchestrator 必须有处理单个 Agent 失败的策略：重试、降级（用简化版结果替代）、跳过（如果岗位分析不是必需的）、中止。
-
----
-
-## 延伸思考
-
-今天的 Multi-Agent 架构是 Week 4 整体设计的核心。把 Day 22 的 Workflow、Day 23 的 Agent 认知、Day 24 的 Tool Calling 串起来，加上今天的 Multi-Agent 架构，一个完整的行业研究系统已经初具雏形。
-
-明天 Day 26 的 Human-in-the-loop 会讨论在这个 Multi-Agent 系统中，哪些节点需要人工介入。可以预见的是：最终报告生成后需要人工审核，AI 方案推荐时某些高风险方案需要人工确认，工具调用中涉及外部动作（发邮件、创建任务）时需要人工审批。
-
-Day 27 的安全专题会讨论 Multi-Agent 系统面临的独特安全挑战。比如攻击者可能通过 Prompt Injection 控制某个专家 Agent，然后通过 Agent 间的通信影响其他 Agent。这种"横向攻击"是 Multi-Agent 系统特有的风险。
-
-Day 28 的复盘会把整个系统组装起来。到那时，你应该能设计并实现一个包含 Workflow 控制、6 个专业 Agent、完整工具集、人工审核节点、安全防护机制的多 Agent 行业研究系统。
-
-从更宏观的视角看，Multi-Agent 是当前 AI 应用架构的前沿方向。LangGraph、CrewAI、AutoGen 等框架都在解决 Multi-Agent 的编排问题。今天学的分工、通信、冲突处理等概念，是理解和使用这些框架的理论基础。掌握了底层原理，后面学任何框架都能快速上手。
-
----
-
-## 自测问题
-
-1. Multi-Agent 解决了单 Agent 的哪三个核心痛点？
-
-2. 什么情况下应该用 Multi-Agent，什么情况下不应该？
-
-3. Orchestrator Agent 的四个职责是什么？为什么它不应该参与具体分析？
-
-4. 专家 Agent 的"专"体现在哪三个方面？
-
-5. Agent 分工的三步方法论是什么？用自己的话描述每一步。
-
-6. Agent 之间的三种通信方式是什么？各自的优缺点？
-
-7. 中间结果整合的三个步骤是什么？整合过程中最常见的坑是什么？
-
-8. Agent 之间的冲突有哪三种类型？各举一个具体例子。
-
-9. 设计 Multi-Agent 系统的五步方法论是什么？
-
-10. 为什么不能让所有 Agent 并行执行？应该怎么安排执行顺序？
-
----
-
-## 关键词
-
-- **Multi-Agent（多智能体）**：由多个专精不同领域的 Agent 协作完成复杂任务的系统架构
-- **Orchestrator Agent（主控 Agent）**：负责任务分解、调度、整合和异常处理的管理型 Agent
-- **专家 Agent**：专精某一领域的 Agent，配备专用工具和 Prompt
-- **Agent 分工**：按知识领域、工作流程和工具集将任务划分给不同 Agent 的设计过程
-- **Agent 通信**：Agent 之间传递信息和结果的机制，包括直接消息、共享黑板和主控转发
-- **中间结果整合**：Orchestrator 收集各 Agent 输出并进行质量检查、一致性校验和格式统一的过程
-- **冲突处理**：解决 Agent 之间结论冲突、数据冲突和资源冲突的策略
-- **知识边界**：决定 Agent 职责范围的专业领域划分
-- **执行阶段**：根据 Agent 之间的依赖关系安排的执行时序
-- **横向攻击**：攻击者通过控制一个 Agent 向其他 Agent 传播恶意指令的安全威胁
+今天设计了一个能自动运行的 Multi-Agent 系统。但有一个问题：如果 Agent 做出了错误的判断，怎么办？如果它推荐了一个实际上不可行的方案，报告已经发出去了，怎么挽回？这就是 Human-in-the-loop 要解决的问题。明天要学如何在 Agent 系统中加入人工审核和干预机制。
