@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>文档解析与清洗</title><meta charset="utf-8"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com"/><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto Serif SC:wght@400;700&amp;family=Noto Sans SC:ital,wght@0,400;0,600;1,400;1,600&amp;family=JetBrains Mono:wght@400;600&amp;display=swap"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="MindCarver Blog"/><meta property="og:title" content="文档解析与清洗"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="文档解析与清洗"/><meta name="twitter:description" content="文档解析与清洗 文章导读 昨天我们建立了 RAG 系统的全景认知，知道了”先搜后答”的完整流程。今天开始进入第一个工程环节：文档解析与清洗。 这是整个 RAG 管线的起点。如果这一步做不好，后面的切分会乱、向量化会差、检索会偏、答案自然好不了。可以把它比作做菜之前的食材处理——鱼鳞没刮干净，调料再好也白搭。 这篇文章的核心目标是理解企业中常见的文档格式、每种格式的解析难点、清洗的原则和方法、以及元数据提取的标准。学完之后，你应该能够为一个企业知识库项目设计出合理的文档处理方案，知道面对一堆乱七八糟的文档该从哪里下手。 核心概念 一、PDF 解析 PDF 是企业中最常见的文档格式，也是解析难度最..."/><meta property="og:description" content="文档解析与清洗 文章导读 昨天我们建立了 RAG 系统的全景认知，知道了”先搜后答”的完整流程。今天开始进入第一个工程环节：文档解析与清洗。 这是整个 RAG 管线的起点。如果这一步做不好，后面的切分会乱、向量化会差、检索会偏、答案自然好不了。可以把它比作做菜之前的食材处理——鱼鳞没刮干净，调料再好也白搭。 这篇文章的核心目标是理解企业中常见的文档格式、每种格式的解析难点、清洗的原则和方法、以及元数据提取的标准。学完之后，你应该能够为一个企业知识库项目设计出合理的文档处理方案，知道面对一堆乱七八糟的文档该从哪里下手。 核心概念 一、PDF 解析 PDF 是企业中最常见的文档格式，也是解析难度最..."/><meta property="og:image:alt" content="文档解析与清洗 文章导读 昨天我们建立了 RAG 系统的全景认知，知道了”先搜后答”的完整流程。今天开始进入第一个工程环节：文档解析与清洗。 这是整个 RAG 管线的起点。如果这一步做不好，后面的切分会乱、向量化会差、检索会偏、答案自然好不了。可以把它比作做菜之前的食材处理——鱼鳞没刮干净，调料再好也白搭。 这篇文章的核心目标是理解企业中常见的文档格式、每种格式的解析难点、清洗的原则和方法、以及元数据提取的标准。学完之后，你应该能够为一个企业知识库项目设计出合理的文档处理方案，知道面对一堆乱七八糟的文档该从哪里下手。 核心概念 一、PDF 解析 PDF 是企业中最常见的文档格式，也是解析难度最..."/><meta property="og:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:url" content="https://https://mindcarver.top/static/og-image.png"/><meta name="twitter:image" content="https://https://mindcarver.top/static/og-image.png"/><meta property="og:image:type" content="image/.png"/><meta property="twitter:domain" content="https://mindcarver.top"/><meta property="og:url" content="https://https//mindcarver.top/agent/学习指南/week3/文档解析与清洗"/><meta property="twitter:url" content="https://https//mindcarver.top/agent/学习指南/week3/文档解析与清洗"/><link rel="icon" href="../../../static/icon.png"/><meta name="description" content="文档解析与清洗 文章导读 昨天我们建立了 RAG 系统的全景认知，知道了”先搜后答”的完整流程。今天开始进入第一个工程环节：文档解析与清洗。 这是整个 RAG 管线的起点。如果这一步做不好，后面的切分会乱、向量化会差、检索会偏、答案自然好不了。可以把它比作做菜之前的食材处理——鱼鳞没刮干净，调料再好也白搭。 这篇文章的核心目标是理解企业中常见的文档格式、每种格式的解析难点、清洗的原则和方法、以及元数据提取的标准。学完之后，你应该能够为一个企业知识库项目设计出合理的文档处理方案，知道面对一堆乱七八糟的文档该从哪里下手。 核心概念 一、PDF 解析 PDF 是企业中最常见的文档格式，也是解析难度最..."/><meta name="generator" content="Quartz"/><link href="../../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://https://mindcarver.top/index.xml"/></head><body data-slug="agent/学习指南/week3/文档解析与清洗"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../../..">MindCarver Blog</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="profile"><div class="profile-header"><a href="https://github.com/mindcarver" target="_blank" rel="noopener" class="profile-avatar-link"><img src="https://avatars.githubusercontent.com/u/32150062?v=4" alt="MindCarver" class="profile-avatar"/></a><div class="profile-info"><h2 class="profile-name">MindCarver</h2><p class="profile-bio">技术服务于产品</p></div></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>node.slugSegment!==\&quot;tags\&quot;&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-196"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-196" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/">agent</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/学习指南/">学习指南</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../../agent/学习指南/week3/">week3</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>文档解析与清洗</a></div></nav><h1 class="article-title">文档解析与清洗</h1><p show-comma="true" class="content-meta"><time datetime="2026-05-05T13:15:39.931Z">2026年5月05日</time><span>17分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="文档解析与清洗">文档解析与清洗<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#文档解析与清洗" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="文章导读">文章导读<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#文章导读" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>昨天我们建立了 RAG 系统的全景认知，知道了”先搜后答”的完整流程。今天开始进入第一个工程环节：文档解析与清洗。</p>
+<p>这是整个 RAG 管线的起点。如果这一步做不好，后面的切分会乱、向量化会差、检索会偏、答案自然好不了。可以把它比作做菜之前的食材处理——鱼鳞没刮干净，调料再好也白搭。</p>
+<p>这篇文章的核心目标是理解企业中常见的文档格式、每种格式的解析难点、清洗的原则和方法、以及元数据提取的标准。学完之后，你应该能够为一个企业知识库项目设计出合理的文档处理方案，知道面对一堆乱七八糟的文档该从哪里下手。</p>
+<hr/>
+<h2 id="核心概念">核心概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="一pdf-解析">一、PDF 解析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一pdf-解析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>PDF 是企业中最常见的文档格式，也是解析难度最大的格式之一。理解 PDF 的解析问题，是掌握文档处理的关键。</p>
+<p><strong>PDF 的本质。</strong> PDF（Portable Document Format）的设计初衷是”在任何设备上看起来都一样”。它的核心是排版信息，不是内容信息。一个 PDF 文件记录的是”在页面坐标 (x, y) 处用 12pt 的 Times New Roman 字体渲染文字’Hello’“，而不是”这里有一段文本，内容是’Hello’”。</p>
+<p>这个设计目标导致了 PDF 解析的根本困难：PDF 不关心内容的逻辑结构，只关心视觉呈现。你要从视觉信息中反推内容结构，这本质上是一个”逆向工程”。</p>
+<p><strong>PDF 解析的三种方式：</strong></p>
+<p>第一种是文本提取。直接从 PDF 文件中提取嵌入的文本信息。这适用于”文字型 PDF”——就是用 Word 或 LaTeX 生成的、文字可以被选中和复制的 PDF。这种方式速度快、准确率高，但对”扫描型 PDF”（由扫描仪生成的图片 PDF）完全无效。</p>
+<p>第二种是 OCR（光学字符识别）。对每一页 PDF 进行图像识别，提取其中的文字。这适用于扫描件、照片中的文字、以及一些无法直接提取文本的 PDF。OCR 的准确率受图像质量、字体、语言、排版复杂度影响很大。现代 OCR 工具在干净的单栏文档上表现已经相当不错，但在多栏排版、手写批注、表格密集的页面上仍然容易出错。</p>
+<p>第三种是视觉模型解析。这是最近两年兴起的方法，用多模态大模型（如 GPT-4V、Claude 等视觉模型）直接”看”PDF 页面的图像，理解其中的内容结构和语义。这种方法在处理复杂排版（多栏、嵌套表格、图文混排）时效果最好，但成本也最高，处理速度最慢。</p>
+<p><strong>PDF 解析的具体挑战：</strong></p>
+<ul>
+<li><strong>多栏排版。</strong> 学术论文和杂志通常采用双栏排版。文本提取时如果不考虑排版，左栏的最后一行会和右栏的第一行混在一起，导致文本顺序完全错乱。</li>
+<li><strong>页眉页脚。</strong> 每页重复出现的页眉（文档标题、章节名）和页脚（页码、版权声明）会污染正文内容。如果不去掉，这些重复文本会被当作文档内容参与检索，干扰结果。</li>
+<li><strong>表格。</strong> PDF 中的表格是视觉上的格子，但文本提取出来后，行列关系会丢失，变成一段毫无结构的文本。而表格中的信息往往是非常重要的数据。</li>
+<li><strong>图片中的文字。</strong> 很多 PDF 包含嵌入的图片，图片中的文字（如流程图中的标注、截图中的内容）无法通过文本提取获得。</li>
+<li><strong>公式。</strong> 数学公式在 PDF 中是用特殊字体渲染的，文本提取出来通常是一堆乱码。</li>
+<li><strong>书签和目录。</strong> PDF 文件可能包含书签信息，这其实是很有价值的结构信息，但简单的文本提取会忽略它。</li>
+</ul>
+<p><strong>工程建议。</strong> 对于文字型 PDF，优先用文本提取（如 PyPDF2、pdfplumber）。对于扫描型 PDF，必须用 OCR（如 Tesseract、PaddleOCR）。对于复杂排版（学术论文、报表），考虑用视觉模型解析（但成本高）。页眉页脚要在清洗阶段去除，表格需要专门的解析器（如 Tabula）。</p>
+<h3 id="二markdown-解析">二、Markdown 解析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二markdown-解析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Markdown 是对 RAG 系统最友好的文档格式，没有之一。</p>
+<p><strong>为什么 Markdown 是最友好的？</strong> 因为 Markdown 本身就是纯文本，天然带有结构标记。# 表示一级标题，## 表示二级标题，- 表示列表项，| 表示表格行。这些标记既人类可读，又机器可解析。你不需要做任何”逆向工程”，直接读取文件内容就行。</p>
+<p><strong>Markdown 的解析要点：</strong></p>
+<ul>
+<li><strong>标题层级。</strong> Markdown 的标题（#、##、### 等）天然提供了文档的结构信息。解析时应该提取标题层级，作为后续切分的边界依据。</li>
+<li><strong>代码块。</strong> 用三个反引号包围的代码块需要特殊处理。代码块不应该被当作普通文本切分，因为它有自己完整的逻辑含义。</li>
+<li><strong>表格。</strong> Markdown 表格用 | 分隔，解析相对容易。但要注意表格可能很宽或很长，直接作为一个整体文本块可能太大。</li>
+<li><strong>链接和图片。</strong> Markdown 中的链接 <a href="../../../url" class="internal alias" data-slug="url">text</a> 和图片 <img src="../../../url" alt="alt"/> 需要解析。链接的 URL 可能包含有价值的信息，图片的 alt 文本可能包含描述。</li>
+<li><strong>元数据。</strong> 很多 Markdown 文件开头有 YAML 格式的元数据块（--- 包围的部分），包含标题、作者、日期、标签等信息。这些元数据应该被提取出来，作为文档级别的元数据存储。</li>
+</ul>
+<p><strong>工程建议。</strong> Markdown 解析用 Python-Markdown 或 mistune 库。提取标题层级作为结构信息。代码块保持完整，不要在代码块中间切分。提取 YAML 元数据块。</p>
+<h3 id="三word-解析">三、Word 解析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三word-解析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Word 文档（.docx）在企业中也很常见，尤其是合同、报告、制度规范这类文档。</p>
+<p><strong>Word 文件的结构。</strong> .docx 文件本质上是一个 ZIP 压缩包，里面包含 XML 文件。Word 文档的内容、样式、结构都记录在这些 XML 中。python-docx 库可以解析这些 XML，提取文本和结构信息。</p>
+<p><strong>Word 解析的要点：</strong></p>
+<ul>
+<li><strong>段落和样式。</strong> Word 文档的段落是基本单元。每个段落有样式信息（标题 1、标题 2、正文、引用等）。样式可以作为结构提取的依据——样式为”标题 1”的段落是一级标题。</li>
+<li><strong>表格。</strong> Word 表格和 PDF 表格不同，它的行列结构是明确的。解析 Word 表格时应该保留行列关系，或者把表格转换为 Markdown 表格格式。</li>
+<li><strong>嵌入对象。</strong> Word 文档可能嵌入图片、公式、其他 Office 文件。这些嵌入对象中的文本也需要提取（如果可能的话）。</li>
+<li><strong>页眉页脚。</strong> 和 PDF 一样，Word 的页眉页脚也需要去除。</li>
+</ul>
+<p><strong>工程建议。</strong> 用 python-docx 库解析。提取段落文本和样式，样式映射到标题层级。表格用专门的逻辑处理，保留结构。去除页眉页脚。</p>
+<h3 id="四excel-解析">四、Excel 解析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四excel-解析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>Excel 文件（.xlsx）和前面几种格式不同，它不是自然语言文档，而是结构化数据表格。</p>
+<p><strong>Excel 解析的问题。</strong> Excel 的每个单元格可能只包含一个词或一个数字，直接按单元格提取会导致碎片化。RAG 系统需要的是有语义完整性的文本块，不是孤立的数据。</p>
+<p><strong>Excel 解析的策略：</strong></p>
+<ul>
+<li><strong>按行文本化。</strong> 把每一行转换成一个自然语言句子。比如一行数据”产品A | 100元 | 库存充足”转换为”产品 A 的价格是 100 元，当前库存充足”。</li>
+<li><strong>按表格摘要化。</strong> 对于大型表格，不要逐行文本化，而是生成表格摘要。“这个表格包含 50 个产品的价格和库存信息，其中产品 A 价格最高，产品 B 库存最低”。</li>
+<li><strong>Sheet 级别的元数据。</strong> Excel 文件的 Sheet 名称、表格的标题行（第一行通常是列名）都是有价值的结构信息。</li>
+</ul>
+<p><strong>工程建议。</strong> 用 openpyxl 或 pandas 库解析。判断表格大小，小表格逐行文本化，大表格生成摘要。提取 Sheet 名称和列名作为元数据。</p>
+<h3 id="五html-解析">五、HTML 解析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五html-解析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>HTML 是网页的格式。如果知识库包含网页内容（比如帮助文档、技术博客），就需要解析 HTML。</p>
+<p><strong>HTML 解析的优势。</strong> HTML 有明确的语义标签（</p><h1 id>、</h1><h2 id="结构提取比-pdf-容易得多html-解析的挑战javascript-渲染的内容-很多现代网页的内容是通过-javascript-动态加载的直接解析-html-拿不到这些内容需要用浏览器渲染工具如-playwrightselenium获取最终渲染后的-html导航和广告-网页通常包含导航栏侧边栏页脚广告等内容这些对知识库价值不大需要去除重复内容-同一个网站的多个页面可能包含相同的页脚版权声明这些重复内容会污染检索结果工程建议-用-beautifulsoup-或-lxml-库解析静态-html对于-js-渲染的内容用-playwright-获取去除导航栏侧边栏页脚等非正文内容六文本清洗解析出文本后下一步是清洗清洗的目标是去除噪声保留有价值的内容需要去除的噪声页眉页脚-每页重复出现的文档标题章节名页码版权声明多余空白-连续的空格换行符制表符合并为单个空格或单个换行特殊字符-不在常用字符集内的符号乱码控制字符页码和分节符-孤立的数字第-x-页----等分页符号版权和免责声明-长篇的版权声明免责条款通常对问答没有帮助清洗的原则宁可少去不要误杀-有些内容看起来像噪声但实际上可能包含关键信息清洗时要保守保留结构标记-标题段落列表的分隔符要保留它们是切分和检索的基础可逆操作-如果可能保留原始文本和清洗后文本的映射关系当发现清洗过度时可以回退工程建议-用正则表达式去除页眉页脚识别重复模式用正则表达式合并多余空白特殊字符可以定义一个白名单只保留白名单内的字符建立清洗前后的对比日志方便调试七结构信息提取清洗后的文本是平铺的字符串但原始文档有结构提取结构信息对于后续切分和检索非常重要需要提取的结构信息标题层级-文档有几级标题每个标题的级别是什么标题之间的父子关系段落边界-哪些文本属于同一段落列表结构-哪些文本是列表项列表的嵌套层级表格位置-表格在文档中的位置表格的标题和说明元数据提取文档级别元数据-文档标题作者创建日期修改日期文档类型所属分类片段级别元数据-每个文本片段所属的章节页码在原文中的位置工程建议-对于-markdown-和-word从样式和标记中提取结构对于-pdf从字体大小和位置推断标题字体大的是标题提取的元数据以-json-格式存储和文本一起入库核心结论文档解析是-rag-管线的第一步也是最容易被低估的环节pdf-是最难解析的格式需要区分文字型和扫描型注意多栏排版表格页眉页脚markdown-是最友好的格式天然有结构标记解析简单word-需要从样式映射到结构表格需要保留行列关系excel-不是自然语言需要文本化或摘要化处理html-需要处理-js-渲染内容去除导航和广告文本清洗要去除噪声但保留有价值内容原则是宁可少去不要误杀结构信息和元数据是后续切分和检索的基础从第一天就要设计好相关延伸文档解析完成我们有了干净的文本和结构信息明天要做的是文本切分把这些长文本切成适合检索的片段切分是-rag-系统中影响效果最显著的环节之一">、<p>、</p><ul>、），结构提取比 PDF 容易得多。<p></p>
+<p><strong>HTML 解析的挑战：</strong></p>
+<ul>
+<li><strong>JavaScript 渲染的内容。</strong> 很多现代网页的内容是通过 JavaScript 动态加载的，直接解析 HTML 拿不到这些内容。需要用浏览器渲染工具（如 Playwright、Selenium）获取最终渲染后的 HTML。</li>
+<li><strong>导航和广告。</strong> 网页通常包含导航栏、侧边栏、页脚、广告等内容，这些对知识库价值不大，需要去除。</li>
+<li><strong>重复内容。</strong> 同一个网站的多个页面可能包含相同的页脚、版权声明，这些重复内容会污染检索结果。</li>
+</ul>
+<p><strong>工程建议。</strong> 用 BeautifulSoup 或 lxml 库解析静态 HTML。对于 JS 渲染的内容，用 Playwright 获取。去除导航栏、侧边栏、页脚等非正文内容。</p>
+<h3 id="六文本清洗">六、文本清洗</h3>
+<p>解析出文本后，下一步是清洗。清洗的目标是去除噪声，保留有价值的内容。</p>
+<p><strong>需要去除的噪声：</strong></p>
+<ul>
+<li><strong>页眉页脚。</strong> 每页重复出现的文档标题、章节名、页码、版权声明。</li>
+<li><strong>多余空白。</strong> 连续的空格、换行符、制表符。合并为单个空格或单个换行。</li>
+<li><strong>特殊字符。</strong> 不在常用字符集内的符号、乱码、控制字符。</li>
+<li><strong>页码和分节符。</strong> 孤立的数字、“第 X 页”、”---” 等分页符号。</li>
+<li><strong>版权和免责声明。</strong> 长篇的版权声明、免责条款，通常对问答没有帮助。</li>
+</ul>
+<p><strong>清洗的原则：</strong></p>
+<ul>
+<li><strong>宁可少去，不要误杀。</strong> 有些内容看起来像噪声，但实际上可能包含关键信息。清洗时要保守。</li>
+<li><strong>保留结构标记。</strong> 标题、段落、列表的分隔符要保留，它们是切分和检索的基础。</li>
+<li><strong>可逆操作。</strong> 如果可能，保留原始文本和清洗后文本的映射关系。当发现清洗过度时，可以回退。</li>
+</ul>
+<p><strong>工程建议。</strong> 用正则表达式去除页眉页脚（识别重复模式）。用正则表达式合并多余空白。特殊字符可以定义一个白名单，只保留白名单内的字符。建立清洗前后的对比日志，方便调试。</p>
+<h3 id="七结构信息提取">七、结构信息提取</h3>
+<p>清洗后的文本是平铺的字符串，但原始文档有结构。提取结构信息对于后续切分和检索非常重要。</p>
+<p><strong>需要提取的结构信息：</strong></p>
+<ul>
+<li><strong>标题层级。</strong> 文档有几级标题，每个标题的级别是什么，标题之间的父子关系。</li>
+<li><strong>段落边界。</strong> 哪些文本属于同一段落。</li>
+<li><strong>列表结构。</strong> 哪些文本是列表项，列表的嵌套层级。</li>
+<li><strong>表格位置。</strong> 表格在文档中的位置，表格的标题和说明。</li>
+</ul>
+<p><strong>元数据提取：</strong></p>
+<ul>
+<li><strong>文档级别元数据。</strong> 文档标题、作者、创建日期、修改日期、文档类型、所属分类。</li>
+<li><strong>片段级别元数据。</strong> 每个文本片段所属的章节、页码、在原文中的位置。</li>
+</ul>
+<p><strong>工程建议。</strong> 对于 Markdown 和 Word，从样式和标记中提取结构。对于 PDF，从字体大小和位置推断标题（字体大的是标题）。提取的元数据以 JSON 格式存储，和文本一起入库。</p>
+<h2 id="核心结论">核心结论</h2>
+<p>文档解析是 RAG 管线的第一步，也是最容易被低估的环节。</p>
+<p>PDF 是最难解析的格式，需要区分文字型和扫描型，注意多栏排版、表格、页眉页脚。</p>
+<p>Markdown 是最友好的格式，天然有结构标记，解析简单。</p>
+<p>Word 需要从样式映射到结构，表格需要保留行列关系。</p>
+<p>Excel 不是自然语言，需要文本化或摘要化处理。</p>
+<p>HTML 需要处理 JS 渲染内容，去除导航和广告。</p>
+<p>文本清洗要去除噪声但保留有价值内容，原则是宁可少去不要误杀。</p>
+<p>结构信息和元数据是后续切分和检索的基础，从第一天就要设计好。</p>
+<h2 id="相关延伸">相关延伸</h2>
+<p>文档解析完成，我们有了干净的文本和结构信息。明天要做的是文本切分——把这些长文本切成适合检索的片段。切分是 RAG 系统中影响效果最显著的环节之一。</p><div class="table-container"><table></table></div></ul><a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#结构提取比-pdf-容易得多html-解析的挑战javascript-渲染的内容-很多现代网页的内容是通过-javascript-动态加载的直接解析-html-拿不到这些内容需要用浏览器渲染工具如-playwrightselenium获取最终渲染后的-html导航和广告-网页通常包含导航栏侧边栏页脚广告等内容这些对知识库价值不大需要去除重复内容-同一个网站的多个页面可能包含相同的页脚版权声明这些重复内容会污染检索结果工程建议-用-beautifulsoup-或-lxml-库解析静态-html对于-js-渲染的内容用-playwright-获取去除导航栏侧边栏页脚等非正文内容六文本清洗解析出文本后下一步是清洗清洗的目标是去除噪声保留有价值的内容需要去除的噪声页眉页脚-每页重复出现的文档标题章节名页码版权声明多余空白-连续的空格换行符制表符合并为单个空格或单个换行特殊字符-不在常用字符集内的符号乱码控制字符页码和分节符-孤立的数字第-x-页----等分页符号版权和免责声明-长篇的版权声明免责条款通常对问答没有帮助清洗的原则宁可少去不要误杀-有些内容看起来像噪声但实际上可能包含关键信息清洗时要保守保留结构标记-标题段落列表的分隔符要保留它们是切分和检索的基础可逆操作-如果可能保留原始文本和清洗后文本的映射关系当发现清洗过度时可以回退工程建议-用正则表达式去除页眉页脚识别重复模式用正则表达式合并多余空白特殊字符可以定义一个白名单只保留白名单内的字符建立清洗前后的对比日志方便调试七结构信息提取清洗后的文本是平铺的字符串但原始文档有结构提取结构信息对于后续切分和检索非常重要需要提取的结构信息标题层级-文档有几级标题每个标题的级别是什么标题之间的父子关系段落边界-哪些文本属于同一段落列表结构-哪些文本是列表项列表的嵌套层级表格位置-表格在文档中的位置表格的标题和说明元数据提取文档级别元数据-文档标题作者创建日期修改日期文档类型所属分类片段级别元数据-每个文本片段所属的章节页码在原文中的位置工程建议-对于-markdown-和-word从样式和标记中提取结构对于-pdf从字体大小和位置推断标题字体大的是标题提取的元数据以-json-格式存储和文本一起入库核心结论文档解析是-rag-管线的第一步也是最容易被低估的环节pdf-是最难解析的格式需要区分文字型和扫描型注意多栏排版表格页眉页脚markdown-是最友好的格式天然有结构标记解析简单word-需要从样式映射到结构表格需要保留行列关系excel-不是自然语言需要文本化或摘要化处理html-需要处理-js-渲染内容去除导航和广告文本清洗要去除噪声但保留有价值内容原则是宁可少去不要误杀结构信息和元数据是后续切分和检索的基础从第一天就要设计好相关延伸文档解析完成我们有了干净的文本和结构信息明天要做的是文本切分把这些长文本切成适合检索的片段切分是-rag-系统中影响效果最显著的环节之一" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-68" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#文档解析与清洗" data-for="文档解析与清洗">文档解析与清洗</a></li><li class="depth-1"><a href="#文章导读" data-for="文章导读">文章导读</a></li><li class="depth-1"><a href="#核心概念" data-for="核心概念">核心概念</a></li><li class="depth-2"><a href="#一pdf-解析" data-for="一pdf-解析">一、PDF 解析</a></li><li class="depth-2"><a href="#二markdown-解析" data-for="二markdown-解析">二、Markdown 解析</a></li><li class="depth-2"><a href="#三word-解析" data-for="三word-解析">三、Word 解析</a></li><li class="depth-2"><a href="#四excel-解析" data-for="四excel-解析">四、Excel 解析</a></li><li class="depth-2"><a href="#五html-解析" data-for="五html-解析">五、HTML 解析</a></li><li class="depth-2"><a href="#六文本清洗" data-for="六文本清洗">六、文本清洗</a></li><li class="depth-2"><a href="#七结构信息提取" data-for="七结构信息提取">七、结构信息提取</a></li><li class="depth-1"><a href="#核心结论" data-for="核心结论">核心结论</a></li><li class="depth-1"><a href="#相关延伸" data-for="相关延伸">相关延伸</a></li><li class="overflow-end"></li></ul></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v1.0.0</a> © 2026</p><ul><li><a href="https://github.com/mindcarver">GitHub</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}container;content;isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../../postscript.js" type="module" data-persist="true"></script></html>
