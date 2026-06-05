@@ -110,6 +110,30 @@ Mandate 的价值不只在“写了什么”，还在“哪些东西一旦写下
 - 需要 review
 - 必须开 child lineage
 
+### 2.4 先把这些英文字段说清楚
+
+Mandate 里的英文不是装饰，而是研究合同里的“锁扣”。这些字段一旦写清，下游才知道哪些边界不能随结果漂移。
+
+| 字段 | 人话含义 | 为什么要用它 |
+| --- | --- | --- |
+| `research_intent` | 研究这条线的原因，包括观察、假设和反假设。 | 防止文档只写“看看能不能赚钱”，后面无法判断这条研究线到底在验证什么。 |
+| `observation` | 你观察到的市场现象。 | 把研究起点说清楚，避免后面用结果倒推故事。 |
+| `hypothesis` | 你认为可能成立的机制。 | 后续 TestEvidence 才知道该验证什么，而不是只看哪个指标好看。 |
+| `counter_hypothesis` | 反假设，说明这条线可能只是伪 alpha。 | 强迫研究一开始就准备反驳自己，减少自证偏差。 |
+| `research_route` | 研究路线。本文固定为 `cross_sectional_factor`。 | 把横截面研究和时序择时研究分开，防止混入单资产 hit rate、best horizon 叙事。 |
+| `cross_sectional_factor` | 横截面因子路线，同一时点比较不同资产。 | 后续评价应看排序能力、分桶分层和横截面证据，而不是 BTC 明天涨不涨。 |
+| `date x asset` | 每条样本是一条“某时点、某资产”的记录。 | 明确比较单位，避免拿同一资产跨时间预测冒充横截面研究。 |
+| `scope_contract` | 研究范围合同。 | 规定是否允许多因子、跨 venue、过滤器和组合表达，防止后面随结果扩大范围。 |
+| `target_market` | 目标市场，比如 crypto spot、perp、股票或期货。 | 市场不同，数据、成本、流动性和执行约束都不同。 |
+| `venue` / `venue_scope` | 交易场所及其范围，如 `binance_spot`。 | 同一资产在不同 venue 的流动性、价格形成和成本不同，不能混用。 |
+| `universe_rule` | 样本池构造规则。 | 横截面结果高度依赖比较对象，universe 不能看结果后再换。 |
+| `exclusions` | 排除规则，如稳定币、杠杆代币、新上市资产。 | 把不适合比较的对象预先排除，避免后面主观剔除拖累结果的资产。 |
+| `time_split` | train/test/backtest/holdout 的时间切分。 | 时间窗必须事前冻结，否则独立验证会被窗口调参污染。 |
+| `data_contract` | 数据合同，规定数据源、bar 粒度、时区和可见时点。 | DataReady 只能实现它，不能后面重新发明一套数据世界。 |
+| `execution_contract` | 研究结果准备怎样被交易表达消费。 | `long_only_rank` 和 `long_short_market_neutral` 不是同一个研究对象，必须提前选清。 |
+| `kill_criteria` | 终止或开新线条件。 | 规定什么时候不能继续包装成正常优化，必须停止或开 child lineage。 |
+| `child lineage` | 子谱系，新研究分支。 | 当核心边界被改动时，不能假装还是原研究线的自然延续。 |
+
 ---
 
 ## 3. Mandate 里真正该冻结的东西

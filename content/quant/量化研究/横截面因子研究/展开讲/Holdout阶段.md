@@ -59,6 +59,25 @@ Holdout 失败之后，不是只有“全盘否定”一种路径。
 
 > 哪种情况触发哪种结论，必须在结果出来前就定义清楚。
 
+## 2.4 先把这些英文字段说清楚
+
+HoldoutValidation 的英文字段都在保证“终审只解释结果，不回写规则”。它们用来证明最终窗口是单次消费，并且复用了上游冻结方案。
+
+| 字段 | 人话含义 | 为什么要用它 |
+| --- | --- | --- |
+| `window_contract` | Holdout 窗口合同。 | 明确最终未见窗口是哪段、是否单次消费，防止不好看就延期观察。 |
+| `single_use_window` | 单次消费窗口。 | Holdout 一旦跑过，就不能再假装没用过。 |
+| `reuse_contract` | 复用合同。 | 规定必须原样复用哪些 factor、组合、执行、成本和风险规则。 |
+| `stability_contract` | 稳定性合同。 | 预先定义 rolling holdout stability、方向翻转和一致性判断口径。 |
+| `drift_audit` | 漂移审计。 | 解释 Holdout 与 Test/Backtest 为什么偏离，不能只说“市场变了”。 |
+| `failure_governance` | 失败治理。 | 规定什么情况 `NO_GO`、什么情况 `CONDITIONAL PASS`、什么情况开 child lineage。 |
+| `holdout_test_compare.parquet` | Holdout 与 TestEvidence 的对比。 | 看最终窗口上的 factor 证据是否还和测试证据一致。 |
+| `holdout_portfolio_compare.parquet` | Holdout 与 BacktestReady 的组合层对比。 | 看冻结组合在最终窗口上的交易层表现是否退化。 |
+| `rolling_holdout_stability.json` | 滚动稳定性结果。 | 防止汇总结果掩盖某几个窗口的方向翻转或局部崩塌。 |
+| `regime_shift_audit.json` | 市场状态漂移审计。 | 当结果变差时，要说明是否有可识别的 regime 变化，而不是找借口。 |
+| `csf_holdout_run_manifest.json` | Holdout 运行清单。 | 证明跑的是哪版冻结方案、什么时候跑、输入和程序是什么。 |
+| `csf_holdout_gate_decision.md` | Holdout 最终门禁结论。 | 明确是进入 Shadow、带条件推进、停止，还是开新 lineage。 |
+
 ---
 
 ## 3. 本阶段冻结的五组内容怎么理解

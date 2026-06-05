@@ -62,6 +62,27 @@ BacktestReady 不是为了给出一个漂亮净值曲线，而是为了明确：
 - 流动性代理是什么
 - 容量上限是怎么估出来的
 
+## 2.5 先把这些英文字段说清楚
+
+BacktestReady 的英文字段都在描述“怎么把证据候选变成可交易组合”。它们不是重新定义因子，而是冻结组合、执行、风险、成本和容量口径。
+
+| 字段 | 人话含义 | 为什么要用它 |
+| --- | --- | --- |
+| `portfolio_contract` | 组合合同，规定候选如何变成持仓。 | 防止看回测后再改权重、持仓数量或 long/short 结构。 |
+| `portfolio_expression` | 上游冻结的组合表达。 | BacktestReady 必须继承它，不能把 long-short 偷换成 long-only。 |
+| `portfolio_weight_panel` | 每个时点每个资产的组合权重面板。 | 没有权重明细，就无法复算收益、风险和暴露。 |
+| `execution_contract` | 执行合同，规定信号如何映射成交易。 | T 还是 T+1、maker 还是 taker、是否分批都会影响结果。 |
+| `signal to trade lag` | 信号产生到交易执行的延迟。 | 防止用尚不可交易的信息成交，避免 lookahead。 |
+| `maker` / `taker` | 挂单 / 吃单成交方式。 | 成本、成交概率和滑点不同，不能混用。 |
+| `risk_contract` | 风险合同。 | 固定单标的上限、beta、group 暴露和参与率边界。 |
+| `turnover_capacity_report.parquet` | 换手与容量报告。 | 说明策略在多大资金和参与率下仍可解释，不只看净值。 |
+| `cost_assumption_report.md` | 成本假设报告。 | 手续费、滑点、资金费率必须有来源，否则净收益没有解释力。 |
+| `return_accounting_provenance.yaml` | 收益归因来源说明。 | 证明 formal PnL 来自真实可交易收益，不是 factor score 或 proxy return。 |
+| `portfolio_return_series.parquet` | 组合收益序列。 | 后续风险指标、曲线和 holdout 对比都要从它复算。 |
+| `equity_curve.parquet` | 净值曲线。 | 展示路径，但不能替代权重、成本和 PnL ledger。 |
+| `csf_backtest_gate_table.csv` | BacktestReady 门禁表。 | 结构化记录交易层是否通过、限制在哪里。 |
+| `csf_backtest_contract.md` | BacktestReady 合同说明。 | 告诉 Holdout 要原样复用哪套组合、执行、风险和成本口径。 |
+
 ---
 
 ## 3. 本阶段冻结的五组内容怎么理解

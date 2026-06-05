@@ -76,6 +76,26 @@ TestEvidence 不是在交易层宣布大胜，但它确实要冻结：
 TestEvidence 结束时不仅要回答“谁通过了证据门禁”，
 还要回答“Backtest 到底允许消费哪一版横截面候选 variant”。
 
+## 2.4 先把这些英文字段说清楚
+
+TestEvidence 的英文字段都在区分“统计证据”和“交易胜利”。它们用来证明候选值得进入 BacktestReady，但不宣布策略已经能交易赚钱。
+
+| 字段 | 人话含义 | 为什么要用它 |
+| --- | --- | --- |
+| `window_contract` | Test 独立样本窗口合同。 | 明确这段数据没有参与训练尺子估计，避免测试窗口被事后调整。 |
+| `formal_gate_contract` | 正式证据门禁合同。 | 规定通过 TestEvidence 要看哪些证据，且必须与 factor role 匹配。 |
+| `Rank IC` | 因子排名与后续收益排名的相关性。 | 衡量 standalone alpha 是否真的有横截面排序能力。 |
+| `ICIR` | IC 的稳定性指标。 | 只看平均 IC 可能被少数窗口撑起来，ICIR 看稳定程度。 |
+| `bucket returns` | 分桶后各组的后续收益。 | 检查高分组和低分组是否出现有序分层。 |
+| `monotonicity` | 分桶收益是否大体单调。 | 如果高分不比低分好，排序信号就不可信。 |
+| `breadth` | 证据覆盖的广度。 | 证明结果不是只靠少数资产或少数时点。 |
+| `admissibility_contract` | 准入合同。 | 即使有证据，也要判断覆盖、稳定性和样本宽度是否足够进入回测。 |
+| `audit_contract` | 审计合同。 | 记录 regime、负结果、多重比较和 crowding，不只留下好看的结果。 |
+| `crowding_review.md` | 拥挤度审计。 | 它是风险披露，不应偷偷变成 formal gate 的阻断条件。 |
+| `csf_selected_variants_test.csv` | 被准入进入 BacktestReady 的 CSF 候选清单。 | BacktestReady 只能消费这份冻结清单，不能重新挑候选。 |
+| `csf_test_gate_table.csv` | TestEvidence 结构化门禁表。 | 让通过/拒绝的证据和理由可审计、可机器读取。 |
+| `csf_test_contract.md` | TestEvidence 合同说明。 | 解释证据口径、冻结候选和下游消费边界。 |
+
 ---
 
 ## 3. 本阶段冻结的五组内容怎么理解

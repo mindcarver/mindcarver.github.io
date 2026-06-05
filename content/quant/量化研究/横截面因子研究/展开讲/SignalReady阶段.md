@@ -85,6 +85,69 @@ QROS 里至少要把它分成：
 
 尤其是 `group_neutral`，如果不明确 taxonomy 版本，后面任何“中性化结果”都不可追溯。
 
+## 2.6 先把这些英文字段说清楚
+
+这一阶段会出现很多英文 `snake_case` 字段。它们不是为了显得专业，而是为了让人和程序都能按同一套合同理解这个因子。
+
+### 身份与角色字段
+
+| 字段 | 人话含义 | 为什么要用它 |
+| --- | --- | --- |
+| `factor_id` | 因子的唯一编号，比如 `MOM_20D`。 | 避免只靠“20 日动量”这种自然语言名字，因为同名因子可能有不同公式、字段和版本。 |
+| `factor_role` | 因子的角色，说明它是主排序信号，还是过滤条件。 | 后续证据标准取决于角色。角色不清，就会拿错指标评估它。 |
+| `standalone_alpha` | 单独作为 alpha 因子使用，主要看横截面排序能力。 | 这类因子后面要看 Rank IC、分桶收益、单调性等排序证据。 |
+| `regime_filter` | 市场状态过滤器，用来判断某个策略在什么环境下启用或停用。 | 它不一定自己有排序能力，重点是能否改善既有组合或策略状态。 |
+| `combo_filter` | 组合层过滤器，用来作为条件层改善组合分布。 | 它的价值在于条件改善，不应该被当成 standalone alpha 去否定。 |
+| `factor_structure` | 因子的结构，说明它是单因子还是确定性多因子分数。 | 防止一个“单因子”在实现里悄悄混进多个逻辑。 |
+| `single_factor` | 只由一个核心因子逻辑输出最终分数。 | 下游知道它不是多个子项组合出来的分数。 |
+| `multi_factor_score` | 多个子项按固定公式组合成一个分数。 | 允许确定性组合，但必须把子项和公式写死，不能把训练学权重混进 SignalReady。 |
+
+### 组合与中性化字段
+
+| 字段                          | 人话含义                          | 为什么要用它                                           |
+| --------------------------- | ----------------------------- | ------------------------------------------------ |
+| `portfolio_expression`      | 这个因子以后准备用什么组合表达来消费。           | 同一个因子放进 long-only 和 long-short，研究含义不同，不能后面看结果再换。 |
+| `long_short_market_neutral` | 做多高分资产、做空低分资产，并尽量控制市场方向暴露。    | 用来检验横截面相对强弱，而不是押注整个市场涨跌。                         |
+| `long_only_rank`            | 只做多排名靠前的资产。                   | 适合不能做空或不打算做空的表达，但它和多空中性的证据口径不同。                  |
+| `neutralization_policy`     | 中性化政策，说明是否剥离某些已知暴露。           | 很多“因子有效”其实可能只是 beta、行业或大小盘暴露，必须提前说明怎么处理。         |
+| `none`                      | 不做中性化。                        | 明确告诉下游：这个 factor panel 保留原始暴露，不要默认它已经被处理过。       |
+| `market_beta_neutral`       | 剥离或控制市场 beta 暴露。              | 防止把整体市场方向收益误认为横截面 alpha。                         |
+| `group_neutral`             | 在分类组内做中性化或平衡。                 | 防止因子只是押中了某类资产分组；它必须绑定可追溯的 taxonomy 版本。           |
+| `taxonomy`                  | 资产分类体系，比如 layer1、defi、meme 等。 | `group_neutral` 依赖它。taxonomy 变了，中性化结果也可能变。       |
+
+### 面板、表达式与交付字段
+
+| 字段 | 人话含义 | 为什么要用它 |
+| --- | --- | --- |
+| `date x asset` | 每个样本是一条“某时点、某资产”的记录。 | 横截面研究比较的是同一时点不同资产，而不是单资产跨时间预测。 |
+| `panel_contract` | 因子值落在哪张 DataReady 面板上的合同。 | 确保下游在同一套主键、时间、eligibility 语义上消费因子。 |
+| `factor_expression` | 因子计算表达式，包括输入字段、派生字段和公式。 | 冻结“怎么算”，避免只留下一个无法复现的自然语言标签。 |
+| `raw_fields` | 原始输入字段，比如 `close`。 | 说明因子直接依赖哪些上游字段，便于追溯来源。 |
+| `derived_fields` | 派生字段，比如 `ret_20d`。 | 说明中间变量怎么来，避免不同实现各算一版。 |
+| `formula` | 最终公式，比如 `ret_20d` 或固定加权组合。 | 下游能按同一公式复现同一个 factor panel。 |
+| `deterministic` | 确定性的，给定同样输入一定得到同样输出。 | SignalReady 只允许确定性定义，不允许训练后学出来的权重。 |
+| `coverage` | 覆盖率，说明多少 `date x asset` 样本有有效因子值。 | 它是交付完整性检查，不是 alpha 好坏判断。coverage 太差会让后续证据不稳定。 |
+| `schema` | 表结构，说明文件里有哪些列、主键和值字段。 | 没有 schema，下游可能读错列，或者把质量字段当成因子值。 |
+| `baseline factor` | 第一版先冻结的基准因子。 | 先把一个清楚、可复现的 baseline 做对，再让 TrainFreeze 管理训练搜索空间。 |
+| `component factor` | 多因子分数里的子因子。 | 多因子时要知道每个 component 是谁，否则最终分数不可解释。 |
+
+### 交付物字段
+
+| 文件                                  | 人话含义        | 为什么要用它                                         |
+| ----------------------------------- | ----------- | ---------------------------------------------- |
+| `factor_panel.parquet`              | 真实落盘的因子值面板。 | Train/Test 直接消费它；没有它就只是口头合同。                   |
+| `factor_manifest.yaml`              | 因子身份清单。     | 记录 `factor_id`、角色、结构、输入和版本，防止身份漂移。             |
+| `component_factor_manifest.yaml`    | 组件因子清单。     | 多因子分数必须能追溯每个 component，不然组合公式不可审计。             |
+| `factor_coverage_report.parquet`    | 因子覆盖率报告。    | 说明哪些样本有值、哪些缺失，以及缺失是否影响交付。                      |
+| `factor_group_context.parquet`      | 因子的分组上下文。   | 供 group neutral、分组审计和后续解释使用。                   |
+| `route_inheritance_contract.yaml`   | 路线继承合同。     | 证明本阶段没有静默改掉 mandate 里冻结的 CSF 路线、组合表达和中性化语义。    |
+| `factor_contract.md`                | 人可读的因子合同。   | 让 reviewer 和后续研究者知道这个因子是什么、怎么算、怎么被评估。          |
+| `factor_field_dictionary.md`        | 因子字段字典。     | 逐列解释 `factor_panel.parquet` 的字段，避免下游误读 schema。 |
+| `csf_signal_ready_gate_decision.md` | 本阶段门禁结论。    | 明确 SignalReady 是否通过、有什么限制、是否允许进入 TrainFreeze。  |
+| `run_manifest.json`                 | 运行清单。       | 记录用什么程序、什么输入、什么版本生成这些 artifact，保证可重放。          |
+| `artifact_catalog.md`               | 产物目录。       | 告诉下游每个文件在哪里、作用是什么。                             |
+| `field_dictionary.md`               | 全阶段字段字典。    | 统一解释本阶段所有正式字段，避免不同文件各说各话。                      |
+
 ---
 
 ## 3. 本阶段真正要冻结的五组内容
@@ -303,7 +366,7 @@ SignalReady 第一版应先冻结清楚 baseline factor：
 
 - 限制上游定义漂移
 - 限制训练搜索空间提前膨胀
-- 防止 Train 阶段第一次发现 signal schema 其实没冻结干净
+- 防止 Train 阶段第一次发现 factor schema 其实没冻结干净
 
 ## 5.6 未物化的 factor / component 不能静默消失
 
@@ -408,7 +471,7 @@ SignalReady 不能只停留在文档语义层。
 
 ## 8. 与下一阶段的边界
 
-TrainFreeze 只能在已冻结的 signal 合同上学习训练窗尺子。
+TrainFreeze 只能在已冻结的 factor 合同上学习训练窗尺子。
 
 也就是说，进入下一阶段后不能再改：
 
