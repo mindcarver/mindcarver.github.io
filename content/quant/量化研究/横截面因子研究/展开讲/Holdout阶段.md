@@ -1,6 +1,5 @@
 # HoldoutValidation 阶段 - 详细展开
 
-> 对应摘要版：`../简介/Holdout阶段.md`
 > 第一次阅读建议先看：[`./英文术语表.md`](./英文术语表.md)
 
 ## 1. 先说人话：Holdout 是终审，不是补考
@@ -104,6 +103,8 @@ Holdout 失败之后，不是只有“全盘否定”一种路径。
 
 这一步不是为了帮策略找借口，而是为了避免团队在失败时只会说“市场变了”。
 
+在 CSF current skill 里，这组更贴近 `stability_contract`：不仅要解释漂移，还要明确 rolling holdout stability、test/backtest 对比和方向翻转判据。
+
 ## 3.4 `failure_governance`
 
 这组定义：
@@ -167,8 +168,8 @@ Holdout 失败之后，不是只有“全盘否定”一种路径。
 
 Holdout 开始时，首先要明确：
 
-- 当前复用的是哪一版 `frozen_portfolio_spec`
-- 对应哪一版 `strategy_combo_ledger`
+- 当前复用的是哪一版 `portfolio_contract.yaml`
+- 对应哪一版 `csf_backtest_gate_table.csv`
 - 时间窗边界是否与 Mandate 一致
 
 如果这一层都不清楚，后面的结果比较就没有意义。
@@ -192,7 +193,7 @@ Holdout 开始时，首先要明确：
 
 但它不能替代单窗口分析。
 
-## 5.4 做 `holdout_backtest_compare`
+## 5.4 做 compare 输出
 
 这一层不是为了拼一条“大曲线”，而是为了做严肃对比。
 
@@ -202,6 +203,11 @@ Holdout 开始时，首先要明确：
 - 退化幅度多大
 - rolling OOS 一致性如何
 - 是否出现特定时间段方向翻转
+
+CSF current artifact 中至少应区分：
+
+- `holdout_test_compare.parquet`
+- `holdout_portfolio_compare.parquet`
 
 ## 5.5 做 `drift_audit`
 
@@ -226,14 +232,22 @@ Holdout 开始时，首先要明确：
 
 典型输出物包括：
 
-- `holdout_run_manifest.json`
-- `holdout_backtest_compare.csv`
-- `window_results/`
-- `holdout_gate_decision.md`
+- `csf_holdout_run_manifest.json`
+- `holdout_factor_diagnostics.parquet`
+- `holdout_test_compare.parquet`
+- `holdout_portfolio_compare.parquet`
+- `portfolio_return_series.parquet`
+- `equity_curve.parquet`
+- `portfolio_pnl_ledger.parquet`
+- `asset_pnl_ledger.parquet`
+- `risk_adjusted_metrics.parquet`
+- `rolling_holdout_stability.json`
+- `regime_shift_audit.json`
+- `csf_holdout_gate_decision.md`
 - `artifact_catalog.md`
 - `field_dictionary.md`
 
-### `holdout_run_manifest.json`
+### `csf_holdout_run_manifest.json`
 
 这类文件的重要性在于证明：
 
@@ -241,13 +255,13 @@ Holdout 开始时，首先要明确：
 - 什么时候跑的
 - 是否只跑了一次
 
-### `window_results/`
+### 单窗口与合并窗口结果
 
 这里必须保留单窗口结果，而不是只保留汇总。
 
-### `holdout_backtest_compare.csv`
+### `holdout_test_compare.parquet` / `holdout_portfolio_compare.parquet`
 
-这个文件只能用于比较，不能和 Backtest 曲线拼成一条“最终业绩曲线”。
+这些文件只能用于比较，不能和 Backtest 曲线拼成一条“最终业绩曲线”。
 
 这是非常重要的纪律。
 

@@ -1,6 +1,5 @@
 # TrainFreeze 阶段 - 详细展开
 
-> 对应摘要版：`../简介/Train阶段.md`
 > 第一次阅读建议先看：[`./英文术语表.md`](./英文术语表.md)
 
 ## 1. 先说人话：TrainFreeze 为什么不是“训练赢家”
@@ -79,7 +78,7 @@
 
 ---
 
-## 3. 本阶段冻结的五组内容怎么理解
+## 3. 本阶段冻结的六组内容怎么理解
 
 ## 3.1 `preprocess_contract`
 
@@ -155,7 +154,25 @@
 - 触发模式
 - 辅助条件
 
-## 3.5 `delivery_contract`
+## 3.5 `search_governance_contract`
+
+这一组解决的是：
+
+- 哪些轴在 TrainFreeze 里仍允许比较
+- 哪些轴已经被 SignalReady 锁死
+- 想改 signal expression / raw fields / score formula 时应如何拒绝
+- variant ledger 和 reject ledger 如何记录
+
+它的作用是防止把“训练候选”伪装成“重新定义因子”。
+
+例如：
+
+- 标准化方式、分桶方式、中性化设定可以是 train-governable axes
+- `factor_expression`、`raw_factor_fields`、`derived_factor_fields`、`score_combination_formula` 通常不是
+
+如果训练阶段发现必须改这些 signal 轴，正确动作不是继续调参，而是回到 SignalReady 或开新 lineage。
+
+## 3.6 `delivery_contract`
 
 这一组解决的是：
 
@@ -263,10 +280,16 @@
 典型输出物包括：
 
 - `csf_train_freeze.yaml`
-- `train_quality.parquet`
+- `train_factor_quality.parquet`
 - `train_variant_ledger.csv`
-- `train_rejects.csv`
-- `train_gate_decision.md`
+- `train_variant_rejects.csv`
+- `train_bucket_diagnostics.parquet`
+- `train_neutralization_diagnostics.parquet`
+- `csf_train_contract.md`
+- `csf_train_freeze_gate_decision.md`
+- `run_manifest.json`
+- `artifact_catalog.md`
+- `field_dictionary.md`
 
 其中最关键的是 `csf_train_freeze.yaml`。
 

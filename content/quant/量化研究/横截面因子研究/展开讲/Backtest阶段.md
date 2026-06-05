@@ -1,6 +1,5 @@
 # BacktestReady 阶段 - 详细展开
 
-> 对应摘要版：`../简介/Backtest阶段.md`
 > 第一次阅读建议先看：[`./英文术语表.md`](./英文术语表.md)
 
 ## 1. 先说人话：BacktestReady 锁的是“组合如何被交易”，不是“信号是什么”
@@ -67,7 +66,20 @@ BacktestReady 不是为了给出一个漂亮净值曲线，而是为了明确：
 
 ## 3. 本阶段冻结的五组内容怎么理解
 
-## 3.1 `execution_policy`
+## 3.1 `portfolio_contract`
+
+这组解决的是“怎么把通过 TestEvidence 的 CSF variant 变成组合”。
+
+典型内容包括：
+
+- portfolio expression
+- 权重规则
+- long / short 数量
+- 是否 market neutral
+
+这一层必须显式使用上游已冻结的 `factor_role`、`factor_structure`、`portfolio_expression` 和 `neutralization_policy`。
+
+## 3.2 `execution_contract`
 
 这组解决的是“怎么下单”。
 
@@ -81,20 +93,7 @@ BacktestReady 不是为了给出一个漂亮净值曲线，而是为了明确：
 这里最容易犯的错是把实现习惯当成合同。  
 例如“先按现在代码里默认配置跑一下”，这不叫冻结合同。
 
-## 3.2 `portfolio_policy`
-
-这组解决的是“怎么把信号变成组合”。
-
-例如：
-
-- 权重规则
-- long / short 数量
-- 是否等权
-- 是否 score weighted
-
-这一层是交易表达的正式落地，不应再回头改上游信号身份。
-
-## 3.3 `risk_overlay`
+## 3.3 `risk_contract`
 
 这组解决的是“组合被允许暴露成什么样”。
 
@@ -105,19 +104,20 @@ BacktestReady 不是为了给出一个漂亮净值曲线，而是为了明确：
 - 某类资产暴露上限
 - 参与率上限
 
-如果没有 risk overlay，回测结果往往只是“理论最好看”，不是可接受的交易方案。
+如果没有 risk contract，回测结果往往只是“理论最好看”，不是可接受的交易方案。
 
-## 3.4 `engine_contract`
+## 3.4 `diagnostic_contract`
 
 这组解决的是“结果是用什么回测引擎和什么口径跑出来的”。
 
-建议至少保留：
+除了引擎差异，还要保留：
 
-- 一个向量化回测实现
-- 一个事件驱动或另一种实现
-- 两者的差异对比
+- return accounting provenance
+- 路径级风险诊断
+- 成本与容量诊断
+- signal/factor proxy return 与 formal PnL 的边界
 
-原因不是为了炫技，而是为了避免你把某个引擎特性误当成策略收益。
+原因不是为了炫技，而是为了避免把某个引擎特性、proxy return 或成本假设误当成策略收益。
 
 ## 3.5 `delivery_contract`
 
@@ -167,17 +167,18 @@ BacktestReady 不是为了给出一个漂亮净值曲线，而是为了明确：
 
 ## 5. 这一阶段应怎么落地
 
-## 5.1 先固定 `selected_factor_spec`
+## 5.1 先固定已通过 TestEvidence 的 variant
 
 BacktestReady 开始时，首先要明确：
 
 - 当前消费的是谁
 - 角色是什么
 - 组合表达是什么
+- 来自哪一版 `csf_selected_variants_test.csv`
 
 如果这一层还含糊，后面所有 backtest 结果都不可靠。
 
-## 5.2 再写 `portfolio_policy`
+## 5.2 再写 `portfolio_contract`
 
 这里应该明确：
 
@@ -188,7 +189,7 @@ BacktestReady 开始时，首先要明确：
 
 如果团队在这里还说“先跑一下再决定”，说明组合合同还没冻结。
 
-## 5.3 再写 `execution_policy`
+## 5.3 再写 `execution_contract`
 
 尤其要明确：
 
@@ -199,7 +200,7 @@ BacktestReady 开始时，首先要明确：
 
 很多“高收益策略”，只是因为在这里默认了过于乐观的成交语义。
 
-## 5.4 再写 `risk_overlay`
+## 5.4 再写 `risk_contract`
 
 例如：
 
@@ -228,16 +229,31 @@ BacktestReady 开始时，首先要明确：
 
 BacktestReady 结束后，通常至少应有：
 
-- `frozen_portfolio_spec.json`
+- `portfolio_contract.yaml`
 - `portfolio_weight_panel.parquet`
-- `portfolio_curve.parquet`
-- `engine_compare.csv`
-- `strategy_combo_ledger.csv`
-- `capacity_review.md`
+- `rebalance_ledger.csv`
+- `turnover_capacity_report.parquet`
+- `cost_assumption_report.md`
+- `portfolio_summary.parquet`
+- `portfolio_return_series.parquet`
+- `equity_curve.parquet`
+- `portfolio_pnl_ledger.parquet`
+- `asset_pnl_ledger.parquet`
+- `risk_adjusted_metrics.parquet`
+- `name_level_metrics.parquet`
+- `drawdown_report.json`
+- `target_strategy_compare.parquet`
+- `csf_backtest_gate_table.csv`
+- `return_accounting_provenance.yaml`
+- `csf_backtest_contract.md`
+- `csf_backtest_gate_decision.md`
+- `run_manifest.json`
+- `artifact_catalog.md`
+- `field_dictionary.md`
 
 这几类文件各自解决不同问题：
 
-### `frozen_portfolio_spec.json`
+### `portfolio_contract.yaml`
 
 明确“冻结方案是什么”。
 
@@ -245,17 +261,17 @@ BacktestReady 结束后，通常至少应有：
 
 明确“每个时点究竟持了什么、权重是多少”。
 
-### `engine_compare.csv`
+### `return_accounting_provenance.yaml`
 
-明确“结果是不是依赖某个回测实现细节”。
+明确 formal PnL 和 return series 来自哪里，避免把 factor score 或 proxy return 当成正式回测收益。
 
-### `strategy_combo_ledger.csv`
+### `csf_backtest_gate_table.csv`
 
-明确“为什么保留这一组合，为什么放弃别的组合”。
+明确本阶段的交易层 gate 结论。
 
-### `capacity_review.md`
+### `turnover_capacity_report.parquet` / `cost_assumption_report.md`
 
-明确“这个组合在多大规模下仍成立”。
+明确“这个组合在多大规模、什么成本假设下仍成立”。
 
 ---
 
@@ -301,16 +317,16 @@ BacktestReady 结束后，通常至少应有：
 
 HoldoutValidation 的职责是：
 
-- 复用这套 frozen portfolio spec
+- 复用这套 `portfolio_contract.yaml`
 - 在未见窗口验证
 - 做 drift audit
 
 所以 Holdout 阶段不应再改：
 
 - factor selection
-- portfolio policy
-- execution policy
-- risk overlay
+- portfolio contract
+- execution contract
+- risk contract
 
 如果 Holdout 结果不好，正确动作是解释或失败治理，而不是回头把 BacktestReady 重新雕一遍。
 

@@ -1,6 +1,5 @@
 # DataReady 阶段 - 详细展开
 
-> 对应摘要版：`../简介/DataReady阶段.md`
 > 第一次阅读建议先看：[`./英文术语表.md`](./英文术语表.md)
 
 ## 1. 先说人话：DataReady 在锁什么
@@ -366,10 +365,15 @@ DataReady 开始时，不应重新发明问题，而应先逐条消费：
 - `asset_universe_membership.parquet`
 - `eligibility_base_mask.parquet`
 - `cross_section_coverage.parquet`
+- `split_sample_adequacy_report.yaml`
 - `shared_feature_base/`
-- `asset_taxonomy_snapshot.parquet`
+- `asset_taxonomy_snapshot.parquet`（如果 mandate 允许 `group_neutral`）
+- `csf_data_contract.md`
+- `csf_data_ready_gate_decision.md`
 - `run_manifest.json`
 - `rebuild_csf_data_ready.py`
+- `artifact_catalog.md`
+- `field_dictionary.md`
 
 其中最容易被忽略的是后两项。
 

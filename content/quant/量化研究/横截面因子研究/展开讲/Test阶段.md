@@ -1,6 +1,5 @@
 # TestEvidence 阶段 - 详细展开
 
-> 对应摘要版：`../简介/Test阶段.md`
 > 第一次阅读建议先看：[`./英文术语表.md`](./英文术语表.md)
 
 ## 1. 先说人话：TestEvidence 为什么不是“回测前的小回测”
@@ -61,22 +60,21 @@ TestEvidence 这个阶段真正要回答的是：
 
 TestEvidence 不是在交易层宣布大胜，但它确实要冻结：
 
-- 哪些 symbol / param 组合具备继续进入 backtest 的资格
-- 冻结后的 `selected_symbols` 是谁
-- 冻结后的 `best_h` 是谁
+- 哪些 factor variant 具备继续进入 backtest 的资格
+- 冻结后的 `csf_selected_variants_test` 是谁
 - 哪些对象被拒绝
 - 为什么被拒绝
 
-在 current skill 里，这一步不再只是泛泛写一份“挑中了哪个因子”的说明，
+在 CSF current skill 里，这一步不再只是泛泛写一份“挑中了哪个因子”的说明，
 而是要把后续 BacktestReady 能直接消费的冻结对象落进：
 
-- `selected_symbols_test.csv`
-- `selected_symbols_test.parquet`
-- `frozen_spec.json`
+- `csf_selected_variants_test.csv`
+- `csf_test_gate_table.csv`
+- `csf_test_contract.md`
 
 也就是说，
 TestEvidence 结束时不仅要回答“谁通过了证据门禁”，
-还要回答“Backtest 到底允许消费哪一版白名单和哪一个 `best_h`”。
+还要回答“Backtest 到底允许消费哪一版横截面候选 variant”。
 
 ---
 
@@ -159,15 +157,21 @@ TestEvidence 结束时不仅要回答“谁通过了证据门禁”，
 
 按照 current skill，至少应显式落下：
 
-- `report_by_h.parquet`
-- `symbol_summary.parquet`
-- `admissibility_report.parquet`
-- `test_gate_table.csv`
+- `rank_ic_timeseries.parquet`
+- `rank_ic_summary.json`
+- `bucket_returns.parquet`
+- `monotonicity_report.json`
+- `breadth_coverage_report.parquet`
+- `subperiod_stability_report.json`
+- `filter_condition_panel.parquet`
+- `target_strategy_condition_compare.parquet`
+- `gated_vs_ungated_summary.json`
+- `csf_test_gate_table.csv`
 - `crowding_review.md`
-- `selected_symbols_test.csv`
-- `selected_symbols_test.parquet`
-- `frozen_spec.json`
-- `test_gate_decision.md`
+- `csf_selected_variants_test.csv`
+- `csf_test_contract.md`
+- `csf_test_gate_decision.md`
+- `run_manifest.json`
 - `artifact_catalog.md`
 - `field_dictionary.md`
 
@@ -273,16 +277,15 @@ TestEvidence 结束时不仅要回答“谁通过了证据门禁”，
 
 如果它只是减少了样本，结果看起来“更干净”，不一定代表真的有改善价值。
 
-## 6.4 冻结 `selected_symbols` 与 `frozen_spec`
+## 6.4 冻结 `csf_selected_variants_test` 与 test contract
 
 TestEvidence 结束时，应该明确：
 
 - 哪些对象进入 backtest
 - 哪些不进入
 - 原因是什么
-- `selected_symbols` 是否已经冻结
-- `best_h` 是否已经冻结
-- 这些冻结对象是否已写入 `frozen_spec.json`
+- `csf_selected_variants_test.csv` 是否已经冻结
+- 这些冻结对象是否已经写入 `csf_test_contract.md` 和 `csf_test_gate_table.csv`
 
 这里最忌讳的不是错选，而是“只留下当前一个版本，看不见背后的筛选过程”。
 
@@ -292,38 +295,38 @@ TestEvidence 结束时，应该明确：
 
 典型输出物包括：
 
-- `report_by_h.parquet`
-- `symbol_summary.parquet`
-- `admissibility_report.parquet`
-- `test_gate_table.csv`
+- `rank_ic_timeseries.parquet`
+- `rank_ic_summary.json`
+- `bucket_returns.parquet`
+- `monotonicity_report.json`
+- `breadth_coverage_report.parquet`
+- `subperiod_stability_report.json`
+- `csf_test_gate_table.csv`
 - `crowding_review.md`
-- `selected_symbols_test.csv`
-- `selected_symbols_test.parquet`
-- `frozen_spec.json`
-- `test_gate_decision.md`
+- `csf_selected_variants_test.csv`
+- `csf_test_contract.md`
+- `csf_test_gate_decision.md`
+- `run_manifest.json`
 
 其中最关键的通常是：
 
-### `frozen_spec.json`
+### `csf_selected_variants_test.csv`
 
-它要保证 BacktestReady 消费的是一套**被正式冻结的对象**，而不是一段口头描述。
-
-在 current skill 里，它至少应同时包含：
-
-- `selected_symbols`
-- `best_h`
-
-### `selected_symbols_test.csv`
+它要保证 BacktestReady 消费的是一套**被正式冻结的横截面候选 variant**，而不是一段口头描述。
 
 它要让团队看得到：
 
-- 被选中的有哪些
-- 没被选中的有哪些
+- 被选中的 variant 有哪些
+- 没被选中的 variant 有哪些
 - 为什么
 
-### `admissibility_report.parquet`
+### `csf_test_gate_table.csv`
 
-它负责承接“证据有，但是否值得进入交易层”的判断。
+它负责承接 formal gate 的结构化结论，包括排序证据、稳定性、覆盖率和准入判断。
+
+### `csf_test_contract.md`
+
+它负责说明 BacktestReady 只能消费哪一批冻结 variant，以及这些 variant 是按什么证据合同被选出的。
 
 ---
 
@@ -360,25 +363,17 @@ TestEvidence 结束时，应该明确：
 
 ## 8.4 输出 `best_horizon`
 
-这里要特别改成更精确的说法。
+在 CSF 横截面因子路线里，这通常就是错误信号。
 
-危险的不是**写出 `best_h` 这个冻结对象本身**，
-而是：
+`qros-csf-test-evidence` 明确不应产出：
 
-- 没有在上游约束范围内定义 horizon 集合
-- 看完更多下游结果后再事后重估一个更好看的 `best_h`
-- 把 `best_h` 当成可以在 Backtest 阶段继续扭动的旋钮
+- `best_h`
+- 预测 horizon 口径
+- 单资产命中率语义
 
-current QROS skill 的要求恰恰是：
+如果文档里出现这些词，通常说明研究线正在从“同一时点横向排序”滑向“单资产时序择时”。
 
-- TestEvidence 结束时，要把 `best_h` 正式写入 `frozen_spec.json`
-- BacktestReady 只能消费这个已冻结的 `best_h`
-- 不能在 Backtest 或 Holdout 再重新估一个更好看的 horizon
-
-所以更准确的表述应是：
-
-> 任意事后重估 `best_horizon` 很危险；
-> 但把已经按阶段纪律冻结好的 `best_h` 正式落盘，是 current TestEvidence contract 的一部分。
+CSF TestEvidence 应冻结的是通过证据门禁的 factor variants，而不是冻结“哪个持有期最好”。
 
 ---
 
@@ -386,14 +381,14 @@ current QROS skill 的要求恰恰是：
 
 BacktestReady 只能消费：
 
-- 已冻结的 `selected_symbols_test`
-- 已冻结的 `frozen_spec.json`
+- 已冻结的 `csf_selected_variants_test.csv`
+- 已冻结的 `csf_test_contract.md`
 - admissibility 结论
 
 BacktestReady 不应再做：
 
-- symbol 白名单重选
-- `best_h` 重估
+- variant 重选
+- horizon 重估
 - 训练尺子重估
 - 信号身份重解释
 
@@ -407,7 +402,7 @@ BacktestReady 不应再做：
 
 > 即便先不跑任何交易层仿真，团队也能清楚知道：
 > 这个对象是否拥有独立样本上的正式证据，
-> `selected_symbols` 和 `best_h` 是否已经冻结，
-> 以及 BacktestReady 到底应该消费哪一版 `frozen_spec.json`。
+> 哪些 `csf_selected_variants_test` 已经冻结，
+> 以及 BacktestReady 到底应该消费哪一版 `csf_test_contract.md`。
 
 如果还在把这一步写成“半个回测”，说明阶段边界还没收紧。
